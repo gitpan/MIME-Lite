@@ -72,13 +72,59 @@ DESCRIPTION
     package instead. I will be more likely to add stuff to that toolkit over
     this one.
 
-MORE EXAMPLES
+EXAMPLES
+  Create a simple message containing just text
+
+        $msg = MIME::Lite->new(
+                     From     =>'me@myhost.com',
+                     To       =>'you@yourhost.com',
+                     Cc       =>'some@other.com, some@more.com',
+                     Subject  =>'Helloooooo, nurse!',
+                     Data     =>"How's it goin', eh?"
+                     );
+
+  Create a simple message containing just an image
+
+        $msg = MIME::Lite->new(
+                     From     =>'me@myhost.com',
+                     To       =>'you@yourhost.com',
+                     Cc       =>'some@other.com, some@more.com',
+                     Subject  =>'Helloooooo, nurse!',
+                     Type     =>'image/gif',
+                     Encoding =>'base64',
+                     Path     =>'hellonurse.gif'
+                     );
+
+  Create a multipart message
+
+        ### Create the multipart "container":
+        $msg = MIME::Lite->new( 
+                     From    =>'me@myhost.com',
+                     To      =>'you@yourhost.com',
+                     Cc      =>'some@other.com, some@more.com',
+                     Subject =>'A message with 2 parts...',
+                     Type    =>'multipart/mixed'
+                     );
+        
+        ### Add the text message part:
+        ### (Note that "attach" has same arguments as "new"):
+        $msg->attach(Type     =>'TEXT',   
+                     Data     =>"Here's the GIF file you wanted"
+                     );  
+         
+        ### Add the image part:
+        $msg->attach(Type     =>'image/gif',
+                     Path     =>'aaa000123.gif',
+                     Filename =>'logo.gif',
+                     Disposition => 'attachment'
+                     );
+
   Attach a GIF to a text message
 
     This will create a multipart message exactly as above, but using the
     "attach to singlepart" hack:
 
-        ### Create a new multipart message:
+        ### Start with a simple text message:
         $msg = MIME::Lite->new(
                      From    =>'me@myhost.com',
                      To      =>'you@yourhost.com',
@@ -88,21 +134,51 @@ MORE EXAMPLES
                      Data    =>"Here's the GIF file you wanted"
                      );  
         
-        ### Attach a part:
+        ### Attach a part... the make the message a multipart automatically:
         $msg->attach(Type     =>'image/gif',
                      Path     =>'aaa000123.gif',
                      Filename =>'logo.gif'
                      );
 
-  Attach a pre-prepared part (allows fine-tuning):
+  Attach a pre-prepared part to a message
 
+        ### Create a standalone part:
         $part = MIME::Lite->new(
                      Type     =>'text/html',
                      Data     =>'<H1>Hello</H1>',
                      );
         $part->attr('content-type.charset' => 'UTF8');
         $part->add('X-Comment' => 'A message for you');
+         
+        ### Attach it to any message:
         $msg->attach($part);
+
+  Print a message to a filehandle
+
+        ### Write it to a filehandle:
+        $msg->print(\*STDOUT); 
+         
+        ### Write just the header:
+        $msg->print_header(\*STDOUT); 
+         
+        ### Write just the encoded body:
+        $msg->print_body(\*STDOUT); 
+
+  Print a message into a string
+
+        ### Get entire message as a string:
+        $str = $msg->as_string;
+         
+        ### Get just the header:
+        $str = $msg->header_as_string;
+         
+        ### Get just the encoded body:
+        $str = $msg->body_as_string;
+
+  Send a message
+
+        ### Send in the "best" way (the default is to use "sendmail"):
+        $msg->send;
 
   Send an HTML document... with images included!
 
@@ -123,28 +199,6 @@ MORE EXAMPLES
                      );
         $msg->send();
 
-  Output a message to a filehandle
-
-        ### Write it to a filehandle:
-        $msg->print(\*STDOUT); 
-         
-        ### Write just the header:
-        $msg->print_header(\*STDOUT); 
-         
-        ### Write just the encoded body:
-        $msg->print_body(\*STDOUT); 
-
-  Get a message as a string
-
-        ### Get entire message as a string:
-        $str = $msg->as_string;
-         
-        ### Get just the header:
-        $str = $msg->header_as_string;
-         
-        ### Get just the encoded body:
-        $str = $msg->body_as_string;
-
   Change how messages are sent
 
         ### Do something like this in your 'main':
@@ -155,72 +209,17 @@ MORE EXAMPLES
         ### Now this will do the right thing:
         $msg->send;         ### will now use Net::SMTP as shown above
 
-FAQ
-  How do I prevent "Content" headers from showing up in my mail reader?
-
-    Apparently, some people are using mail readers which display the MIME
-    headers like "Content-disposition", and they want MIME::Lite not to
-    generate them "because they look ugly".
-
-    Sigh.
-
-    Y'know, kids, those headers aren't just there for cosmetic purposes.
-    They help ensure that the message is *understood* correctly by mail
-    readers. But okay, you asked for it, you got it... here's how you can
-    suppress the standard MIME headers. Before you send the message, do
-    this:
-
-            $msg->scrub;
-
-    You can scrub() any part of a multipart message independently; just be
-    aware that it works recursively. Before you scrub, note the rules that I
-    follow:
-
-    Content-type
-        You can safely scrub the "content-type" attribute if, and only if,
-        the part is of type "text/plain" with charset "us-ascii".
-
-    Content-transfer-encoding
-        You can safely scrub the "content-transfer-encoding" attribute if,
-        and only if, the part uses "7bit", "8bit", or "binary" encoding. You
-        are far better off doing this if your lines are under 1000
-        characters. Generally, that means you *can* scrub it for plain text,
-        and you can *not* scrub this for images, etc.
-
-    Content-disposition
-        You can safely scrub the "content-disposition" attribute if you
-        trust the mail reader to do the right thing when it decides whether
-        to show an attachment inline or as a link. Be aware that scrubbing
-        both the content-disposition and the content-type means that there
-        is no way to "recommend" a filename for the attachment!
-
-        Note: there are reports of brain-dead MUAs out there that do the
-        wrong thing if you *provide* the content-disposition. If your
-        attachments keep showing up inline or vice-versa, try scrubbing this
-        attribute.
-
-    Content-length
-        You can always scrub "content-length" safely.
-
-  How do I give my attachment a [different] recommended filename?
-
-    By using the Filename option (which is different from Path!):
-
-            $msg->attach(Type => "image/gif",
-                         Path => "/here/is/the/real/file.GIF",
-                         Filename => "logo.gif");
-
-    You should *not* put path information in the Filename.
-
 PUBLIC INTERFACE
   Global configuration
 
     To alter the way the entire module behaves, you have the following
     methods/options:
 
-    MIME::Lite->header_order()
+    MIME::Lite->field_order()
         When used as a classmethod, this changes the default order in which
-        headers are output for *all* messages.
+        headers are output for *all* messages. However, please consider
+        using the instance method variant instead, so you won't stomp on
+        other message senders in the same application.
 
     MIME::Lite->quiet()
         This classmethod can be used to suppress/unsuppress all warnings
@@ -241,21 +240,32 @@ PUBLIC INTERFACE
 
             MIME::Lite->send("smtp");
 
-    $MIME::Lite::PARANOID
-        If true, we won't attempt to use MIME::Base64/MIME::QuotedPrint,
-        even if they're available. Default is false.
+    $MIME::Lite::AUTO_CC
+        If true, automatically send to the Cc/Bcc addresses for
+        send_by_smtp(). Default is true.
+
+    $MIME::Lite::AUTO_CONTENT_TYPE
+        If true, try to automatically choose the content type from the file
+        name in `new()'/`build()'. In other words, setting this true changes
+        the default `Type' from `"TEXT"' to `"AUTO"'.
+
+        Default is false, since we must maintain backwards-compatibility
+        with prior behavior. Please consider keeping it false, and just
+        using Type 'AUTO' when you build() or attach().
 
     $MIME::Lite::AUTO_ENCODE
         If true, automatically choose the encoding from the content type.
         Default is true.
 
-    $MIME::Lite::AUTO_CC
-        If true, automatically send to the Cc/Bcc addresses for
-        send_by_smtp(). Default is true.
-
     $MIME::Lite::AUTO_VERIFY
         If true, check paths to attachments right before printing, raising
         an exception if any path is unreadable. Default is true.
+
+    $MIME::Lite::PARANOID
+        If true, we won't attempt to use MIME::Base64, MIME::QuotedPrint, or
+        MIME::Types, even if they're available. Default is false. Please
+        consider keeping it false, and trusting these other packages to do
+        the right thing.
 
   Construction
 
@@ -403,8 +413,15 @@ PUBLIC INTERFACE
 
                  "TEXT"   means "text/plain"
                  "BINARY" means "application/octet-stream"
+                 "AUTO"   means attempt to guess from the filename, falling back
+                          to 'application/octet-stream'.  This is good if you have
+                          MIME::Types on your system and you have no idea what
+                          file might be used for the attachment.
 
-            The default is `"TEXT"'.
+            The default is `"TEXT"', but it will be `"AUTO"' if you set
+            $AUTO_CONTENT_TYPE to true (sorry, but you have to enable it
+            explicitly, since we don't want to break code which depends on
+            the old behavior).
 
         A picture being worth 1000 words (which is of course 2000 bytes, so
         it's probably more of an "icon" than a "picture", but I digress...),
@@ -541,7 +558,7 @@ PUBLIC INTERFACE
         Mail::Header returns something different, but similar enough to be
         confusing.
 
-        You can change the order of the fields: see the header_order entry
+        You can change the order of the fields: see the field_order entry
         elsewhere in this document . You really shouldn't need to do this,
         but some people have to deal with broken mailers.
 
@@ -893,6 +910,62 @@ PUBLIC INTERFACE
         should reconsider the whole line. `;-)'
 
 NOTES
+  How do I prevent "Content" headers from showing up in my mail reader?
+
+    Apparently, some people are using mail readers which display the MIME
+    headers like "Content-disposition", and they want MIME::Lite not to
+    generate them "because they look ugly".
+
+    Sigh.
+
+    Y'know, kids, those headers aren't just there for cosmetic purposes.
+    They help ensure that the message is *understood* correctly by mail
+    readers. But okay, you asked for it, you got it... here's how you can
+    suppress the standard MIME headers. Before you send the message, do
+    this:
+
+            $msg->scrub;
+
+    You can scrub() any part of a multipart message independently; just be
+    aware that it works recursively. Before you scrub, note the rules that I
+    follow:
+
+    Content-type
+        You can safely scrub the "content-type" attribute if, and only if,
+        the part is of type "text/plain" with charset "us-ascii".
+
+    Content-transfer-encoding
+        You can safely scrub the "content-transfer-encoding" attribute if,
+        and only if, the part uses "7bit", "8bit", or "binary" encoding. You
+        are far better off doing this if your lines are under 1000
+        characters. Generally, that means you *can* scrub it for plain text,
+        and you can *not* scrub this for images, etc.
+
+    Content-disposition
+        You can safely scrub the "content-disposition" attribute if you
+        trust the mail reader to do the right thing when it decides whether
+        to show an attachment inline or as a link. Be aware that scrubbing
+        both the content-disposition and the content-type means that there
+        is no way to "recommend" a filename for the attachment!
+
+        Note: there are reports of brain-dead MUAs out there that do the
+        wrong thing if you *provide* the content-disposition. If your
+        attachments keep showing up inline or vice-versa, try scrubbing this
+        attribute.
+
+    Content-length
+        You can always scrub "content-length" safely.
+
+  How do I give my attachment a [different] recommended filename?
+
+    By using the Filename option (which is different from Path!):
+
+            $msg->attach(Type => "image/gif",
+                         Path => "/here/is/the/real/file.GIF",
+                         Filename => "logo.gif");
+
+    You should *not* put path information in the Filename.
+
   Benign limitations
 
     This is "lite", after all...
@@ -1045,6 +1118,11 @@ WARNINGS
     So: don't depend on taint-checking to save you from outputting tainted
     data in a message.
 
+  Don't tweak the global configuration
+
+    Global configuration variables are bad, and should go away. Until they
+    do, please follow the hints with each setting on how *not* to change it.
+
 A MIME PRIMER
   Content types
 
@@ -1115,9 +1193,38 @@ A MIME PRIMER
         8-bit alphabet).
 
 VERSION
-    $Id: Lite.pm,v 2.111 2001/04/04 06:20:23 eryq Exp $
+    $Id: Lite.pm,v 2.115 2001/08/16 07:06:37 eryq Exp $
 
 CHANGE LOG
+    Version 2.114   (2001/08/16)
+        New special 'AUTO' content type in new()/build() tells MIME::Lite to
+        try and guess the type from file extension. To make use of this,
+        you'll want to install MIME::Types. The "AUTO" setting can be made
+        the default default (instead of "TEXT") if you set
+        `$AUTO_CONTENT_TYPE = 1, $PARANOID = 0'. *Thanks to* Ville
+        SkyttE<#228> *for these patches.*
+
+        File::Basename is only used if available. *Thanks to* Ville
+        SkyttE<#228> *for this patch.*
+
+        SMTP failures (in send_by_smtp) now add the $smtp->message to the
+        croak'ed exception, so if things go wrong, you get a better idea of
+        what and why. *Thanks to Thomas R. Wyant III for the patch.*
+
+        Made a subtle change to `as_string' which supposedly fixes a failed
+        MIME data.t test with Perl 5.004_04 on NT 4 sp6. The problem might
+        only exist in this old perl, but as the patch author says, not
+        everyone has climbed higher on the Perl ladder. *Thanks to John
+        Gotts for the patch.*
+
+        Added `contrib' directory, with MailTool.pm. *Thanks to Tom Wyant
+        for this contribution.*
+
+        Improved HTML documentation (notice the links to the individual
+        methods in the top menu).
+
+        Corrected some mis-docs.
+
     Version 2.111   (2001/04/03)
         Added long-overdue `parts()' and `parts_DFS()' methods.
 
@@ -1354,7 +1461,7 @@ CHANGE LOG
         Initial release.
 
     Version 1.101   (1997/03/01)
-        Baseline code.
+        Baseline code. Originally created: 11 December 1996. Ho ho ho.
 
 TERMS AND CONDITIONS
     Copyright (c) 1997 by Eryq. Copyright (c) 1998 by ZeeGee Software Inc.
@@ -1383,5 +1490,6 @@ AUTHOR
     Eryq (eryq@zeegee.com). President, ZeeGee Software Inc.
     (http://www.zeegee.com).
 
-    Created: 11 December 1996. Ho ho ho.
+    Go to http://www.zeegee.com for the latest downloads and on-line
+    documentation for this module.
 

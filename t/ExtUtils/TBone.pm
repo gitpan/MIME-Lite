@@ -88,7 +88,7 @@ use FileHandle;
 use File::Basename;
 
 # The package version, both in 1.23 style *and* usable by MakeMaker:
-$VERSION = substr q$Revision: 1.117 $, 10;
+$VERSION = substr q$Revision: 1.118 $, 10;
 
 
 
@@ -356,6 +356,23 @@ sub log_close {
 
 #------------------------------
 
+=item log_warnings
+
+I<Instance method.>
+Redefine $SIG{__WARN__} to log to STDERR and to the log. 
+
+=cut
+
+sub log_warnings {
+    my ($self) = @_;
+    $SIG{__WARN__} = sub {
+	print STDERR $_[0];
+	$self->log("warning: ", $_[0]);
+    };
+}
+
+#------------------------------
+
 =item log MESSAGE...
 
 I<Instance method.>
@@ -480,7 +497,7 @@ sub catfile {
 =head1 CHANGE LOG
 
 B<Current version:>
-$Id: TBone.pm,v 1.117 2000/08/16 05:08:09 eryq Exp $
+$Id: TBone.pm,v 1.118 2001/08/07 04:23:19 eryq Exp $
 
 =over 4
 

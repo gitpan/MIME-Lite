@@ -83,14 +83,62 @@ package instead.  I will be more likely to add stuff to that toolkit
 over this one.
 
 
-=head1 MORE EXAMPLES
+=head1 EXAMPLES
+
+=head2 Create a simple message containing just text
+
+    $msg = MIME::Lite->new(
+                 From     =>'me@myhost.com',
+                 To       =>'you@yourhost.com',
+                 Cc       =>'some@other.com, some@more.com',
+                 Subject  =>'Helloooooo, nurse!',
+                 Data     =>"How's it goin', eh?"
+		 );
+
+=head2 Create a simple message containing just an image
+
+    $msg = MIME::Lite->new(
+                 From     =>'me@myhost.com',
+                 To       =>'you@yourhost.com',
+                 Cc       =>'some@other.com, some@more.com',
+                 Subject  =>'Helloooooo, nurse!',
+                 Type     =>'image/gif',
+                 Encoding =>'base64',
+                 Path     =>'hellonurse.gif'
+		 );
+
+
+=head2 Create a multipart message
+
+    ### Create the multipart "container":
+    $msg = MIME::Lite->new( 
+                 From    =>'me@myhost.com',
+                 To      =>'you@yourhost.com',
+                 Cc      =>'some@other.com, some@more.com',
+                 Subject =>'A message with 2 parts...',
+                 Type    =>'multipart/mixed'
+		 );
+    
+    ### Add the text message part:
+    ### (Note that "attach" has same arguments as "new"):
+    $msg->attach(Type     =>'TEXT',   
+                 Data     =>"Here's the GIF file you wanted"
+		 );  
+     
+    ### Add the image part:
+    $msg->attach(Type     =>'image/gif',
+                 Path     =>'aaa000123.gif',
+                 Filename =>'logo.gif',
+		 Disposition => 'attachment'
+		 );
+
 
 =head2 Attach a GIF to a text message
 
 This will create a multipart message exactly as above, but using the 
 "attach to singlepart" hack:
 
-    ### Create a new multipart message:
+    ### Start with a simple text message:
     $msg = MIME::Lite->new(
                  From    =>'me@myhost.com',
                  To      =>'you@yourhost.com',
@@ -100,22 +148,55 @@ This will create a multipart message exactly as above, but using the
                  Data    =>"Here's the GIF file you wanted"
                  );  
     
-    ### Attach a part:
+    ### Attach a part... the make the message a multipart automatically:
     $msg->attach(Type     =>'image/gif',
                  Path     =>'aaa000123.gif',
                  Filename =>'logo.gif'
                  );
 
 
-=head2 Attach a pre-prepared part (allows fine-tuning):
+=head2 Attach a pre-prepared part to a message
 
+    ### Create a standalone part:
     $part = MIME::Lite->new(
                  Type     =>'text/html',
                  Data     =>'<H1>Hello</H1>',
                  );
     $part->attr('content-type.charset' => 'UTF8');
     $part->add('X-Comment' => 'A message for you');
+     
+    ### Attach it to any message:
     $msg->attach($part);
+
+
+=head2 Print a message to a filehandle
+
+    ### Write it to a filehandle:
+    $msg->print(\*STDOUT); 
+     
+    ### Write just the header:
+    $msg->print_header(\*STDOUT); 
+     
+    ### Write just the encoded body:
+    $msg->print_body(\*STDOUT); 
+
+
+=head2 Print a message into a string
+
+    ### Get entire message as a string:
+    $str = $msg->as_string;
+     
+    ### Get just the header:
+    $str = $msg->header_as_string;
+     
+    ### Get just the encoded body:
+    $str = $msg->body_as_string;
+
+
+=head2 Send a message
+
+    ### Send in the "best" way (the default is to use "sendmail"):
+    $msg->send;
 
 
 =head2 Send an HTML document... with images included!
@@ -138,30 +219,6 @@ This will create a multipart message exactly as above, but using the
     $msg->send();
 
 
-=head2 Output a message to a filehandle
-
-    ### Write it to a filehandle:
-    $msg->print(\*STDOUT); 
-     
-    ### Write just the header:
-    $msg->print_header(\*STDOUT); 
-     
-    ### Write just the encoded body:
-    $msg->print_body(\*STDOUT); 
-
-
-=head2 Get a message as a string
-
-    ### Get entire message as a string:
-    $str = $msg->as_string;
-     
-    ### Get just the header:
-    $str = $msg->header_as_string;
-     
-    ### Get just the encoded body:
-    $str = $msg->body_as_string;
-
-
 =head2 Change how messages are sent
 
     ### Do something like this in your 'main':
@@ -177,76 +234,6 @@ This will create a multipart message exactly as above, but using the
 
 
 
-=head1 FAQ
-
-
-=head2 How do I prevent "Content" headers from showing up in my mail reader?
-
-Apparently, some people are using mail readers which display the MIME
-headers like "Content-disposition", and they want MIME::Lite not
-to generate them "because they look ugly".  
-
-Sigh.
-
-Y'know, kids, those headers aren't just there for cosmetic purposes.
-They help ensure that the message is I<understood> correctly by mail 
-readers.  But okay, you asked for it, you got it... 
-here's how you can suppress the standard MIME headers.  
-Before you send the message, do this:
-
-	$msg->scrub;
-
-You can scrub() any part of a multipart message independently;
-just be aware that it works recursively.  Before you scrub,
-note the rules that I follow:
-
-=over 4
-
-=item Content-type
-
-You can safely scrub the "content-type" attribute if, and only if, 
-the part is of type "text/plain" with charset "us-ascii". 
-
-=item Content-transfer-encoding
-
-You can safely scrub the "content-transfer-encoding" attribute 
-if, and only if, the part uses "7bit", "8bit", or "binary" encoding.
-You are far better off doing this if your lines are under 1000 
-characters.  Generally, that means you I<can> scrub it for plain
-text, and you can I<not> scrub this for images, etc.
-
-=item Content-disposition
-
-You can safely scrub the "content-disposition" attribute 
-if you trust the mail reader to do the right thing when it decides
-whether to show an attachment inline or as a link.  Be aware
-that scrubbing both the content-disposition and the content-type
-means that there is no way to "recommend" a filename for the attachment!
-
-B<Note:> there are reports of brain-dead MUAs out there that 
-do the wrong thing if you I<provide> the content-disposition.
-If your attachments keep showing up inline or vice-versa,
-try scrubbing this attribute.
-
-=item Content-length
-
-You can always scrub "content-length" safely.
-
-=back
-
-
-=head2 How do I give my attachment a [different] recommended filename?
-
-By using the Filename option (which is different from Path!):
-
-	$msg->attach(Type => "image/gif",
-	             Path => "/here/is/the/real/file.GIF",
-	             Filename => "logo.gif");
-
-You should I<not> put path information in the Filename.
-
-
-
 =head1 PUBLIC INTERFACE
 
 =head2 Global configuration
@@ -257,10 +244,12 @@ methods/options:
 =over 4
 
 
-=item MIME::Lite->header_order()
+=item MIME::Lite->field_order()
 
-When used as a L<classmethod|/send>, this changes the default 
+When used as a L<classmethod|/field_order>, this changes the default 
 order in which headers are output for I<all> messages.
+However, please consider using the instance method variant instead,
+so you won't stomp on other message senders in the same application.
 
 
 =item MIME::Lite->quiet()
@@ -286,22 +275,26 @@ Or, for non-Unix users:
     MIME::Lite->send("smtp");
 
 
-=item $MIME::Lite::PARANOID
+=item $MIME::Lite::AUTO_CC
 
-If true, we won't attempt to use MIME::Base64/MIME::QuotedPrint, even
-if they're available.
-Default is B<false>.
+If true, automatically send to the Cc/Bcc addresses for send_by_smtp().
+Default is B<true>.
+
+
+=item $MIME::Lite::AUTO_CONTENT_TYPE
+
+If true, try to automatically choose the content type from the file name
+in C<new()>/C<build()>.  In other words, setting this true changes the
+default C<Type> from C<"TEXT"> to C<"AUTO">.
+
+Default is B<false>, since we must maintain backwards-compatibility 
+with prior behavior.  B<Please> consider keeping it false,
+and just using Type 'AUTO' when you build() or attach().
 
 
 =item $MIME::Lite::AUTO_ENCODE
 
 If true, automatically choose the encoding from the content type.
-Default is B<true>.
-
-
-=item $MIME::Lite::AUTO_CC
-
-If true, automatically send to the Cc/Bcc addresses for send_by_smtp().
 Default is B<true>.
 
 
@@ -311,18 +304,28 @@ If true, check paths to attachments right before printing, raising an exception
 if any path is unreadable.
 Default is B<true>.
 
+
+=item $MIME::Lite::PARANOID
+
+If true, we won't attempt to use MIME::Base64, MIME::QuotedPrint,
+or MIME::Types, even if they're available.
+Default is B<false>.  Please consider keeping it false,
+and trusting these other packages to do the right thing.
+
+
 =back
 
 =cut
 
 require 5.004;     ### for /c modifier in m/\G.../gc modifier
 
-use Carp;
+use Carp ();
 use FileHandle;
 
 use strict;
 use vars qw(
             $AUTO_CC 
+            $AUTO_CONTENT_TYPE
             $AUTO_ENCODE
             $AUTO_VERIFY            
             $PARANOID 
@@ -339,25 +342,28 @@ use vars qw(
 # GLOBALS, EXTERNAL/CONFIGURATION...
 
 ### The package version, both in 1.23 style *and* usable by MakeMaker:
-$VERSION = substr q$Revision: 2.111 $, 10;
-
-### Don't warn me about dangerous activities:
-$QUIET = undef;
-
-### Set this true if you don't want to use MIME::Base64/MIME::QuotedPrint:
-$PARANOID = 0;
-
-### Unsupported (for tester use): don't qualify boundary with time/pid:
-$VANILLA = 0;
-
-### Automatically choose encoding from content type:
-$AUTO_ENCODE = 1;
+$VERSION = substr q$Revision: 2.115 $, 10;
 
 ### Automatically interpret CC/BCC for SMTP:
 $AUTO_CC = 1;
 
+### Automatically choose content type from file name:
+$AUTO_CONTENT_TYPE = 0;
+
+### Automatically choose encoding from content type:
+$AUTO_ENCODE = 1;
+
 ### Check paths right before printing:
 $AUTO_VERIFY = 1;
+
+### Set this true if you don't want to use MIME::Base64/QuotedPrint/Types:
+$PARANOID = 0;
+
+### Don't warn me about dangerous activities:
+$QUIET = undef;
+
+### Unsupported (for tester use): don't qualify boundary with time/pid:
+$VANILLA = 0;
 
 
 #==============================
@@ -399,6 +405,19 @@ my @Uses;
 ### Header order:
 my @FieldOrder;
 
+### See if we have File::Basename
+my $HaveFileBasename = 0;
+if (eval "require File::Basename") { # not affected by $PARANOID, core Perl
+  $HaveFileBasename = 1;
+  push @Uses, "F$File::Basename::VERSION";
+}
+
+### See if we have/want MIME::Types
+my $HaveMimeTypes = 0;
+if (!$PARANOID and eval "require MIME::Types") {
+  $HaveMimeTypes = 1;
+  push @Uses, "T$MIME::Types::VERSION";
+}
 
 #==============================
 #==============================
@@ -865,8 +884,15 @@ The MIME content type, or one of these special values (case-sensitive):
 
      "TEXT"   means "text/plain"
      "BINARY" means "application/octet-stream"
+     "AUTO"   means attempt to guess from the filename, falling back
+              to 'application/octet-stream'.  This is good if you have
+              MIME::Types on your system and you have no idea what
+              file might be used for the attachment.
 
-The default is C<"TEXT">.
+The default is C<"TEXT">, but it will be C<"AUTO"> if you set
+$AUTO_CONTENT_TYPE to true (sorry, but you have to enable 
+it explicitly, since we don't want to break code which depends 
+on the old behavior).
 
 =back
 
@@ -920,7 +946,7 @@ sub build {
 
     ### Miko's note: reorganized to check for exactly one of Data, Path, or FH
     (defined($params{Data})+defined($params{Path})+defined($params{FH}) <= 1)
-	or croak "supply exactly zero or one of (Data|Path|FH).\n";
+	or Carp::croak "supply exactly zero or one of (Data|Path|FH).\n";
 
     ### Create new instance, if necessary:
     ref($self) or $self = $self->new;
@@ -929,10 +955,15 @@ sub build {
     ### CONTENT-TYPE....
     ###
 
-    ### Get content-type:
-    my $type = ($params{Type} || 'TEXT');
-    ($type eq 'TEXT')   and $type = 'text/plain';
-    ($type eq 'BINARY') and $type = 'application/octet-stream';
+    ### Get content-type or content-type-macro:
+    my $type = ($params{Type} || ($AUTO_CONTENT_TYPE ? 'AUTO' : 'TEXT'));
+
+    ### Interpret content-type-macros:
+    if    ($type eq 'TEXT')   { $type = 'text/plain'; }
+    elsif ($type eq 'BINARY') { $type = 'application/octet-stream' }
+    elsif ($type eq 'AUTO')   { $type = $self->suggest_type($params{Path}); }
+
+    ### We now have a content-type; set it:
     $type = lc($type);
     $self->attr('content-type' => $type);
    
@@ -993,7 +1024,8 @@ sub build {
     ### Sanity check:
     if ($type =~ m{^(multipart|message)/}) {
 	($enc =~ m{^(7bit|8bit|binary)\Z}) or 
-	    croak "illegal MIME: can't have encoding $enc with type $type\n";
+	  Carp::croak("illegal MIME: ".
+		      "can't have encoding $enc with type $type\n");
     }
 
     ### CONTENT-DISPOSITION...
@@ -1130,7 +1162,7 @@ sub add {
     my $value = shift;
 
     ### If a dangerous option, warn them:
-    carp "Explicitly setting a MIME header field ($tag) is dangerous:\n".
+    Carp::carp "Explicitly setting a MIME header field ($tag) is dangerous:\n".
 	 "use the attr() method instead.\n"
 	if (is_mime_field($tag) && !$QUIET);
 
@@ -1278,7 +1310,7 @@ I<Note:> I called this "fields" because the header() method of
 Mail::Header returns something different, but similar enough to 
 be confusing.
 
-You can change the order of the fields: see L</header_order>. 
+You can change the order of the fields: see L</field_order>. 
 You really shouldn't need to do this, but some people have to
 deal with broken mailers.
 
@@ -1400,7 +1432,7 @@ Behavior with MIME fields is TBD, and will raise an exception for now.
 sub get {
     my ($self, $tag, $index) = @_;
     $tag = lc($tag); 
-    croak "get: can't be used with MIME fields\n" if is_mime_field($tag);
+    Carp::croak "get: can't be used with MIME fields\n" if is_mime_field($tag);
     
     my @all = map { ($_->[0] eq $tag) ? $_->[1] : ()} @{$self->{Header}};
     (defined($index) ? $all[$index] : (wantarray ? @all : $all[0]));
@@ -1717,7 +1749,14 @@ sub path {
 	my $filename;
 	if ($self->{Path} and ($self->{Path} !~ /\|$/)) {  ### non-shell path:
 	    ($filename = $self->{Path}) =~ s/^<//;    
-	    ($filename) = ($filename =~ m{([^\/]+)\Z});
+
+	    ### Consult File::Basename, maybe:
+	    if ($HaveFileBasename) {
+		$filename = File::Basename::basename($filename);
+	    } 
+	    else {
+		($filename) = ($filename =~ m{([^\/]+)\Z});
+	    }
 	}
 	$self->filename($filename);
 
@@ -1784,7 +1823,7 @@ sub read_now {
 	$self->{Data} = join '', @chunks;
     }
     elsif ($self->{Path}) {     ### data from a path:
-	open SLURP, $self->{Path} or croak "open $self->{Path}: $!\n";
+	open SLURP, $self->{Path} or Carp::croak "open $self->{Path}: $!\n";
 	CORE::binmode(SLURP) if $self->binmode;
 	$self->{Data} = <SLURP>;        ### sssssssssssssslurp...
 	close SLURP;                    ### ...aaaaaaaaahhh!
@@ -1834,7 +1873,7 @@ sub sign {
     my $sig;
     if (!defined($sig = $params{Data})) {      ### not given explicitly:
 	local $/ = undef;
-	open SIG, $params{Path} or croak "open sig $params{Path}: $!\n";
+	open SIG, $params{Path} or Carp::croak "open sig $params{Path}: $!\n";
 	$sig = <SIG>;                  ### sssssssssssssslurp...
 	close SIG;                     ### ...aaaaaaaaahhh!
     }    
@@ -1876,14 +1915,65 @@ sub sign {
 
 sub suggest_encoding {
     my ($self, $ctype) = @_;
+    $ctype = lc($ctype);
 
-    my ($type) = split '/', lc($ctype);
-    if (($type eq 'text') || ($type eq 'message')) {    ### scan message body
+    ### Consult MIME::Types, maybe:
+    if ($HaveMimeTypes) {
+    
+	### Mappings contain [suffix,mimetype,encoding]
+	my @mappings = MIME::Types::by_mediatype($ctype);
+	if (scalar(@mappings)) {
+	    ### Just pick the first one:
+	    my ($suffix, $mimetype, $encoding) = @{$mappings[0]};
+	    if ($encoding &&
+		$encoding =~/^(base64|binary|[78]bit|quoted-printable)$/i) {
+		return lc($encoding);    ### sanity check
+	    }
+	}
+    }
+
+    ### If we got here, then MIME::Types was no help.
+    ### Extract major type:
+    my ($type) = split '/', $ctype;
+    if (($type eq 'text') || ($type eq 'message')) {    ### scan message body?
 	return 'binary';
     }
     else {
 	return ($type eq 'multipart') ? 'binary' : 'base64';
     }
+}
+
+#------------------------------
+#
+# =item suggest_type PATH
+#
+# I<Class/instance method.>
+# Suggest the content-type for this attached path.
+# We always fall back to "application/octet-stream" if no good guess
+# can be made, so don't use this if you don't mean it!
+#
+sub suggest_type {
+    my ($self, $path) = @_;
+
+    ### If there's no path, bail:
+    $path or return 'application/octet-stream';
+
+    ### Consult MIME::Types, maybe:
+    if ($HaveMimeTypes) {
+	# Mappings contain [mimetype,encoding]:
+	my @mappings = MIME::Types::by_suffix($path);
+	if (scalar(@mappings)) {
+	    ### Just pick the first one:
+	    my ($mimetype, $encoding) = @{$mappings[0]};
+	    if ($mimetype && $mimetype =~ /^\S+\/\S+$/) {
+		return $mimetype;  ### sanity check
+	    }	    
+	}
+    }
+    
+    ### If we got here, then MIME::Types was no help.
+    ### The correct thing to fall back to is the most-generic content type:
+    return 'application/octet-stream';
 }
 
 #------------------------------
@@ -2026,7 +2116,7 @@ sub print_body {
 	### It's a toss-up; try both data and parts:
 	if    (@parts == 0) { $self->print_simple_body($out) }
 	elsif (@parts == 1) { $parts[0]->print($out) }
-	else                { croak "can't handle message with >1 part\n"; }
+	else                { Carp::croak "can't handle message with >1 part\n"; }
     }
     else {                    
 	$self->print_simple_body($out); 
@@ -2098,7 +2188,7 @@ sub print_simple_body {
 	      $out->print(encode_base64($self->{Data})); 
 	      last DATA;
 	  };
-	  croak "unsupported encoding: `$_'\n";
+	  Carp::croak "unsupported encoding: `$_'\n";
         }
     }
 
@@ -2112,8 +2202,9 @@ sub print_simple_body {
 
 	### Open file if necessary:
 	if (defined($self->{Path})) {
-	    $DATA = new FileHandle || croak "can't get new filehandle\n";
-	    $DATA->open("$self->{Path}") or croak "open $self->{Path}: $!\n";
+	    $DATA = new FileHandle || Carp::croak "can't get new filehandle\n";
+	    $DATA->open("$self->{Path}") or 
+	      Carp::croak "open $self->{Path}: $!\n";
 	}
 	else {
 	    $DATA=$self->{FH};
@@ -2144,7 +2235,7 @@ sub print_simple_body {
 		$out->print(encode_base64($_)) while (read($DATA, $_, 45));
 		last PATH;
 	    };
-	    croak "unsupported encoding: `$_'\n";
+	    Carp::croak "unsupported encoding: `$_'\n";
 	}
 	
 	### Close file:
@@ -2152,7 +2243,7 @@ sub print_simple_body {
     }
     
     else {
-	croak "no data in this part\n";
+	Carp::croak "no data in this part\n";
     }
     1;
 }
@@ -2192,12 +2283,13 @@ Return the entire message as a string, with a header and an encoded body.
 
 sub as_string {
     my $self = shift;
-    my @buf;
-    my $io = (wrap MIME::Lite::IO_ScalarArray \@buf);
+    my $buf = [];
+    my $io = (wrap MIME::Lite::IO_ScalarArray $buf);
     $self->print($io);
-    join '', @buf;
+    join '', @$buf;
 }
 *stringify = \&as_string;    ### backwards compatibility
+*stringify = \&as_string;    ### ...twice to avoid warnings :)
 
 #------------------------------
 
@@ -2215,12 +2307,13 @@ that responds to a C<print()> message.
 
 sub body_as_string {
     my $self = shift;
-    my @buf;
-    my $io = (wrap MIME::Lite::IO_ScalarArray \@buf);
+    my $buf = [];
+    my $io = (wrap MIME::Lite::IO_ScalarArray $buf);
     $self->print_body($io);
-    join '', @buf;
+    join '', @$buf;
 }
 *stringify_body = \&body_as_string;    ### backwards compatibility
+*stringify_body = \&body_as_string;    ### ...twice to avoid warnings :)
 
 #------------------------------
 #
@@ -2256,6 +2349,7 @@ sub header_as_string {
     $self->fields_as_string($self->fields);
 }
 *stringify_header = \&header_as_string;    ### backwards compatibility
+*stringify_header = \&header_as_string;    ### ...twice to avoid warnings :)
 
 =back
 
@@ -2424,7 +2518,7 @@ sub send_by_sendmail {
 	my $sendmailcmd = shift @_;
 
 	### Do it:
-	open SENDMAIL, "|$sendmailcmd" or croak "open |$sendmailcmd: $!\n";
+	open SENDMAIL, "|$sendmailcmd" or Carp::croak "open |$sendmailcmd: $!\n";
 	$self->print(\*SENDMAIL);
 	close SENDMAIL;
 	return (($? >> 8) ? undef : 1);
@@ -2493,7 +2587,7 @@ sub send_by_smtp {
     my $to   = $self->get('To');
 
     ### Sanity check:
-    defined($to) or croak "send_by_smtp: missing 'To:' address\n";
+    defined($to) or Carp::croak "send_by_smtp: missing 'To:' address\n";
  	       
     ### Get the destinations as a simple array of addresses:
     my @to_all = extract_addrs($to);
@@ -2507,13 +2601,13 @@ sub send_by_smtp {
     ### Create SMTP client:
     require Net::SMTP;
     my $smtp = MIME::Lite::SMTP->new(@args)
-        or croak "Failed to connect to mail server: $!\n";
+        or Carp::croak("Failed to connect to mail server: $!\n");
     $smtp->mail($from)
-        or croak "SMTP MAIL command failed: $!\n";
+        or Carp::croak("SMTP MAIL command failed: $!\n".$smtp->message."\n");
     $smtp->to(@to_all)
-        or croak "SMTP RCPT command failed: $!\n";
+        or Carp::croak("SMTP RCPT command failed: $!\n".$smtp->message."\n");
     $smtp->data()
-        or croak "SMTP DATA command failed: $!\n";
+        or Carp::croak("SMTP DATA command failed: $!\n".$smtp->message."\n");
 
     ### MIME::Lite can print() to anything with a print() method:
     $self->print_for_smtp($smtp);
@@ -2685,6 +2779,74 @@ __END__
 #============================================================
 
 =head1 NOTES
+
+
+=head2 How do I prevent "Content" headers from showing up in my mail reader?
+
+Apparently, some people are using mail readers which display the MIME
+headers like "Content-disposition", and they want MIME::Lite not
+to generate them "because they look ugly".  
+
+Sigh.
+
+Y'know, kids, those headers aren't just there for cosmetic purposes.
+They help ensure that the message is I<understood> correctly by mail 
+readers.  But okay, you asked for it, you got it... 
+here's how you can suppress the standard MIME headers.  
+Before you send the message, do this:
+
+	$msg->scrub;
+
+You can scrub() any part of a multipart message independently;
+just be aware that it works recursively.  Before you scrub,
+note the rules that I follow:
+
+=over 4
+
+=item Content-type
+
+You can safely scrub the "content-type" attribute if, and only if, 
+the part is of type "text/plain" with charset "us-ascii". 
+
+=item Content-transfer-encoding
+
+You can safely scrub the "content-transfer-encoding" attribute 
+if, and only if, the part uses "7bit", "8bit", or "binary" encoding.
+You are far better off doing this if your lines are under 1000 
+characters.  Generally, that means you I<can> scrub it for plain
+text, and you can I<not> scrub this for images, etc.
+
+=item Content-disposition
+
+You can safely scrub the "content-disposition" attribute 
+if you trust the mail reader to do the right thing when it decides
+whether to show an attachment inline or as a link.  Be aware
+that scrubbing both the content-disposition and the content-type
+means that there is no way to "recommend" a filename for the attachment!
+
+B<Note:> there are reports of brain-dead MUAs out there that 
+do the wrong thing if you I<provide> the content-disposition.
+If your attachments keep showing up inline or vice-versa,
+try scrubbing this attribute.
+
+=item Content-length
+
+You can always scrub "content-length" safely.
+
+=back
+
+
+=head2 How do I give my attachment a [different] recommended filename?
+
+By using the Filename option (which is different from Path!):
+
+	$msg->attach(Type => "image/gif",
+	             Path => "/here/is/the/real/file.GIF",
+	             Filename => "logo.gif");
+
+You should I<not> put path information in the Filename.
+
+
 
 
 =head2 Benign limitations
@@ -2865,6 +3027,15 @@ So: don't depend on taint-checking to save you from outputting
 tainted data in a message.
 
 
+=head2 Don't tweak the global configuration
+
+Global configuration variables are bad, and should go away.
+Until they do, please follow the hints with each setting
+on how I<not> to change it.
+
+
+
+
 =head1 A MIME PRIMER
 
 =head2 Content types
@@ -2963,12 +3134,43 @@ non-ASCII characters (e.g., Latin-1, Latin-2, or any other 8-bit alphabet).
 
 =head1 VERSION
 
-$Id: Lite.pm,v 2.111 2001/04/04 06:20:23 eryq Exp $
+$Id: Lite.pm,v 2.115 2001/08/16 07:06:37 eryq Exp $
 
 
 =head1 CHANGE LOG
 
 =over 4
+
+=item Version 2.114   (2001/08/16)
+
+New special 'AUTO' content type in new()/build() tells MIME::Lite to 
+try and guess the type from file extension.  To make use of 
+this, you'll want to install B<MIME::Types>.
+The "AUTO" setting can be made the default default (instead of "TEXT")
+if you set C<$AUTO_CONTENT_TYPE = 1, $PARANOID = 0>.
+I<Thanks to> Ville SkyttE<#228> I<for these patches.>
+
+File::Basename is only used if available.
+I<Thanks to> Ville SkyttE<#228> I<for this patch.>
+
+SMTP failures (in send_by_smtp) now add the $smtp-E<gt>message to the
+croak'ed exception, so if things go wrong, you get a better
+idea of what and why.
+I<Thanks to Thomas R. Wyant III for the patch.>
+
+Made a subtle change to C<as_string> which supposedly fixes a 
+failed MIME data.t test with Perl 5.004_04 on NT 4 sp6.  
+The problem might only exist in this old perl, but as the patch 
+author says, not everyone has climbed higher on the Perl ladder.
+I<Thanks to John Gotts for the patch.>
+
+Added C<contrib> directory, with F<MailTool.pm>.
+I<Thanks to Tom Wyant for this contribution.>
+
+Improved HTML documentation (notice the links to
+the individual methods in the top menu).
+
+Corrected some mis-docs.
 
 
 =item Version 2.111   (2001/04/03)
@@ -3256,6 +3458,7 @@ Initial release.
 =item Version 1.101   (1997/03/01)
 
 Baseline code.
+Originally created: 11 December 1996.  Ho ho ho.
 
 =back
 
@@ -3293,7 +3496,8 @@ indigestion in humans if taken internally.
 Eryq (F<eryq@zeegee.com>).
 President, ZeeGee Software Inc. (F<http://www.zeegee.com>).
 
-Created: 11 December 1996.  Ho ho ho.
+Go to F<http://www.zeegee.com> for the latest downloads
+and on-line documentation for this module.
 
 =cut
 

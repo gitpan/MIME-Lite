@@ -4,6 +4,8 @@ MANIFEST
 Makefile.PL
 README
 README.system
+contrib/MailTool.pm
+contrib/README
 docs/MIME/Lite.pm.html
 docs/MIME/icons/h1bullet.gif
 docs/MIME/icons/h2bullet.gif
