@@ -1,0 +1,73 @@
+NAME
+    MIME::Lite - low-calorie MIME generator
+
+    *WARNING: This is Alpha code. I have not yet fully tested it, and I
+    can't guarantee that the interface won't change in the next few releases
+    in a non-backwards-compatible manner. It is being provided to the
+    community for suggestions and in the hopes that it will be useful.*
+
+SYNOPSIS
+        use MIME::Lite;
+
+
+    Create a single-part message:
+
+        # Create a new single-part message, to send a GIF file:
+        $msg = new MIME::Lite 
+                   -From    =>'me@myhost.com',
+                   -To      =>'you@yourhost.com',
+                    Cc      =>'some@other.com, some@more.com',
+                    Subject =>'Helloooooo, nurse!',    
+                    Type    =>'image/gif',
+                    Path    =>'hellonurse.gif';
+
+
+    Create a multipart message (i.e., one with attachments):
+
+        # Create a new multipart message:
+        $msg = new MIME::Lite 
+                   -From    =>'me@myhost.com',
+                   -To      =>'you@yourhost.com',
+                   -Cc      =>'some@other.com, some@more.com',
+                   -Subject =>'A message with 2 parts...',
+                    Type    =>'multipart/mixed';
+
+        # Add parts (each "attach" has same arguments as "new"):
+        attach $msg 
+                    Type     =>'TEXT',   
+                    Data     =>"Here's the GIF file you wanted";  
+        attach $msg 
+                    Type     =>'image/gif',
+                    Path     =>'aaa000123.gif',
+                    Filename =>'logo.gif';
+
+
+DESCRIPTION
+    In the never-ending quest for great taste with fewer calories, we
+    proudly present: *MIME::Lite*.
+
+    MIME::Lite is intended as a simple, standalone module for generating
+    (not parsing!) MIME messages... specifically, it allows you to output a
+    simple, decent single- or multi-part message with text or binary
+    attachments. It does not require that you have the Mail:: or MIME::
+    modules installed.
+
+    You can specify each message part as either the literal data itself (in
+    a scalar or array), or as a string which can be given to open() to get a
+    readable filehandle (e.g., "<filename" or "somecommand|").
+
+    If you need more sophisticated behavior, please get the MIME-tools
+    package instead. I will be more likely to add stuff to that toolkit over
+    this one.
+
+CHANGES
+  Version 1.102
+
+    Initial release.
+
+AUTHOR
+    Eryq, (who really should be wrapping holiday presents instead).
+    eryq@enteract.com / http://enteract.com/~eryq.
+
+    Created: 11 December 1996. Ho ho ho.
+

@@ -1,0 +1,36 @@
+use MIME::Lite;
+
+   
+my $a1000 = <<EOF;
+Here's the GIF\xA0file you wanted!
+aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaabbbbbbbbbb
+EOF
+
+
+my $msg;
+
+# Create a new multipart message:
+$msg = new MIME::Lite -From    =>'me@myhost.com',
+                      -To      =>'you@yourhost.com',
+                      -Cc      =>'some@other.com, some@more.com',
+                      -Subject =>'Hello, nurse!',
+                       Type     =>'multipart/mixed';
+
+# Add parts (each "attach" has same arguments as "new"):
+my $enc;
+foreach $enc (qw(binary 7bit 8bit quoted-printable base64)) {
+    $msg->attach(Type=>'TEXT',   
+		 Data=>$a1000,
+		 Encoding=>$enc);
+}
+$msg->attach(Type=>"text/sig",
+             Path=>"$ENV{HOME}/.signature",
+             ReadNow=>0);
+$msg->attach(Type=>"text/ls",
+             Path=>"ls -l ~eryq |",
+             ReadNow=>1);
+              
+    
+# Write it:
+# $msg->print(\*STDOUT);
+print $msg->stringify, "\n";

@@ -1,0 +1,13 @@
+COPYING
+MANIFEST
+Makefile.PL
+README
+docs/MIME/Lite.pm.html
+docs/MIME/h1bullet.gif
+docs/MIME/h2bullet.gif
+docs/MIME/mime-lg.gif
+docs/MIME/mime-sm.gif
+docs/Makefile
+lib/MIME/Lite.pm
+test/bigmsg
+test/hacktest

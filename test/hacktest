@@ -1,0 +1,40 @@
+use MIME::Lite;
+
+
+# Create a new multipart message:
+$msg = new MIME::Lite 
+    -From    =>'me@myhost.com',
+    -To      =>"$ENV{USER}\@enteract.com",
+    -Subject =>'A message with 2 parts...',
+    Type    =>'TEXT',
+    Data    =>"Here's the GIF file you wanted";  
+$msg->sign;
+    
+# Attach a part:
+attach $msg 
+    Type     =>'image/gif',
+    Encoding =>'base64',
+    Path     =>"docs/MIME/mime-sm.gif",
+    Filename =>'mime-logo.gif';
+
+
+
+print "Sending message...\n";    
+$msg->print;
+
+__END__
+
+# Attach a part:
+$msg = new MIME::Lite
+    -To      =>"$ENV{USER}\@enteract.com",
+    -Subject =>'A binary message',
+    Type     =>'image/gif',
+    Encoding =>'base64',
+    Path     =>"docs/MIME/mime-sm.gif",
+    Filename =>'mime-logo.gif';
+
+print "Sending message...\n";    
+$msg->send;
+
+
+
