@@ -10,4 +10,6 @@ docs/MIME/mime-sm.gif
 docs/Makefile
 lib/MIME/Lite.pm
 test/bigmsg
+test/giftest
 test/hacktest
+test/signtest

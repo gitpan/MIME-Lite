@@ -42,6 +42,15 @@ SYNOPSIS
                     Filename =>'logo.gif';
 
 
+    Output a message:
+
+        # As a string...
+        $str = $msg->stringify;
+
+        # To a filehandle (say, a "sendmail" stream...)    
+        $msg->print(\*SENDMAIL);
+
+
 DESCRIPTION
     In the never-ending quest for great taste with fewer calories, we
     proudly present: *MIME::Lite*.
@@ -61,9 +70,11 @@ DESCRIPTION
     this one.
 
 CHANGES
-  Version 1.102
+  Version 1.112
 
-    Initial release.
+    Added the read_now() manpage, and the binmode() manpage method for our
+    non-Unix-using brethren: file data is now read using binmode() if
+    appropriate. *Thanks to Xiangzhou Wang for pointing out this bug.*
 
 AUTHOR
     Eryq, (who really should be wrapping holiday presents instead).

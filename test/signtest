@@ -1,0 +1,16 @@
+use MIME::Lite;
+
+# Create a new multipart message:
+$msg = new MIME::Lite 
+    -To       => 'eryq@enteract.com',
+    -Subject  => 'GIF test',
+     Type     => 'TEXT',		       
+     Data     => "Just a short note.";
+
+# Sign it:
+$msg->sign;
+
+# Output:
+$msg->print(\*STDOUT);
+
+

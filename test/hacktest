@@ -1,40 +1,33 @@
+#!/usr/bin/perl
 use MIME::Lite;
+
+print <<EOF;
+======================================================================
+
+Test the "attach to singlepart" hack...
+
+======================================================================
+
+EOF
 
 
 # Create a new multipart message:
-$msg = new MIME::Lite 
+my $msg = new MIME::Lite
     -From    =>'me@myhost.com',
-    -To      =>"$ENV{USER}\@enteract.com",
-    -Subject =>'A message with 2 parts...',
+    -To      =>'you@yourhost.com',
+    -Subject =>'Test the "attach to singlepart" hack',
     Type    =>'TEXT',
-    Data    =>"Here's the GIF file you wanted";  
-$msg->sign;
-    
+    Data    =>"This is an ordinary text message... can we attach to it?\n";  
+
 # Attach a part:
 attach $msg 
     Type     =>'image/gif',
     Encoding =>'base64',
-    Path     =>"docs/MIME/mime-sm.gif",
+    Path     =>"./docs/MIME/mime-sm.gif",
     Filename =>'mime-logo.gif';
 
-
-
-print "Sending message...\n";    
+# Output!
 $msg->print;
 
 __END__
-
-# Attach a part:
-$msg = new MIME::Lite
-    -To      =>"$ENV{USER}\@enteract.com",
-    -Subject =>'A binary message',
-    Type     =>'image/gif',
-    Encoding =>'base64',
-    Path     =>"docs/MIME/mime-sm.gif",
-    Filename =>'mime-logo.gif';
-
-print "Sending message...\n";    
-$msg->send;
-
-
 

@@ -47,6 +47,16 @@ Create a multipart message (i.e., one with attachments):
                 Filename =>'logo.gif';
 
 
+Output a message:
+
+    # As a string...
+    $str = $msg->stringify;
+    
+    # To a filehandle (say, a "sendmail" stream...)    
+    $msg->print(\*SENDMAIL);
+
+
+
 =head1 DESCRIPTION
 
 In the never-ending quest for great taste with fewer calories,
@@ -138,7 +148,7 @@ use vars qw($VERSION);
 #------------------------------
 
 # The package version, both in 1.23 style *and* usable by MakeMaker:
-$VERSION = substr q$Revision: 1.105 $, 10;
+$VERSION = substr q$Revision: 1.112 $, 10;
 
 # Boundary counter:
 my $BCount = 0;
@@ -148,8 +158,9 @@ my $SENDMAIL = "/usr/lib/sendmail -t -oi -oem";
 
 
 #------------------------------------------------------------
+#
 # fold STRING
-#------------------------------------------------------------
+#
 # Make STRING safe as a field value.  Remove leading/trailing whitespace,
 # and make sure newlines are represented as newline+space
 
@@ -161,12 +172,13 @@ sub fold {
 }
 
 #------------------------------------------------------------
+#
 # gen_boundary
-#------------------------------------------------------------
+#
 # Generate a new boundary to use.
 
 sub gen_boundary {
-    return ("_--------=_".int(time).$$.$BCount++);
+    return ("_----------=_".int(time).$$.$BCount++);
 }
 
 
@@ -180,8 +192,9 @@ sub gen_boundary {
 #------------------------------
 
 #------------------------------------------------------------
+#
 # encode_base64 STRING
-#------------------------------------------------------------
+#
 # Encode the given string using BASE64.
 # Stolen from MIME::Base64 by Gisle Aas.
 
@@ -206,8 +219,9 @@ sub encode_base64
 }
 
 #------------------------------------------------------------
+#
 # encode_qp STRING
-#------------------------------------------------------------
+#
 # Encode the given string, LINE BY LINE, using QUOTED-PRINTABLE.
 # Stolen from MIME::Base64 by Gisle Aas, with a slight bug fix: we
 # break lines earlier.  Notice that this seems not to work unless
@@ -234,8 +248,9 @@ sub encode_qp {
 }
 
 #------------------------------------------------------------
+#
 # encode_8bit STRING
-#------------------------------------------------------------
+#
 # Encode the given string using 8BIT.
 # This breaks long lines into shorter ones.
 
@@ -246,8 +261,9 @@ sub encode_8bit {
 }
 
 #------------------------------------------------------------
+#
 # encode_7bit STRING
-#------------------------------------------------------------
+#
 # Encode the given string using 7BIT.
 # This breaks long lines, and turns 8-bit chars into =XX sequences.
 
@@ -256,6 +272,28 @@ sub encode_7bit {
     $str =~ s/[\x80-\xFF]/sprintf("=%02X",ord($&))/eg; 
     $str =~ s/^.{990}/$&\n/mg;
     $str;
+}
+
+
+
+
+
+#------------------------------
+#
+# PRIVATE UTILITY METHODS...
+#
+#------------------------------
+
+#------------------------------------------------------------
+#
+# _slurp_data
+#
+# Slurp in the contents of the Path, into Data.
+
+sub _slurp_data {
+    my $self = shift;
+    
+
 }
 
 
@@ -281,7 +319,7 @@ sub encode_7bit {
 I<Class method, constructor.>
 Create a new message object.  
 
-If any arguments are given, they are passed into build(); otherwise,
+If any arguments are given, they are passed into L<build()>; otherwise,
 just the empty object is created.
 
 =cut
@@ -310,7 +348,7 @@ I<Instance method.>
 Add a new part to this message, and return the new part.
 
 You can attach a MIME::Lite OBJECT, or have it create one by specifying
-a PARAMHASH that will be automatically given to new().
+a PARAMHASH that will be automatically given to L<new()>.
 
 One of the possibly-quite-useful hacks thrown into this is the 
 "attach-to-singlepart" hack: if you attempt to attach a part (let's
@@ -446,7 +484,7 @@ times.  B<Fatal exception> raised if the open fails.
 
 I<Optional.>
 If defined, indicates whether or not this is a "top-level" MIME message.
-Parts of a multipart message are I<not> top-level.
+The parts of a multipart message are I<not> top-level.
 Default is true.
 
 =item Type
@@ -520,20 +558,6 @@ sub build {
     ref($self) or $self = $self->new;
 
 
-    # Get data or path:
-    if (defined($params{Data})) {     # Literal data...	
-	$self->data($params{Data});
-    }
-    elsif (defined($params{Path})) {  # A path to data...
-	$self->path($params{Path});       # also sets filename
-	if ($params{ReadNow}) {
-	    local $/ = undef;
-	    open NOW, $self->{Path} or croak "open $self->{Path}: $!";
-	    $self->{Data} = <NOW>;        # sssssssssssssslurp...
-	    close NOW;                    # ...aaaaaaaaahhh!
-	}
-    }
-
 
     ### CONTENT-TYPE....
     ###
@@ -555,6 +579,20 @@ sub build {
     }
 
 
+    ### DATA OR PATH...
+    ###    Note that we must do this *after* we get the content type, 
+    ###    in case read_now() is invoked, since it needs the binmode().
+
+    # Get data or path:
+    if (defined($params{Data})) {     # Literal data...	
+	$self->data($params{Data});
+    }
+    elsif (defined($params{Path})) {  # A path to data...
+	$self->path($params{Path});       # also sets filename
+	$self->read_now if $params{ReadNow};
+    }
+
+
     ### CONTENT-TRANSFER-ENCODING...
     ###
 
@@ -570,7 +608,7 @@ sub build {
 
 
     ### CONTENT-DISPOSITION...
-    ### Default is inline for single, none for multis:
+    ###    Default is inline for single, none for multis:
     ###
     my $disp = ($params{Disposition} or ($is_multipart ? undef : 'inline'));
     $self->attr('content-disposition' => $disp);
@@ -603,68 +641,9 @@ sub build {
     $self;
 }
 
-#------------------------------------------------------------
-
-=item sign PARAMHASH
-
-Sign the message.  This forces the message to be read into core,
-after which the signature is appended to it.
-
-=over 4
-
-=item Data
-
-As in L<build()>: the literal signature data.
-Can be either a scalar or a ref to an array of scalars.
-
-=item Path
-
-As in L<build()>: the path to the file.
-
 =back
-
-If no arguments are given, the default is:
-
-    Path => "$ENV{HOME}/.signature"
-
-=back
-
-The content-length is recomputed.
 
 =cut
-
-sub sign {
-    my $self = shift;
-    my %params = @_;
-
-    # Default:
-    int(@_) or $params{Path} = "$ENV{HOME}/.signature";
-
-    # Force message in-core:
-    if (!defined($self->{Data})) {
-	local $/ = undef;
-	open DATA, $self->{Path} or croak "open msg $self->{Path}: $!";
-	$self->{Data} = <DATA>;        # sssssssssssssslurp...
-	close DATA;                    # ...aaaaaaaaahhh!
-    }
-
-    # Load signature:
-    my $sig;
-    if (!defined($sig = $params{Data})) {    # not given explicitly...
-	local $/ = undef;
-	open SIG, $params{Path} or croak "open sig $params{Path}: $!";
-	$sig = <SIG>;                  # sssssssssssssslurp...
-	close SIG;                     # ...aaaaaaaaahhh!
-    }
-    $sig = join('',@$sig) if (ref($sig) and (ref($sig) eq 'ARRAY'));
-
-    # Append, following Internet conventions:
-    $self->{Data} .= "\n-- \n$sig";
-
-    # Re-compute length:
-    $self->get_length;
-    1;
-}
 
 
 #==============================
@@ -676,10 +655,10 @@ sub sign {
 
 =cut
 
-
 #------------------------------------------------------------
+#
 # top_level ONOFF
-#------------------------------------------------------------
+#
 # Set/unset the top-level attributes and headers.
 # This affects "MIME-Version" and "X-Mailer".
 
@@ -687,7 +666,7 @@ sub top_level {
     my ($self, $onoff) = @_;	
     if ($onoff) {
 	$self->attr('MIME-Version' => '1.0');
-	$self->add('X-Mailer' => "MIME::Lite $VERSION");
+	$self->replace('X-Mailer' => "MIME::Lite $VERSION");
     }
     else {
 	$self->attr('MIME-Version' => undef);
@@ -783,29 +762,6 @@ sub attr {
     # Return current value:
     $self->{Attrs}{$tag}{$subtag};
 }
-
-#------------------------------------------------------------
-
-=item data [DATA]
-
-Get/set the literal DATA of the message.  The DATA may be
-either a scalar, or a reference to an array of scalars (which
-will simply be joined).    
-
-I<Warning:> setting the data causes the "content-length" attribute
-to be recomputed (possibly to nothing).
-
-=cut
-
-sub data {
-    my $self = shift;
-    if (@_) {
-	$self->{Data} = (ref($_[0] eq 'ARRAY') ? join('', @{$_[0]}) : $_[0]);
-	$self->get_length;
-    }
-    $self->{Data};
-}
-
 
 #------------------------------------------------------------
 
@@ -916,17 +872,27 @@ sub filename {
 
 #------------------------------------------------------------
 
-=item get_length [VALUE]
+=item get_length
 
-Recompute (and return) the content length for the message.
+Recompute the content length for the message I<if the process is trivial>, 
+setting the "content-length" attribute as a side-effect:
 
     $msg->get_length;
 
 Returns the length, or undefined if not set.
 
-The content length is only set to a defined value if the message
-is a singlepart with binary encoding, and if the body is available
-either in-core or as a simple file.
+I<Note:> the content length can be difficult to compute, since it 
+involves assembling the entire encoded body and taking the length
+of it (which, in the case of multipart messages, means freezing
+all the sub-parts, etc.).  
+
+This method only sets the content length to a defined value if the
+message is a singlepart with C<"binary"> encoding, I<and> the body is
+available either in-core or as a simple file.  Otherwise, the content
+length is set to the undefined value.
+
+Since content-length is not a standard MIME field anyway (that's right, kids:
+it's not in the MIME RFCs, it's an HTTP thing), this seems pretty fair.
 
 =cut
 
@@ -946,39 +912,6 @@ sub get_length {
     }
     $self->attr('content-length' => $length);
     return $length;
-}
-
-#------------------------------------------------------------
-
-=item path [PATH]
-
-Get/set the literal DATA of the message.
-
-I<Warning:> setting the path recomputes any existing "content-length" field,
-and re-sets the "filename" (to the last element of the path if it
-looks like a simple path, and to nothing if not).
-
-=cut
-
-sub path {
-    my $self = shift;
-    if (@_) {
-
-	# Set the path, and invalidate the content length:
-	$self->{Path} = shift;
-
-	# Re-set filename, extracting it from path if possible:
-	my $filename;
-	if ($self->{Path} and ($self->{Path} !~ /\|$/)) {  # non-shell path:
-	    ($filename = $self->{Path}) =~ s/^<//;    
-	    ($filename) = ($filename =~ m{([^\/]+)\Z});
-	}
-	$self->filename($filename);
-
-	# Reset the length:
-	$self->get_length;
-    }
-    $self->{Path};
 }
 
 #------------------------------------------------------------
@@ -1010,6 +943,181 @@ sub replace {
 =cut
 
 
+#==============================
+#==============================
+
+=head2 Setting/getting message data
+
+=over 4
+
+=cut
+
+#------------------------------------------------------------
+
+=item binmode [OVERRIDE]
+
+With no argument, returns whether or not it thinks that the data 
+(as given by the "Path" argument of L<build()>) should be read using 
+binmode() (for example, when L<read_now()> is invoked).
+
+The default behavior is that any content type other than 
+C<text/*> or C<message/*> is binmode'd; this should in general work fine.
+
+With a defined argument, this method sets an explicit "override"
+value.  An undefined argument unsets the override.
+The new current value is returned.
+
+=cut
+
+sub binmode {
+    my $self = shift;
+    $self->{Binmode} = shift if (@_);       # argument? set override
+    return (defined($self->{Binmode}) 
+	    ? $self->{Binmode}
+	    : ($self->attr("content-type") !~ m{^(text|message)/}i));
+}
+
+#------------------------------------------------------------
+
+=item data [DATA]
+
+Get/set the literal DATA of the message.  The DATA may be
+either a scalar, or a reference to an array of scalars (which
+will simply be joined).    
+
+I<Warning:> setting the data causes the "content-length" attribute
+to be recomputed (possibly to nothing).
+
+=cut
+
+sub data {
+    my $self = shift;
+    if (@_) {
+	$self->{Data} = (ref($_[0] eq 'ARRAY') ? join('', @{$_[0]}) : $_[0]);
+	$self->get_length;
+    }
+    $self->{Data};
+}
+
+
+#------------------------------------------------------------
+
+=item path [PATH]
+
+Get/set the PATH to the message data.
+
+I<Warning:> setting the path recomputes any existing "content-length" field,
+and re-sets the "filename" (to the last element of the path if it
+looks like a simple path, and to nothing if not).
+
+=cut
+
+sub path {
+    my $self = shift;
+    if (@_) {
+
+	# Set the path, and invalidate the content length:
+	$self->{Path} = shift;
+
+	# Re-set filename, extracting it from path if possible:
+	my $filename;
+	if ($self->{Path} and ($self->{Path} !~ /\|$/)) {  # non-shell path:
+	    ($filename = $self->{Path}) =~ s/^<//;    
+	    ($filename) = ($filename =~ m{([^\/]+)\Z});
+	}
+	$self->filename($filename);
+
+	# Reset the length:
+	$self->get_length;
+    }
+    $self->{Path};
+}
+
+#------------------------------------------------------------
+
+=item read_now [PATH]
+
+Force the path to be read into core immediately.  With optional
+argument, sets the L<path()> first; otherwise, the current path
+(such as given during a L<build()>) will be used.
+
+Note that the in-core data will always be used if available.
+
+Be aware that everything is slurped into a giant scalar: you may not want 
+to use this if sending tar files!  The benefit of I<not> reading in the data 
+is that very large files can be handled by this module if left on disk
+until the message is output via L<print()> or L<print_body()>.
+
+=cut
+
+sub read_now {
+    my $self = shift;
+    local $/ = undef;
+    open SLURP, $self->{Path} or croak "open $self->{Path}: $!";
+    binmode(SLURP) if $self->binmode;
+    $self->{Data} = <SLURP>;        # sssssssssssssslurp...
+    close SLURP;                    # ...aaaaaaaaahhh!
+}
+
+#------------------------------------------------------------
+
+=item sign PARAMHASH
+
+Sign the message.  This forces the message to be read into core,
+after which the signature is appended to it.
+
+=over 4
+
+=item Data
+
+As in L<build()>: the literal signature data.
+Can be either a scalar or a ref to an array of scalars.
+
+=item Path
+
+As in L<build()>: the path to the file.
+
+=back
+
+If no arguments are given, the default is:
+
+    Path => "$ENV{HOME}/.signature"
+
+The content-length is recomputed.
+
+=cut
+
+sub sign {
+    my $self = shift;
+    my %params = @_;
+
+    # Default:
+    int(@_) or $params{Path} = "$ENV{HOME}/.signature";
+
+    # Force message in-core:
+    defined($self->{Data}) or $self->read_now;
+
+    # Load signature:
+    my $sig;
+    if (!defined($sig = $params{Data})) {    # not given explicitly...
+	local $/ = undef;
+	open SIG, $params{Path} or croak "open sig $params{Path}: $!";
+	$sig = <SIG>;                  # sssssssssssssslurp...
+	close SIG;                     # ...aaaaaaaaahhh!
+    }
+    $sig = join('',@$sig) if (ref($sig) and (ref($sig) eq 'ARRAY'));
+
+    # Append, following Internet conventions:
+    $self->{Data} .= "\n-- \n$sig";
+
+    # Re-compute length:
+    $self->get_length;
+    1;
+}
+
+=back
+
+=cut
 
 
 #==============================
@@ -1133,8 +1241,9 @@ sub print_body {
     elsif (defined($self->{Path})) {
 
 	# Open file:
-	my $DATA = new FileHandle "$self->{Path}" ||
-	    croak "open $self->{Path}: $!";
+	my $DATA = new FileHandle || croak "can't get new filehandle!";
+	$DATA->open("$self->{Path}") or croak "open $self->{Path}: $!";
+	binmode($DATA) if $self->binmode;
 
 	# Encode piece by piece:
       PATH:
@@ -1377,7 +1486,7 @@ sub print {
 
 =head1 NOTES
 
-=head2 Limitations of this module
+=head2 Limitations
 
 This is "lite", after all...
 
@@ -1397,7 +1506,7 @@ separate module.
 
 A content-length field is only inserted if the encoding is binary,
 the message is a singlepart, and all the document data is available
-at build() time by virtue of residing in a simple path, or in-core.
+at L<build()> time by virtue of residing in a simple path, or in-core.
 Since content-length is not a standard MIME field anyway (that's right, kids:
 it's not in the MIME RFCs, it's an HTTP thing), this seems pretty fair.
 
@@ -1532,6 +1641,16 @@ non-ASCII characters (e.g., Latin-1, Latin-2, or any other 8-bit alphabet).
 =head1 CHANGE LOG
 
 =over 4
+
+=item Version 1.112
+
+Added L<read_now()>, and L<binmode()> method for our non-Unix-using brethren: 
+file data is now read using binmode() if appropriate.
+I<Thanks to Xiangzhou Wang for pointing out this bug.>
+
+=item Version 1.110
+
+Fixed bug in opening the data filehandle.
 
 =item Version 1.102
 

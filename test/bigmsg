@@ -1,36 +1,65 @@
+#!/usr/bin/perl
 use MIME::Lite;
 
-   
-my $a1000 = <<EOF;
-Here's the GIF\xA0file you wanted!
-aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaabbbbbbbbbb
+print <<EOF;
+======================================================================
+
+Test the 5 encodings...
+
+======================================================================
+
 EOF
 
 
-my $msg;
+# Set up a long message:
+my $DATA = <<EOF;
+
+Here's a line with some 8-bit characters: \xABFran\xE7ois M\xFCller\xBB.
+
+The line below is REALLY long.  It contains 1000 a's, followed by some b's.
+All of the encodings (except binary) should break the line before the b's:
+
+aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaabbbbbbbbbb
+
+Bye!
+EOF
+
 
 # Create a new multipart message:
-$msg = new MIME::Lite -From    =>'me@myhost.com',
-                      -To      =>'you@yourhost.com',
-                      -Cc      =>'some@other.com, some@more.com',
-                      -Subject =>'Hello, nurse!',
-                       Type     =>'multipart/mixed';
+$msg = new MIME::Lite
+	-From    =>'me@myhost.com',
+        -To      =>'you@yourhost.com',
+        -Cc      =>'some@other.com, some@more.com',
+        -Subject =>'The Magnificent Five (encodings, that is)',
+        Type     =>'multipart/mixed';
 
 # Add parts (each "attach" has same arguments as "new"):
 my $enc;
-foreach $enc (qw(binary 7bit 8bit quoted-printable base64)) {
+foreach $enc (qw(binary 8bit 7bit quoted-printable base64)) {
     $msg->attach(Type=>'TEXT',   
-		 Data=>$a1000,
+		 Data=>$DATA,
 		 Encoding=>$enc);
 }
-$msg->attach(Type=>"text/sig",
-             Path=>"$ENV{HOME}/.signature",
-             ReadNow=>0);
-$msg->attach(Type=>"text/ls",
-             Path=>"ls -l ~eryq |",
-             ReadNow=>1);
-              
     
-# Write it:
-# $msg->print(\*STDOUT);
+
+print <<EOF;
+======================================================================
+Writing directly to the STDOUT
+======================================================================
+EOF
+$msg->print(\*STDOUT);
+
+
+print <<EOF;
+======================================================================
+Stringifying message, then writing to STDOUT
+======================================================================
+EOF
 print $msg->stringify, "\n";
+
+1;
+
+
+
+
+

@@ -27,12 +27,13 @@
 </LI><UL>
 <LI><A HREF="#construction">Construction</A>
 </LI><LI><A HREF="#settinggetting_headers_and_attri">Setting/getting headers and attributes</A>
+</LI><LI><A HREF="#settinggetting_message_data">Setting/getting message data</A>
 </LI><LI><A HREF="#output">Output</A>
 </LI><LI><A HREF="#sending">Sending</A>
 </LI></UL>
 <LI><A HREF="#notes">NOTES</A>
 </LI><UL>
-<LI><A HREF="#limitations_of_this_module">Limitations of this module</A>
+<LI><A HREF="#limitations">Limitations</A>
 </LI><LI><A HREF="#cheap_and_easy_mailing">Cheap and easy mailing</A>
 </LI><LI><A HREF="#under_the_hood">Under the hood</A>
 </LI></UL>
@@ -121,6 +122,22 @@ Create a multipart message (i.e., one with attachments):
                 Type     =&gt;'image/gif',
                 Path     =&gt;'aaa000123.gif',
                 Filename =&gt;'logo.gif';</PRE>
+
+
+
+<P>
+Output a message:
+
+
+<P>
+<PRE>    # As a string...
+    &#36;str = &#36;msg-&gt;stringify;</PRE>
+
+
+
+<P>
+<PRE>    # To a filehandle (say, a &quot;sendmail&quot; stream...)    
+    &#36;msg-&gt;print(\*SENDMAIL);</PRE>
 
 
 
@@ -268,7 +285,7 @@ Create a new message object.
 
 
 <P>
-If any arguments are given, they are passed into build(); otherwise,
+If any arguments are given, they are passed into <A HREF="#build">build()</A>; otherwise,
 just the empty object is created.
 
 
@@ -280,7 +297,7 @@ Add a new part to this message, and return the new part.
 
 <P>
 You can attach a MIME::Lite OBJECT, or have it create one by specifying
-a PARAMHASH that will be automatically given to new().
+a PARAMHASH that will be automatically given to <A HREF="#new">new()</A>.
 
 
 <P>
@@ -385,7 +402,7 @@ times.  <B>Fatal exception</B> raised if the open fails.
 
 <I>Optional.</I>
 If defined, indicates whether or not this is a &quot;top-level&quot; MIME message.
-Parts of a multipart message are <I>not</I> top-level.
+The parts of a multipart message are <I>not</I> top-level.
 Default is true.
 
 
@@ -469,38 +486,7 @@ have been written:
     &#36;msg-&gt;add(Subject =&gt; &quot;A gzipp'ed tar file&quot;);  </PRE>
 
 
-
-<P><DT><B><A NAME="sign">sign PARAMHASH</A></B><DD>
-
-Sign the message.  This forces the message to be read into core,
-after which the signature is appended to it.
-
-<DL>
-<P><DT><B><A NAME="data">Data</A></B><DD>
-
-As in <A HREF="#build">build()</A>: the literal signature data.
-Can be either a scalar or a ref to an array of scalars.
-
-
-<P><DT><B><A NAME="path">Path</A></B><DD>
-
-As in <A HREF="#build">build()</A>: the path to the file.
-
 </DL>
-
-<P>
-If no arguments are given, the default is:
-
-
-<P>
-<PRE>    Path =&gt; &quot;&#36;ENV{HOME}/.signature&quot;</PRE>
-
-
-</DL>
-
-<P>
-The content-length is recomputed.
-
 
 <P><HR>
 <A NAME="settinggetting_headers_and_attri">
@@ -587,18 +573,6 @@ Supplying no VALUE argument just returns the attribute's value:
 
 
 
-<P><DT><B><A NAME="data">data [DATA]</A></B><DD>
-
-Get/set the literal DATA of the message.  The DATA may be
-either a scalar, or a reference to an array of scalars (which
-will simply be joined).
-
-
-<P>
-<I>Warning:</I> setting the data causes the &quot;content-length&quot; attribute
-to be recomputed (possibly to nothing).
-
-
 <P><DT><B><A NAME="delete">delete TAG</A></B><DD>
 
 Delete field TAG with the given VALUE to the end of the header.  
@@ -651,9 +625,10 @@ With no argument, returns the filename as dictated by the
 content-disposition.
 
 
-<P><DT><B><A NAME="get_length">get_length [VALUE]</A></B><DD>
+<P><DT><B><A NAME="get_length">get_length</A></B><DD>
 
-Recompute (and return) the content length for the message.
+Recompute the content length for the message <I>if the process is trivial</I>, 
+setting the &quot;content-length&quot; attribute as a side-effect:
 
 
 <P>
@@ -666,20 +641,22 @@ Returns the length, or undefined if not set.
 
 
 <P>
-The content length is only set to a defined value if the message
-is a singlepart with binary encoding, and if the body is available
-either in-core or as a simple file.
-
-
-<P><DT><B><A NAME="path">path [PATH]</A></B><DD>
-
-Get/set the literal DATA of the message.
+<I>Note:</I> the content length can be difficult to compute, since it 
+involves assembling the entire encoded body and taking the length
+of it (which, in the case of multipart messages, means freezing
+all the sub-parts, etc.).
 
 
 <P>
-<I>Warning:</I> setting the path recomputes any existing &quot;content-length&quot; field,
-and re-sets the &quot;filename&quot; (to the last element of the path if it
-looks like a simple path, and to nothing if not).
+This method only sets the content length to a defined value if the
+message is a singlepart with <CODE>&quot;binary&quot;</CODE> encoding, <I>and</I> the body is
+available either in-core or as a simple file.  Otherwise, the content
+length is set to the undefined value.
+
+
+<P>
+Since content-length is not a standard MIME field anyway (that's right, kids:
+it's not in the MIME RFCs, it's an HTTP thing), this seems pretty fair.
 
 
 <P><DT><B><A NAME="replace">replace TAG,VALUE</A></B><DD>
@@ -702,6 +679,105 @@ in the array to be added.
 
 <P>
 <I>Note:</I> the name comes from Mail::Header.
+
+</DL>
+
+<P><HR>
+<A NAME="settinggetting_message_data">
+<H2><FONT COLOR=#600020>
+<A HREF="#__top"><IMG SRC="h2bullet.gif" ALT="" BORDER="0"></A>
+Setting/getting message data</FONT></H2>
+</A>
+
+<DL>
+<P><DT><B><A NAME="binmode">binmode [OVERRIDE]</A></B><DD>
+
+With no argument, returns whether or not it thinks that the data 
+(as given by the &quot;Path&quot; argument of <A HREF="#build">build()</A>) should be read using 
+binmode() (for example, when <A HREF="#read_now">read_now()</A> is invoked).
+
+
+<P>
+The default behavior is that any content type other than 
+<CODE>text/*</CODE> or <CODE>message/*</CODE> is binmode'd; this should in general work fine.
+
+
+<P>
+With a defined argument, this method sets an explicit &quot;override&quot;
+value.  An undefined argument unsets the override.
+The new current value is returned.
+
+
+<P><DT><B><A NAME="data">data [DATA]</A></B><DD>
+
+Get/set the literal DATA of the message.  The DATA may be
+either a scalar, or a reference to an array of scalars (which
+will simply be joined).
+
+
+<P>
+<I>Warning:</I> setting the data causes the &quot;content-length&quot; attribute
+to be recomputed (possibly to nothing).
+
+
+<P><DT><B><A NAME="path">path [PATH]</A></B><DD>
+
+Get/set the PATH to the message data.
+
+
+<P>
+<I>Warning:</I> setting the path recomputes any existing &quot;content-length&quot; field,
+and re-sets the &quot;filename&quot; (to the last element of the path if it
+looks like a simple path, and to nothing if not).
+
+
+<P><DT><B><A NAME="read_now">read_now [PATH]</A></B><DD>
+
+Force the path to be read into core immediately.  With optional
+argument, sets the <A HREF="#path">path()</A> first; otherwise, the current path
+(such as given during a <A HREF="#build">build()</A>) will be used.
+
+
+<P>
+Note that the in-core data will always be used if available.
+
+
+<P>
+Be aware that everything is slurped into a giant scalar: you may not want 
+to use this if sending tar files!  The benefit of <I>not</I> reading in the data 
+is that very large files can be handled by this module if left on disk
+until the message is output via <A HREF="#print">print()</A> or <A HREF="#print_body">print_body()</A>.
+
+
+<P><DT><B><A NAME="sign">sign PARAMHASH</A></B><DD>
+
+Sign the message.  This forces the message to be read into core,
+after which the signature is appended to it.
+
+<DL>
+<P><DT><B><A NAME="data">Data</A></B><DD>
+
+As in <A HREF="#build">build()</A>: the literal signature data.
+Can be either a scalar or a ref to an array of scalars.
+
+
+<P><DT><B><A NAME="path">Path</A></B><DD>
+
+As in <A HREF="#build">build()</A>: the path to the file.
+
+</DL>
+
+<P>
+If no arguments are given, the default is:
+
+
+<P>
+<PRE>    Path =&gt; &quot;&#36;ENV{HOME}/.signature&quot;</PRE>
+
+
+
+<P>
+The content-length is recomputed.
 
 </DL>
 
@@ -829,10 +905,10 @@ NOTES</FONT></H1>
 
 
 <P><HR>
-<A NAME="limitations_of_this_module">
+<A NAME="limitations">
 <H2><FONT COLOR=#600020>
 <A HREF="#__top"><IMG SRC="h2bullet.gif" ALT="" BORDER="0"></A>
-Limitations of this module</FONT></H2>
+Limitations</FONT></H2>
 </A>
 
 
@@ -851,7 +927,7 @@ separate module.
 
 <P><LI>A content-length field is only inserted if the encoding is binary,
 the message is a singlepart, and all the document data is available
-at build() time by virtue of residing in a simple path, or in-core.
+at <A HREF="#build">build()</A> time by virtue of residing in a simple path, or in-core.
 Since content-length is not a standard MIME field anyway (that's right, kids:
 it's not in the MIME RFCs, it's an HTTP thing), this seems pretty fair.
 
@@ -1043,6 +1119,18 @@ CHANGE LOG</FONT></H1>
 </A>
 
 <DL>
+<P><DT><B><A NAME="version">Version 1.112</A></B><DD>
+
+Added <A HREF="#read_now">read_now()</A>, and <A HREF="#binmode">binmode()</A> method for our non-Unix-using brethren: 
+file data is now read using binmode() if appropriate.
+<I>Thanks to Xiangzhou Wang for pointing out this bug.</I>
+
+
+<P><DT><B><A NAME="version">Version 1.110</A></B><DD>
+
+Fixed bug in opening the data filehandle.
+
+
 <P><DT><B><A NAME="version">Version 1.102</A></B><DD>
 
 Initial release.
@@ -1120,7 +1208,7 @@ Created: 11 December 1996.  Ho ho ho.
 
 <P><HR>
 <SMALL>
-		Last updated: Sat Mar  1 04:11:36 1997 <BR>
+		Last updated: Thu Mar  6 17:56:31 1997 <BR>
 		Generated by pod2coolhtml 1.101.  Want a copy?  Just email
 		<A HREF="mailto:eryq@enteract.com">eryq@enteract.com</A>.
 		(Yes, it's free.)
