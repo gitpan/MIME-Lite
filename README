@@ -1,15 +1,14 @@
 NAME
     MIME::Lite - low-calorie MIME generator
 
-    *WARNING: This is Alpha code. I have not yet fully tested it, and I
+    *WARNING:* This is Alpha code. I have not yet fully tested it, and I
     can't guarantee that the interface won't change in the next few releases
     in a non-backwards-compatible manner. It is being provided to the
-    community for suggestions and in the hopes that it will be useful.*
+    community for suggestions and in the hopes that it will be useful.
 
 SYNOPSIS
         use MIME::Lite;
-
-
+       
     Create a single-part message:
 
         # Create a new single-part message, to send a GIF file:
@@ -22,7 +21,6 @@ SYNOPSIS
                     Encoding =>'base64',
                     Path     =>'hellonurse.gif';
 
-
     Create a multipart message (i.e., one with attachments):
 
         # Create a new multipart message:
@@ -32,7 +30,7 @@ SYNOPSIS
                     Cc      =>'some@other.com, some@more.com',
                     Subject =>'A message with 2 parts...',
                     Type    =>'multipart/mixed';
-
+        
         # Add parts (each "attach" has same arguments as "new"):
         attach $msg 
                     Type     =>'TEXT',   
@@ -42,15 +40,13 @@ SYNOPSIS
                     Path     =>'aaa000123.gif',
                     Filename =>'logo.gif';
 
-
     Output a message:
 
         # As a string...
         $str = $msg->as_string;
-
+        
         # To a filehandle (say, a "sendmail" stream)...
         $msg->print(\*SENDMAIL);
-
 
 DESCRIPTION
     In the never-ending quest for great taste with fewer calories, we
@@ -74,14 +70,15 @@ DESCRIPTION
     this one.
 
 CHANGES
-  Version 1.121
+  Version 1.122
 
-    Filename attribute is now no longer ignored by build(). *Thanks to Ian
-    Smith for finding and patching this bug.*
+    MIME::Base64 and MIME::QuotedPrint are used if available.
+
+    The 7bit encoding no longer does "escapes"; it merely strips 8-bit
+    characters.
 
 AUTHOR
-    Eryq, (who really should be wrapping holiday presents instead).
-    eryq@enteract.com / http://enteract.com/~eryq.
+    Eryq. President, Zero G Inc. eryq@zeegee.com / http://www.zeegee.com.
 
     Created: 11 December 1996. Ho ho ho.
 

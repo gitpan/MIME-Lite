@@ -2,15 +2,29 @@
 use lib "lib";
 use MIME::Lite;
 
-# Create a new multipart message:
 $msg = new MIME::Lite 
      To       => 'eryq@enteract.com',
      Subject  => 'GIF test',
      Type     => 'image/gif',		       
      Encoding => 'base64',
      Path     => "cat ./docs/MIME/mime-sm.gif |";
-
-# Output:
 print $msg->stringify;
+
+#$msg = new MIME::Lite 
+#     To       => 'eryq@enteract.com',
+#     Subject  => 'GIF test',
+#     Type     => 'image/gif',		       
+#     Encoding => 'base64',
+#     Path     => "./docs/MIME/mime-sm.gif";
+#
+#$msg = new MIME::Lite 
+#     To       => 'eryq@enteract.com',
+#     Subject  => 'GIF test',
+#     Type     => 'image/gif',		       
+#     Encoding => 'base64',
+#     Path     => "./docs/MIME/mime-sm.gif",
+#     Filename => "my-mime.gif";
+
+
 
 

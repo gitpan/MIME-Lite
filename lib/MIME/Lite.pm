@@ -141,7 +141,7 @@ use Carp;
 use FileHandle;
 
 use strict;
-use vars qw($VERSION $QUIET);
+use vars qw($VERSION $QUIET $PARANOID);
 
 
 
@@ -152,10 +152,14 @@ use vars qw($VERSION $QUIET);
 
 
 # The package version, both in 1.23 style *and* usable by MakeMaker:
-$VERSION = substr q$Revision: 1.121 $, 10;
+$VERSION = substr q$Revision: 1.123 $, 10;
 
 # Don't warn me about dangerous activities:
 $QUIET = undef;
+
+# Set this true if you don't want to use MIME::Base64/MIME::QuotedPrint:
+$PARANOID = 0;
+
 
 
 # Boundary counter:
@@ -173,6 +177,9 @@ qw(
    received    references  reply-to      return-path   sender        
    subject     to
    );
+
+# What external packages do we use for encoding?
+my @Uses;
 
 
 #==============================
@@ -226,7 +233,6 @@ sub is_mime_field {
 }
 
 
-
 #==============================
 #==============================
 #
@@ -237,10 +243,15 @@ sub is_mime_field {
 # encode_base64 STRING
 #
 # Encode the given string using BASE64.
-# Stolen from MIME::Base64 by Gisle Aas, with a correction by Andreas Koenig.
+# Unless paranoid, we try to load the real code before supplying our own.
 
-sub encode_base64
-{
+if (!$PARANOID and eval "require MIME::Base64") {
+    import MIME::Base64 qw(encode_base64);
+    push @Uses, "B$MIME::Base64::VERSION";
+}
+else {
+    eval q{
+sub encode_base64 {
     my $res = "";
     my $eol = "\n";
 
@@ -258,7 +269,9 @@ sub encode_base64
     # Break encoded string into lines of no more than 76 characters each:
     $res =~ s/(.{1,76})/$1$eol/g if (length $eol);
     return $res;
-}
+} # sub
+  } # q
+} #if
 
 #------------------------------------------------------------
 #
@@ -268,7 +281,15 @@ sub encode_base64
 # Stolen from MIME::QuotedPrint by Gisle Aas, with a slight bug fix: we
 # break lines earlier.  Notice that this seems not to work unless
 # encoding line by line.
+#
+# Unless paranoid, we try to load the real code before supplying our own.
 
+if (!$PARANOID and eval "require MIME::QuotedPrint") {
+    import MIME::QuotedPrint qw(encode_qp);
+    push @Uses, "Q$MIME::QuotedPrint::VERSION";
+}
+else {
+    eval q{
 sub encode_qp {
     my $res = shift;
     $res =~ s/([^ \t\n!-<>-~])/sprintf("=%02X", ord($1))/eg;  # rule #2,#3
@@ -277,17 +298,14 @@ sub encode_qp {
 	           split('', $1)
       )/egm;                        # rule #3 (encode whitespace at eol)
 
-    # rule #5 (lines must be shorter than 76 chars, but we are not allowed
-    # to break =XX escapes.  This makes things complicated.)
-    ### [Eryq's note]: the bug fix is the {70} below, which was {74} in the
-    ### original code.
+    # rule #5 (lines shorter than 76 chars, but can't break =XX escapes:
     my $brokenlines = "";
-    $brokenlines .= "$1=\n" while $res =~ s/^(.{70}([^=]{2})?)//;
-    # unnessesary to make a break at the last char
+    $brokenlines .= "$1=\n" while $res =~ s/^(.{70}([^=]{2})?)//; # 70 was 74
     $brokenlines =~ s/=\n$// unless length $res; 
-
     "$brokenlines$res";
-}
+} # sub
+  } # q
+} #if
 
 #------------------------------------------------------------
 #
@@ -307,11 +325,11 @@ sub encode_8bit {
 # encode_7bit STRING
 #
 # Encode the given string using 7BIT.
-# This breaks long lines, and turns 8-bit chars into =XX sequences.
+# This NO LONGER protects people through encoding.
 
 sub encode_7bit {
     my $str = shift;
-    $str =~ s/[\x80-\xFF]/sprintf("=%02X",ord($&))/eg; 
+    $str =~ s/[\x80-\xFF]//eg; 
     $str =~ s/^.{990}/$&\n/mg;
     $str;
 }
@@ -512,8 +530,9 @@ lines, so consider using one of the following values instead:
 
 Be sure to pick an appropriate encoding.  In the case of "7bit"/"8bit",
 long lines are automatically chopped to legal length; in the case of "7bit", 
-all 8-bit characters are automatically converted to ugly QP-like C<"=XX">
-sequences.  There's a L<"A MIME PRIMER"> in this document with more info.
+all 8-bit characters are automatically I<removed>.  This may not be
+what you want, so pick your encoding well!
+There's a L<"A MIME PRIMER"> in this document with more info.
 
 =item Filename
 
@@ -753,7 +772,8 @@ sub top_level {
     my ($self, $onoff) = @_;	
     if ($onoff) {
 	$self->attr('MIME-Version' => '1.0');
-	$self->replace('X-Mailer' => "MIME::Lite $VERSION");
+	my $uses = (@Uses ? ("(" . join("; ", @Uses) . ")") : '');
+	$self->replace('X-Mailer' => "MIME::Lite $VERSION $uses");
     }
     else {
 	$self->attr('MIME-Version' => undef);
@@ -1803,9 +1823,16 @@ non-ASCII characters (e.g., Latin-1, Latin-2, or any other 8-bit alphabet).
 =head1 CHANGE LOG
 
 B<Current version:>
-$Id: Lite.pm,v 1.121 1997/04/08 14:55:06 eryq Exp $
+$Id: Lite.pm,v 1.123 1998/05/01 16:40:18 eryq Exp $
 
 =over 4
+
+=item Version 1.122
+
+MIME::Base64 and MIME::QuotedPrint are used if available.
+
+The 7bit encoding no longer does "escapes"; it merely strips 8-bit characters.
+
 
 =item Version 1.121
 
@@ -1882,8 +1909,8 @@ on any products that bear the name "Lite"...
 
 =head1 AUTHOR
 
-Eryq, (who really should be wrapping holiday presents instead).
-F<eryq@enteract.com> / F<http://enteract.com/~eryq>.
+Eryq.  President, Zero G Inc.
+F<eryq@zeegee.com> / F<http://www.zeegee.com>.
 
 Created: 11 December 1996.  Ho ho ho.
 
@@ -1892,4 +1919,3 @@ Created: 11 December 1996.  Ho ho ho.
 
 #------------------------------------------------------------
 1;
-
