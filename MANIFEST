@@ -3,17 +3,13 @@ INSTALLING
 MANIFEST
 Makefile.PL
 README
+README.system
 docs/MIME/Lite.pm.html
 docs/MIME/h1bullet.gif
 docs/MIME/h2bullet.gif
+docs/MIME/index.chc
 docs/MIME/mime-lg.gif
 docs/MIME/mime-sm.gif
-docs/Makefile
-examples/bigmsg
-examples/giftest
-examples/hacktest
-examples/signtest
-examples/smtptest
 lib/MIME/Lite.pm
 t/ExtUtils/TBone.pm
 t/Utils.pm
@@ -21,4 +17,3 @@ t/data.t
 t/head.t
 testin/README
 testin/hello
-testout/README

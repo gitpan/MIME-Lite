@@ -12,7 +12,7 @@ WriteMakefile(
 	      DISTNAME     => "MIME-Lite",
 	      EXE_FILES    => [@EXES],
 	      'dist'       => {
-		  PREOP    => "cd docs ; make",
+		  PREOP    => "./MakefileZG.PL ; make -f MakefileZG",
 		  COMPRESS => 'gzip',
 		  SUFFIX   => 'gz',
 	      }

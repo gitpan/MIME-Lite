@@ -750,7 +750,7 @@ A MIME PRIMER
         8-bit alphabet).
 
 CHANGE LOG
-    Current version: $Id: Lite.pm,v 1.134 1999/04/17 04:59:03 eryq Exp $
+    Current version: $Id: Lite.pm,v 1.135 1999/04/18 14:32:13 eryq Exp $
 
     Version 1.133
         Fixed bug in "Data" handling: arrayrefs were not being handled

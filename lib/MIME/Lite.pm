@@ -157,7 +157,7 @@ use vars qw($VERSION $QUIET $PARANOID $VANILLA);
 # GLOBALS, EXTERNAL/CONFIGURATION...
 
 # The package version, both in 1.23 style *and* usable by MakeMaker:
-$VERSION = substr q$Revision: 1.134 $, 10;
+$VERSION = substr q$Revision: 1.135 $, 10;
 
 # Don't warn me about dangerous activities:
 $QUIET = undef;
@@ -2081,7 +2081,7 @@ non-ASCII characters (e.g., Latin-1, Latin-2, or any other 8-bit alphabet).
 =head1 CHANGE LOG
 
 B<Current version:>
-$Id: Lite.pm,v 1.134 1999/04/17 04:59:03 eryq Exp $
+$Id: Lite.pm,v 1.135 1999/04/18 14:32:13 eryq Exp $
 
 =over 4
 
