@@ -342,7 +342,7 @@ use vars qw(
 # GLOBALS, EXTERNAL/CONFIGURATION...
 
 ### The package version, both in 1.23 style *and* usable by MakeMaker:
-$VERSION = substr q$Revision: 2.116 $, 10;
+$VERSION = substr q$Revision: 2.117 $, 10;
 
 ### Automatically interpret CC/BCC for SMTP:
 $AUTO_CC = 1;
@@ -3163,12 +3163,19 @@ non-ASCII characters (e.g., Latin-1, Latin-2, or any other 8-bit alphabet).
 
 =head1 VERSION
 
-$Id: Lite.pm,v 2.116 2001/08/17 14:25:01 eryq Exp $
+$Id: Lite.pm,v 2.117 2001/08/20 20:40:39 eryq Exp $
 
 
 =head1 CHANGE LOG
 
 =over 4
+
+
+=item Version 2.117   (2001/08/20)
+
+The terms-of-use have been placed in the distribution file "COPYING".  
+Also, small documentation tweaks were made.
+
 
 =item Version 2.116   (2001/08/17)
 
@@ -3185,7 +3192,7 @@ The "AUTO" setting can be made the default default (instead of "TEXT")
 if you set C<$AUTO_CONTENT_TYPE = 1, $PARANOID = 0>.
 I<Thanks to> Ville SkyttE<#228> I<for these patches.>
 
-File::Basename is only used if available.
+File::Basename is used if it is available.
 I<Thanks to> Ville SkyttE<#228> I<for this patch.>
 
 SMTP failures (in send_by_smtp) now add the $smtp-E<gt>message to the
@@ -3532,9 +3539,7 @@ Eryq (F<eryq@zeegee.com>).
 President, ZeeGee Software Inc. (F<http://www.zeegee.com>).
 
 Go to F<http://www.zeegee.com> for the latest downloads
-and on-line documentation for this module.
-
-Enjoy.
+and on-line documentation for this module.  Enjoy.
 
 =cut
 

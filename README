@@ -1209,9 +1209,13 @@ A MIME PRIMER
         8-bit alphabet).
 
 VERSION
-    $Id: Lite.pm,v 2.116 2001/08/17 14:25:01 eryq Exp $
+    $Id: Lite.pm,v 2.117 2001/08/20 20:40:39 eryq Exp $
 
 CHANGE LOG
+    Version 2.117   (2001/08/20)
+        The terms-of-use have been placed in the distribution file
+        "COPYING". Also, small documentation tweaks were made.
+
     Version 2.116   (2001/08/17)
         Added long-overdue patch which makes the instance method form of
         send() do the right thing when given HOW... arguments. *Thanks to
@@ -1225,7 +1229,7 @@ CHANGE LOG
         `$AUTO_CONTENT_TYPE = 1, $PARANOID = 0'. *Thanks to* Ville
         SkyttE<#228> *for these patches.*
 
-        File::Basename is only used if available. *Thanks to* Ville
+        File::Basename is used if it is available. *Thanks to* Ville
         SkyttE<#228> *for this patch.*
 
         SMTP failures (in send_by_smtp) now add the $smtp->message to the
@@ -1512,7 +1516,5 @@ AUTHOR
     (http://www.zeegee.com).
 
     Go to http://www.zeegee.com for the latest downloads and on-line
-    documentation for this module.
-
-    Enjoy.
+    documentation for this module. Enjoy.
 

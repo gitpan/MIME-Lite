@@ -48,8 +48,21 @@ correct test-output while at the same time logging all test
 activity to a log file.  Hopefully, bug reports which include
 the contents of this file will be easier for you to investigate.
 
+=head1 OUTPUT
 
-=head1 LOG FILE
+=head2 Standard output
+
+Pretty much as described by C<Test::Harness>, with a special
+"# END" comment placed at the very end:
+
+    1..3
+    ok 1
+    not ok 2
+    ok 3
+    # END
+
+
+=head1 Log file
 
 A typical log file output by this module looks like this:
 
@@ -69,7 +82,7 @@ A typical log file output by this module looks like this:
     3: My third test.
     3: ok 3
     
-    END
+    # END
 
 Each test() is logged with the test name and results, and
 the test-number prefixes each line.
@@ -88,7 +101,7 @@ use FileHandle;
 use File::Basename;
 
 # The package version, both in 1.23 style *and* usable by MakeMaker:
-$VERSION = substr q$Revision: 1.121 $, 10;
+$VERSION = substr q$Revision: 1.124 $, 10;
 
 
 
@@ -125,9 +138,10 @@ sub new {
 =item typical
 
 I<Class method, constructor.>
-Create a typical tester.  Use this instead of new() for most applicaitons.
+Create a typical tester.  
+Use this instead of new() for most applicaitons.
 The directory "testout" is created for you automatically, to hold
-the output log file.
+the output log file, and log_warnings() is invoked.
 
 =cut
 
@@ -139,7 +153,9 @@ sub typical {
 	    or die "Couldn't create a 'testout' subdirectory: $!\n";
 	### warn "$class: created 'testout' directory\n";
     }
-    $class->new($class->catfile('.', 'testout', "${tfile}log"));
+    my $self = $class->new($class->catfile('.', 'testout', "${tfile}log"));
+    $self->log_warnings;
+    $self;
 }
 
 #------------------------------
@@ -168,13 +184,15 @@ sub DESTROY {
 =item begin NUMTESTS
 
 I<Instance method.>
-Start testing.
+Start testing.  
+This outputs the 1..NUMTESTS line to the standard output.
 
 =cut
 
 sub begin {
     my ($self, $n) = @_;
     return if $self->{Begin}++;
+
     $self->l_print("1..$n\n\n");
     print {$self->{OUT}} "1..$n\n";
 }
@@ -184,15 +202,16 @@ sub begin {
 =item end
 
 I<Instance method.>
-End testing.
+Indicate the end of testing.
+This outputs a "# END" line to the standard output.
 
 =cut
 
 sub end {
     my ($self) = @_;
     return if $self->{End}++;
-    $self->l_print("END\n");
-    print {$self->{OUT}} "END\n";
+    $self->l_print("# END\n");
+    print {$self->{OUT}} "# END\n";
 }
 
 #------------------------------
@@ -201,6 +220,11 @@ sub end {
 
 I<Instance method.>
 Do a test, and log some information connected with it.
+This outputs the test result lines to the standard output:
+
+    ok 12
+    not ok 13
+
 Use it like this:
 
     $T->ok(-e $dotforward);
@@ -359,7 +383,9 @@ sub log_close {
 =item log_warnings
 
 I<Instance method.>
-Redefine $SIG{__WARN__} to log to STDERR and to the log. 
+Invoking this redefines $SIG{__WARN__} to log to STDERR and 
+to the tester's log.  This is automatically invoked when
+using the C<typical> constructor.
 
 =cut
 
@@ -446,7 +472,9 @@ sub ln_print {
 
 I<Class/instance method.>
 Concatenate several directories into a path ending in a directory.
-Lightweight version of the one in the (very new) File::Spec.
+Lightweight version of the one in C<File::Spec>; this method
+dates back to a more-innocent time when File::Spec was younger
+and less ubiquitous.
 
 Paths are assumed to be absolute.
 To signify a relative path, the first DIR must be ".",
@@ -496,12 +524,32 @@ sub catfile {
 
 =head1 VERSION
 
-$Id: TBone.pm,v 1.121 2001/08/17 01:56:59 eryq Exp $
+$Id: TBone.pm,v 1.124 2001/08/20 20:30:07 eryq Exp $
 
 
 =head1 CHANGE LOG
 
 =over 4
+
+=item Version 1.124   (2001/08/20)
+
+The terms-of-use have been placed in the distribution file "COPYING".  
+Also, small documentation tweaks were made.
+
+
+=item Version 1.122   (2001/08/20)
+
+Changed output of C<"END"> to C<"# END">; apparently, "END" is
+not a directive.  Maybe it never was.
+I<Thanks to Michael G. Schwern for the bug report.>
+
+    The storyteller
+       need not say "the end" aloud;
+    Silence is enough.
+
+Automatically invoke C<log_warnings()> when constructing
+via C<typical()>.
+
 
 =item Version 1.120   (2001/08/17)
 
@@ -538,7 +586,12 @@ Created: Friday-the-13th of February, 1998.
 =head1 AUTHOR
 
 Eryq (F<eryq@zeegee.com>).
-President, ZeeGee Software Inc. (F<http://www.zeegee.com>)
+President, ZeeGee Software Inc. (F<http://www.zeegee.com>).
+
+Go to F<http://www.zeegee.com> for the latest downloads
+and on-line documentation for this module.  
+
+Enjoy.  Yell if it breaks.
 
 =cut
 
