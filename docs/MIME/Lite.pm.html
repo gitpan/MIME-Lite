@@ -63,13 +63,6 @@ MIME::Lite - low-calorie MIME generator
 
 
 <P>
-<I><B>WARNING:</B> This is Alpha code.  I have not yet fully tested it, and I can't
-guarantee that the interface won't change in the next few releases
-in a non-backwards-compatible manner.  It is being provided to the
-community for suggestions and in the hopes that it will be useful.</I>
-
-
-<P>
 <PRE></PRE>
 
 
@@ -84,12 +77,9 @@ SYNOPSIS</FONT></H1>
 
 <P>
 <PRE>    use MIME::Lite;
-   </PRE>
+   
+Create a single-part message:</PRE>
 
-
-
-<P>
-Create a single-part message:
 
 
 <P>
@@ -107,11 +97,6 @@ Create a single-part message:
 
 
 <P>
-<PRE></PRE>
-
-
-
-<P>
 Create a multipart message (i.e., one with attachments):
 
 
@@ -123,12 +108,8 @@ Create a multipart message (i.e., one with attachments):
                 Cc      =&gt;'some@other.com, some@more.com',
                 Subject =&gt;'A message with 2 parts...',
                 Type    =&gt;'multipart/mixed';
-    </PRE>
-
-
-
-<P>
-<PRE>    # Add parts (each &quot;attach&quot; has same arguments as &quot;new&quot;):
+    
+    # Add parts (each &quot;attach&quot; has same arguments as &quot;new&quot;):
     attach $msg 
                 Type     =&gt;'TEXT',   
                 Data     =&gt;&quot;Here's the GIF file you wanted&quot;;  
@@ -149,15 +130,27 @@ Output a message:
 
 
 <P>
-<PRE>    # As a string...
+<PRE>    # Format as a string:
     $str = $msg-&gt;as_string;
-    </PRE>
+    
+    # Print to a filehandle (say, a &quot;sendmail&quot; stream):
+    $msg-&gt;print(\*SENDMAIL);</PRE>
 
 
 
 <P>
-<PRE>    # To a filehandle (say, a &quot;sendmail&quot; stream)...
-    $msg-&gt;print(\*SENDMAIL);</PRE>
+<PRE></PRE>
+
+
+
+<P>
+Send a message:
+
+
+<P>
+<PRE>    # Send in the &quot;best&quot; way (the default is to use &quot;sendmail&quot;):
+    $msg-&gt;send;
+      </PRE>
 
 
 
@@ -231,17 +224,11 @@ Create a multipart message exactly as above, but using the
                 Subject =&gt;'A message with 2 parts...',
                 Type    =&gt;'TEXT',
                 Data    =&gt;&quot;Here's the GIF file you wanted&quot;;  
-    </PRE>
-
-
-
-<P>
-<PRE>    # Attach a part:
-    attach $msg 
-                Type     =&gt;'image/gif',
+    
+    # Attach a part:
+    attach $msg Type     =&gt;'image/gif',
                 Path     =&gt;'aaa000123.gif',
-                Filename =&gt;'logo.gif';
-    </PRE>
+                Filename =&gt;'logo.gif';</PRE>
 
 
 
@@ -257,19 +244,11 @@ Output a message to a filehandle:
 <P>
 <PRE>    # Write it to a filehandle:
     $msg-&gt;print(\*STDOUT); 
-     </PRE>
-
-
-
-<P>
-<PRE>    # Write just the header:
+     
+    # Write just the header:
     $msg-&gt;print_header(\*STDOUT); 
-     </PRE>
-
-
-
-<P>
-<PRE>    # Write just the encoded body:
+     
+    # Write just the encoded body:
     $msg-&gt;print_body(\*STDOUT); </PRE>
 
 
@@ -286,19 +265,11 @@ Get a message as a string:
 <P>
 <PRE>    # Get entire message as a string:
     $str = $msg-&gt;as_string;
-     </PRE>
-
-
-
-<P>
-<PRE>    # Get just the header:
+     
+    # Get just the header:
     $str = $msg-&gt;header_as_string;
-     </PRE>
-
-
-
-<P>
-<PRE>    # Get just the encoded body:
+     
+    # Get just the encoded body:
     $str = $msg-&gt;body_as_string;</PRE>
 
 
@@ -309,12 +280,22 @@ Get a message as a string:
 
 
 <P>
-# Send a message (Unix systems only!):
+Change how messages are sent:
 
 
 <P>
-<PRE>    # Send it!
-    $msg-&gt;send;</PRE>
+<PRE>    # Do something like this in your 'main':
+    if ($I_DONT_HAVE_SENDMAIL) {
+       MIME::Lite-&gt;send('smtp', &quot;smtp.myisp.net&quot;, Timeout=&gt;60);
+    }
+     
+    # Now this will do the right thing:
+    $msg-&gt;send;         # will now use Net::SMTP as shown above</PRE>
+
+
+
+<P>
+<PRE></PRE>
 
 
 
@@ -558,23 +539,15 @@ but I digress...), here are some examples:
                Type     =&gt; 'TEXT',
                Encoding =&gt; '7bit',
                Data     =&gt; &quot;Just a quick note to say hi!&quot;;
- </PRE>
-
-
-
-<P>
-<PRE>    $msg = build MIME::Lite 
+ 
+    $msg = build MIME::Lite 
                From     =&gt; 'dorothy@emerald-city.oz',
                To       =&gt; 'gesundheit@edu.edu.edu',
                Subject  =&gt; &quot;A gif for U&quot;
                Type     =&gt; 'image/gif',
                Path     =&gt; &quot;/home/httpd/logo.gif&quot;;
- </PRE>
-
-
-
-<P>
-<PRE>    $msg = build MIME::Lite 
+ 
+    $msg = build MIME::Lite 
                From     =&gt; 'laughing@all.of.us',
                To       =&gt; 'scarlett@fiddle.dee.de',
                Subject  =&gt; &quot;A gzipp'ed tar file&quot;,
@@ -592,21 +565,13 @@ have been written:
 
 <P>
 <PRE>    $msg = new MIME::Lite;
-    </PRE>
-
-
-
-<P>
-<PRE>    $msg-&gt;build(Type     =&gt; 'x-gzip',
+    
+    $msg-&gt;build(Type     =&gt; 'x-gzip',
                 Path     =&gt; &quot;gzip &lt; /usr/inc/somefile.tar |&quot;,
                 ReadNow  =&gt; 1,
                 Filename =&gt; &quot;somefile.tgz&quot;);
-    </PRE>
-
-
-
-<P>
-<PRE>    $msg-&gt;add(From    =&gt; &quot;laughing@all.of.us&quot;);
+    
+    $msg-&gt;add(From    =&gt; &quot;laughing@all.of.us&quot;);
     $msg-&gt;add(To      =&gt; &quot;scarlett@fiddle.dee.de&quot;);
     $msg-&gt;add(Subject =&gt; &quot;A gzipp'ed tar file&quot;);  </PRE>
 
@@ -751,6 +716,29 @@ This actually sets both &quot;standard&quot; attributes.
 <P>
 With no argument, returns the filename as dictated by the 
 content-disposition.
+
+
+<P><DT><B><A NAME="get">get TAG,[INDEX]</A></B><DD>
+
+Get the contents of field TAG, which might have been set 
+with set() or replace().  Returns the text of the field.
+
+
+<P>
+<PRE>    $ml-&gt;get('Subject', 0);</PRE>
+
+
+
+<P>
+If the optional 0-based INDEX is given, then we return the INDEX'th
+occurence of field TAG.  Otherwise, we look at the context:
+In a scalar context, only the first (0th) occurence of the 
+field is returned; in an array context, <I>all</I> occurences are returned.
+
+
+<P>
+<I>Warning:</I> this should only be used with non-MIME fields.
+Behavior with MIME fields is TBD, and will raise an exception for now.
 
 
 <P><DT><B><A NAME="get_length">get_length</A></B><DD>
@@ -1025,36 +1013,117 @@ Sending</FONT></H2>
 <DL>
 <P><DT><B><A NAME="send">send</A></B><DD>
 
-<I>Instance method.</I>  
-Sends the message.
+
+<P><DT><B><A NAME="send">send HOW, HOWARGS...</A></B><DD>
+
+<I>Class/instance method.</I>  
+This is the principle method for sending mail, and for configuring
+how mail will be sent.
 
 
 <P>
-Right now, this is done by piping it into the &quot;sendmail&quot; command
-as given by <CODE>sendmail()</CODE>.  The default will probably only work 
-on Unix-like systems.
+<I>As an instance method</I> (with no arguments), sends the message by whatever 
+means has been set up (the default is to use the Unix &quot;sendmail&quot; program).
+Returns whatever the mail-handling routine returns: this should be true 
+on success, false/exception on error:
 
 
 <P>
-Returns false if sendmail <I>seems</I> to have failed, true otherwise.
-<B>Fatal exception</B> raised if the open fails.
+<PRE>    $msg = MIME::Lite-&gt;new(From=&gt;...);
+    $msg-&gt;send || die &quot;you DON'T have mail!&quot;;</PRE>
+
+
+
+<P>
+<I>As a class method</I> (with a HOW argument and optional HOWARGS), sets up 
+how the instance method will work for all objects until further notice.
+It treats HOW as a facility name, with optional HOWARGS handled by
+the facility.   There are three facilities:
+
+<DL>
+<P><DT><B><A NAME="sendmail">&quot;sendmail&quot;, SENDMAILCMD</A></B><DD>
+
+Send a message by piping it into the &quot;sendmail&quot; command.
+Uses the <CODE>send_by_sendmail()</CODE> method, giving it the SENDMAILCMD.
+This usage implements (and deprecates) the <CODE>sendmail()</CODE> method.
+ 
+=item &quot;smtp&quot;, [HOSTNAME]
+
+
+<P>
+Send a message by SMTP, using optional HOSTNAME as SMTP-sending host.
+Uses the <CODE>send_by_smtp()</CODE> method.
+
+
+<P><DT><B><A NAME="sub">&quot;sub&quot;, \&amp;SUBREF, ARGS...</A></B><DD>
+
+Sends a message MSG by invoking the subroutine SUBREF of your choosing,
+with MSG as the first argument, and ARGS following.
+
+</DL>
+
+
+<P>
+<I>For example:</I> let's say you're on an OS which lacks the usual Unix
+&quot;sendmail&quot; facility, but you've installed something a lot like it, and
+you need to configure your Perl script to use this &quot;sendmail.exe&quot; program.
+Do this following in your script's setup:
+
+
+<P>
+<PRE>    MIME::Lite-&gt;send('sendmail', &quot;d:\\programs\\sendmail.exe&quot;);</PRE>
+
+
+
+<P>
+Then, whenever you need to send a message $msg, just say:
+
+
+<P>
+<PRE>    $msg-&gt;send;</PRE>
+
+
+
+<P>
+That's it.  Now, if you ever move your script to a Unix box, all you
+need to do is change that line in the setup and you're done.
+All of your $msg-&gt;send invocations will work as expected.
+
+
+<P><DT><B><A NAME="send_by_sendmail">send_by_sendmail SENDMAILCMD</A></B><DD>
+
+<I>Instance method.</I>
+Send message via the external &quot;sendmail&quot; program, SENDMAILCMD.
+Returns true on success, false or exception on error.
+
+
+<P>
+<I>Note:</I> this facility will probably only work on Unix systems.
+The SENDMAILCMD for this facility must get all its message-specific 
+information from the standard input.
+
+
+<P><DT><B><A NAME="send_by_smtp">send_by_smtp [ARGS...]</A></B><DD>
+
+<I>Instance method.</I>
+Send message via SMTP, using Net::SMTP.  
+The ARGS are sent into Net::SMTP::new(): usually, these are
+
+
+<P>
+<PRE>    MAILHOST, OPTION=&gt;VALUE, ...</PRE>
+
+
+
+<P>
+Returns true on success, false or exception on error.
 
 
 <P><DT><B><A NAME="sendmail">sendmail COMMAND...</A></B><DD>
 
-<I>Class method.</I>  
-Set up the &quot;sendmail&quot; command used by <CODE>send()</CODE>.
-You may supply it as either a single string, or an array of 
-path-to-command-plus-arguments:
-
-
-<P>
-<PRE>    sendmail MIME::Lite &quot;/usr/lib/sendmail&quot;, &quot;-t&quot;, &quot;-oi&quot;, &quot;-oem&quot;;</PRE>
-
-
-
-<P>
-What you see above is the default.
+<I>Class method, DEPRECATED.</I>  
+Declare the sender to be &quot;sendmail&quot;, and set up the &quot;sendmail&quot; command.
+<I>You should use send() instead.</I>
 
 </DL>
 
@@ -1142,29 +1211,27 @@ Cheap and easy mailing</FONT></H2>
 
 
 <P>
-I thought putting in a sendmail invocation wasn't too bad an idea,
-since a lot of Perlers are on UNIX systems.  The default arguments
+I thought putting in a default &quot;sendmail&quot; invocation wasn't too bad an 
+idea, since a lot of Perlers are on UNIX systems.  The default arguments
 to sendmail (which you can change) are:
 
 
 <P>
 <PRE>     -t      Scan message for To:, Cc:, Bcc:, etc.
-              </PRE>
-
-
-
-<P>
-<PRE>     -oi     Do NOT treat a single &quot;.&quot; on a line as a message terminator.
+              
+     -oi     Do NOT treat a single &quot;.&quot; on a line as a message terminator.
              As in, &quot;-oi vey, it truncated my message... why?!&quot;
-                </PRE>
-
-
-
-<P>
-<PRE>     -oem    On error, mail back the message (I assume to the
+                
+     -oem    On error, mail back the message (I assume to the
              appropriate address, given in the header).
              When mail returns, circle is complete.  Jai guru deva -oem.</PRE>
 
+
+
+<P>
+If you're not on a Unix system, or if you'd just rather send mail
+some other way, check out the <CODE>send()</CODE> method.  There's built in
+support for SMTP delivery, or you can slip in your own hooks.
 
 
 <P>
@@ -1395,7 +1462,7 @@ CHANGE LOG</FONT></H1>
 
 <P>
 <B>Current version:</B>
-$Id: Lite.pm,v 1.126 1998/11/13 05:34:49 eryq Exp $
+$Id: Lite.pm,v 1.130 1998/12/14 04:27:41 eryq Exp eryq $
 
 
 <P>
@@ -1403,9 +1470,31 @@ $Id: Lite.pm,v 1.126 1998/11/13 05:34:49 eryq Exp $
 
 
 <DL>
+<P><DT><B><A NAME="version">Version 1.130</A></B><DD>
+
+Added much larger and more-flexible send() facility.
+<I>Thanks to Andrew McRae (and Optimation New Zealand Ltd) 
+for the Net::SMTP interface.  Additional thanks to the many folks
+who requested this feature.</I>
+
+
+<P>
+Added get() method for extracting basic attributes.
+
+
+<P>
+New... &quot;t&quot; tests!
+
+
+<P>
+<PRE></PRE>
+
+
+
 <P><DT><B><A NAME="version">Version 1.124</A></B><DD>
 
-Folded in filehandle (FH) support provided by &quot;miko&quot;.
+Folded in filehandle (FH) support in build/attach.
+<I>Thanks to Miko O'Sullivan for the code.</I>
 
 
 <P>
@@ -1525,9 +1614,10 @@ TERMS AND CONDITIONS</FONT></H1>
 
 
 <P>
-Copyright (c) 1997 by Eryq.  All rights reserved.  This program is free
-software; you can redistribute it and/or modify it under the same terms as
-Perl itself.
+Copyright (c) 1997 by Eryq.  
+Copyright (c) 1998 by ZeeGee Software Inc.
+All rights reserved.  This program is free software; you can redistribute 
+it and/or modify it under the same terms as Perl itself.
 
 
 <P>
@@ -1582,8 +1672,8 @@ AUTHOR</FONT></H1>
 
 
 <P>
-Eryq.  President, ZeeGee Software, Inc.
-<I><A HREF="mailto:eryq@zeegee.com">eryq@zeegee.com</A></I> / <I><A HREF="http://www.zeegee.com">http://www.zeegee.com</A></I>.
+Eryq (<I><A HREF="mailto:eryq@zeegee.com">eryq@zeegee.com</A></I>).
+President, ZeeGee Software Inc. (<I><A HREF="http://www.zeegee.com">http://www.zeegee.com</A></I>).
 
 
 <P>
@@ -1592,7 +1682,7 @@ Created: 11 December 1996.  Ho ho ho.
 
 <P><HR>
 <SMALL>
-		Last updated: Mon Nov 23 23:21:54 1998 <BR>
+		Last updated: Mon Dec 14 00:16:21 1998 <BR>
 		Generated by pod2coolhtml 1.101.  Want a copy?  Just email
 		<A HREF="mailto:eryq@zeegee.com">eryq@zeegee.com</A>.
 		(Yes, it's free.)

@@ -12,5 +12,10 @@ examples/bigmsg
 examples/giftest
 examples/hacktest
 examples/signtest
+examples/smtptest
 lib/MIME/Lite.pm
-
+t/ExtUtils/TBone.pm
+t/Utils.pm
+t/head.t
+testin/README
+testout/README

@@ -5,11 +5,6 @@ package MIME::Lite;
 
 MIME::Lite - low-calorie MIME generator
 
-I<B<WARNING:> This is Alpha code.  I have not yet fully tested it, and I can't
-guarantee that the interface won't change in the next few releases
-in a non-backwards-compatible manner.  It is being provided to the
-community for suggestions and in the hopes that it will be useful.>
-
 
 =head1 SYNOPSIS
 
@@ -50,11 +45,18 @@ Create a multipart message (i.e., one with attachments):
 
 Output a message:
 
-    # As a string...
+    # Format as a string:
     $str = $msg->as_string;
     
-    # To a filehandle (say, a "sendmail" stream)...
+    # Print to a filehandle (say, a "sendmail" stream):
     $msg->print(\*SENDMAIL);
+
+
+Send a message:
+
+    # Send in the "best" way (the default is to use "sendmail"):
+    $msg->send;
+      
 
 
 =head1 DESCRIPTION
@@ -95,14 +97,13 @@ Create a multipart message exactly as above, but using the
                 Data    =>"Here's the GIF file you wanted";  
     
     # Attach a part:
-    attach $msg 
-                Type     =>'image/gif',
+    attach $msg Type     =>'image/gif',
                 Path     =>'aaa000123.gif',
                 Filename =>'logo.gif';
-    
+
 
 Output a message to a filehandle:
- 
+
     # Write it to a filehandle:
     $msg->print(\*STDOUT); 
      
@@ -125,10 +126,16 @@ Get a message as a string:
     $str = $msg->body_as_string;
 
 
-# Send a message (Unix systems only!):
+Change how messages are sent:
 
-    # Send it!
-    $msg->send;
+    # Do something like this in your 'main':
+    if ($I_DONT_HAVE_SENDMAIL) {
+       MIME::Lite->send('smtp', "smtp.myisp.net", Timeout=>60);
+    }
+     
+    # Now this will do the right thing:
+    $msg->send;         # will now use Net::SMTP as shown above
+
 
 
 =head1 PUBLIC INTERFACE
@@ -150,7 +157,7 @@ use vars qw($VERSION $QUIET $PARANOID $VANILLA);
 # GLOBALS, EXTERNAL/CONFIGURATION...
 
 # The package version, both in 1.23 style *and* usable by MakeMaker:
-$VERSION = substr q$Revision: 1.126 $, 10;
+$VERSION = substr q$Revision: 1.130 $, 10;
 
 # Don't warn me about dangerous activities:
 $QUIET = undef;
@@ -167,8 +174,13 @@ $VANILLA = 0;
 #
 # GLOBALS, INTERNAL...
 
-# Our sendmail command:
-my $SendmailCmd = "/usr/lib/sendmail -t -oi -oem";
+# Our sending facilities:
+my $Sender     = "sendmail";
+my %SenderArgs = (
+    "sendmail" => ["/usr/lib/sendmail -t -oi -oem"],
+    "smtp"     => [],
+    "sub"      => [],
+);
 
 # Boundary counter:
 my $BCount = 0;
@@ -192,7 +204,7 @@ my @Uses;
 #
 # PRIVATE UTILITY FUNCTIONS...
 
-#------------------------------------------------------------ 
+#------------------------------ 
 #
 # fold STRING
 #
@@ -206,7 +218,7 @@ sub fold {
     $str;
 }
 
-#------------------------------------------------------------
+#------------------------------
 #
 # gen_boundary
 #
@@ -217,7 +229,7 @@ sub gen_boundary {
     return ("_----------=_".($VANILLA ? '' : int(time).$$).$BCount++);
 }
 
-#------------------------------------------------------------
+#------------------------------
 #
 # known_field FIELDNAME
 #
@@ -228,7 +240,7 @@ sub known_field {
     $KnownField{$field} or ($field =~ m{^(content|resent|x)-.});
 }
 
-#------------------------------------------------------------
+#------------------------------
 #
 # is_mime_field FIELDNAME
 #
@@ -244,7 +256,7 @@ sub is_mime_field {
 #
 # PRIVATE ENCODING FUNCTIONS...
 
-#------------------------------------------------------------
+#------------------------------
 #
 # encode_base64 STRING
 #
@@ -279,7 +291,7 @@ sub encode_base64 {
   } # q
 } #if
 
-#------------------------------------------------------------
+#------------------------------
 #
 # encode_qp STRING
 #
@@ -313,7 +325,7 @@ sub encode_qp {
   } # q
 } #if
 
-#------------------------------------------------------------
+#------------------------------
 #
 # encode_8bit STRING
 #
@@ -326,7 +338,7 @@ sub encode_8bit {
     $str;
 }
 
-#------------------------------------------------------------
+#------------------------------
 #
 # encode_7bit STRING
 #
@@ -350,7 +362,7 @@ sub encode_7bit {
 =cut
 
 
-#------------------------------------------------------------
+#------------------------------
 
 =item new [PARAMHASH]
 
@@ -378,7 +390,7 @@ sub new {
 }
 
 
-#------------------------------------------------------------
+#------------------------------
 
 =item attach [OBJECT|PARAMHASH]
 
@@ -454,7 +466,7 @@ sub attach {
     $part1;
 }
 
-#------------------------------------------------------------
+#------------------------------
 
 =item build [PARAMHASH]
 
@@ -628,7 +640,7 @@ sub build {
     my @params = @_;
     my $key;
 
-    # miko note: reorganized to check for exactly one of Data, Path, or FH
+    # Miko's note: reorganized to check for exactly one of Data, Path, or FH
     (defined($params{Data})+defined($params{Path})+defined($params{FH}) <= 1)
 	or croak "supply exactly zero or one of (Data|Path|FH).\n";
 
@@ -671,7 +683,7 @@ sub build {
 	$self->read_now if $params{ReadNow};
     }
     # ...or a filehandle to data:
-    # miko note: this part works much like the path routine just above,
+    # Miko's note: this part works much like the path routine just above,
     elsif (defined($params{FH})) {
 	$self->fh($params{FH});
 	$self->read_now if $params{ReadNow};  # implement later
@@ -761,7 +773,7 @@ sub build {
 
 =cut
 
-#------------------------------------------------------------
+#------------------------------
 #
 # top_level ONOFF
 #
@@ -782,7 +794,7 @@ sub top_level {
     }
 }
 
-#------------------------------------------------------------
+#------------------------------
 
 =item add TAG,VALUE
 
@@ -827,7 +839,7 @@ sub add {
     }
 }
 
-#------------------------------------------------------------
+#------------------------------
 
 =item attr ATTR,[VALUE]
 
@@ -878,7 +890,7 @@ sub attr {
     $self->{Attrs}{$tag}{$subtag};
 }
 
-#------------------------------------------------------------
+#------------------------------
 
 =item delete TAG
 
@@ -905,7 +917,7 @@ sub delete {
     $self;
 }
 
-#------------------------------------------------------------
+#------------------------------
 
 =item fields
 
@@ -964,7 +976,7 @@ sub fields {
     return \@fields;
 }
 
-#------------------------------------------------------------
+#------------------------------
 
 =item filename [FILENAME]
 
@@ -985,7 +997,35 @@ sub filename {
     $self->attr('content-disposition.filename');
 }
 
-#------------------------------------------------------------
+#------------------------------
+
+=item get TAG,[INDEX]
+
+Get the contents of field TAG, which might have been set 
+with set() or replace().  Returns the text of the field.
+
+    $ml->get('Subject', 0);
+
+If the optional 0-based INDEX is given, then we return the INDEX'th
+occurence of field TAG.  Otherwise, we look at the context:
+In a scalar context, only the first (0th) occurence of the 
+field is returned; in an array context, I<all> occurences are returned.  
+
+I<Warning:> this should only be used with non-MIME fields.
+Behavior with MIME fields is TBD, and will raise an exception for now.
+
+=cut
+
+sub get {
+    my ($self, $tag, $index) = @_;
+    $tag = lc($tag); 
+    croak "get: can't be used with MIME fields\n" if is_mime_field($tag);
+    
+    my @all = map { ($_->[0] eq $tag) ? $_->[1] : ()} @{$self->{Header}};
+    (defined($index) ? $all[$index] : (wantarray ? @all : $all[0]));
+}
+
+#------------------------------
 
 =item get_length
 
@@ -1012,7 +1052,7 @@ it's not in the MIME RFCs, it's an HTTP thing), this seems pretty fair.
 =cut
 
 #----
-# miko note: I wasn't quite sure how to handle this, so I waited to hear 
+# Miko's note: I wasn't quite sure how to handle this, so I waited to hear 
 # what you think.  Given that the content-length isn't always required, 
 # and given the performance cost of calculating it from a file handle,
 # I thought it might make more sense to add some some sort of computelength 
@@ -1042,7 +1082,7 @@ sub get_length {
     return $length;
 }
 
-#------------------------------------------------------------
+#------------------------------
 
 =item replace TAG,VALUE
 
@@ -1083,7 +1123,7 @@ sub replace {
 
 =cut
 
-#------------------------------------------------------------
+#------------------------------
 
 =item binmode [OVERRIDE]
 
@@ -1108,7 +1148,7 @@ sub binmode {
 	    : ($self->attr("content-type") !~ m{^(text|message)/}i));
 }
 
-#------------------------------------------------------------
+#------------------------------
 
 =item data [DATA]
 
@@ -1131,7 +1171,7 @@ sub data {
 }
 
 
-#------------------------------------------------------------
+#------------------------------
 
 =item path [PATH]
 
@@ -1164,7 +1204,7 @@ sub path {
     $self->{Path};
 }
 
-#------------------------------------------------------------
+#------------------------------
 
 =item fh [FILEHANDLE]
 
@@ -1182,7 +1222,7 @@ sub fh {
     $self->{FH};
 }
 
-#------------------------------------------------------------
+#------------------------------
 
 =item resetfh [FILEHANDLE]
 
@@ -1195,7 +1235,7 @@ are seekable).
 =cut
 
 #----
-# miko note: With the Data and Path, the same data could theoretically 
+# Miko's note: With the Data and Path, the same data could theoretically 
 # be reused.  However, file handles need to be reset to be reused, 
 # so I added this routine.
 #
@@ -1206,7 +1246,7 @@ sub resetfh {
     seek($self->{FH},0,0);
 }
 
-#------------------------------------------------------------
+#------------------------------
 
 =item read_now 
 
@@ -1241,7 +1281,7 @@ sub read_now {
     }
 }
 
-#------------------------------------------------------------
+#------------------------------
 
 =item sign PARAMHASH
 
@@ -1311,7 +1351,7 @@ sub sign {
 
 =cut
 
-#------------------------------------------------------------
+#------------------------------
 
 =item print [OUTHANDLE]
 
@@ -1357,7 +1397,7 @@ sub print {
     1;
 }
 
-#------------------------------------------------------------
+#------------------------------
 
 =item print_body [OUTHANDLE]
 
@@ -1419,7 +1459,7 @@ sub print_body {
     }
 
     # Else, is the data in a file?  If so, output piecemeal...
-    #    miko note: this routine pretty much works the same with a path 
+    #    Miko's note: this routine pretty much works the same with a path 
     #    or a filehandle. the only difference in behaviour is that it does 
     #    not attempt to open anything if it already has a filehandle
     elsif (defined($self->{Path}) || defined($self->{FH})) {
@@ -1473,7 +1513,7 @@ sub print_body {
     1;
 }
 
-#------------------------------------------------------------
+#------------------------------
 
 =item print_header [OUTHANDLE]
 
@@ -1497,7 +1537,7 @@ sub print_header {
     1;
 }
 
-#------------------------------------------------------------
+#------------------------------
 
 =item as_string
 
@@ -1515,7 +1555,7 @@ sub as_string {
 }
 *stringify = \&as_string;    # backwards compatibility
 
-#------------------------------------------------------------
+#------------------------------
 
 =item body_as_string
 
@@ -1537,7 +1577,7 @@ sub body_as_string {
 }
 *stringify_body = \&body_as_string;    # backwards compatibility
 
-#------------------------------------------------------------
+#------------------------------
 
 =item header_as_string
 
@@ -1574,51 +1614,174 @@ sub header_as_string {
 
 =cut
 
-#------------------------------------------------------------
+#------------------------------
 
 =item send
 
-I<Instance method.>  
-Sends the message.
+=item send HOW, HOWARGS...
 
-Right now, this is done by piping it into the "sendmail" command
-as given by C<sendmail()>.  The default will probably only work 
-on Unix-like systems.
+I<Class/instance method.>  
+This is the principle method for sending mail, and for configuring
+how mail will be sent.
 
-Returns false if sendmail I<seems> to have failed, true otherwise.
-B<Fatal exception> raised if the open fails.
+I<As an instance method> (with no arguments), sends the message by whatever 
+means has been set up (the default is to use the Unix "sendmail" program).
+Returns whatever the mail-handling routine returns: this should be true 
+on success, false/exception on error:
+
+    $msg = MIME::Lite->new(From=>...);
+    $msg->send || die "you DON'T have mail!";
+
+I<As a class method> (with a HOW argument and optional HOWARGS), sets up 
+how the instance method will work for all objects until further notice.
+It treats HOW as a facility name, with optional HOWARGS handled by
+the facility.   There are three facilities:
+
+=over 4
+
+=item "sendmail", SENDMAILCMD
+
+Send a message by piping it into the "sendmail" command.
+Uses the C<send_by_sendmail()> method, giving it the SENDMAILCMD.
+This usage implements (and deprecates) the C<sendmail()> method.
+ 
+=item "smtp", [HOSTNAME]
+
+Send a message by SMTP, using optional HOSTNAME as SMTP-sending host.
+Uses the C<send_by_smtp()> method.
+
+=item "sub", \&SUBREF, ARGS...
+
+Sends a message MSG by invoking the subroutine SUBREF of your choosing,
+with MSG as the first argument, and ARGS following.
+
+=back
+
+I<For example:> let's say you're on an OS which lacks the usual Unix
+"sendmail" facility, but you've installed something a lot like it, and
+you need to configure your Perl script to use this "sendmail.exe" program.
+Do this following in your script's setup:
+
+    MIME::Lite->send('sendmail', "d:\\programs\\sendmail.exe");
+
+Then, whenever you need to send a message $msg, just say:
+
+    $msg->send;
+
+That's it.  Now, if you ever move your script to a Unix box, all you
+need to do is change that line in the setup and you're done.
+All of your $msg-E<gt>send invocations will work as expected.
 
 =cut
 
 sub send {
     my $self = shift;
-   
+    if (ref($self)) {              # instance method:
+	my $method = "send_by_$Sender";
+	my @args   = @{$SenderArgs{$Sender} || []};
+	return $self->$method(@args);
+    }
+    else {                         # class method:
+	$Sender = shift;
+	$SenderArgs{$Sender} = [@_];    # remaining args
+	return 1;
+    }
+}
+
+#------------------------------
+
+=item send_by_sendmail SENDMAILCMD
+
+I<Instance method.>
+Send message via the external "sendmail" program, SENDMAILCMD.
+Returns true on success, false or exception on error.
+
+I<Note:> this facility will probably only work on Unix systems.
+The SENDMAILCMD for this facility must get all its message-specific 
+information from the standard input.
+
+=cut
+
+sub send_by_sendmail {
+    my ($self, $sendmailcmd) = @_;
+
+    # Do it:
     my $pid;
-    open SENDMAIL, "|$SendmailCmd" or croak "open |$SendmailCmd: $!";
+    open SENDMAIL, "|$sendmailcmd" or croak "open |$sendmailcmd: $!";
     $self->print(\*SENDMAIL);
     close SENDMAIL;
     return (($? >> 8) ? undef : 1);
 }
 
+#------------------------------
 
-#------------------------------------------------------------
+=item send_by_smtp [ARGS...]
+
+I<Instance method.>
+Send message via SMTP, using Net::SMTP.  
+The ARGS are sent into Net::SMTP::new(): usually, these are
+
+    MAILHOST, OPTION=>VALUE, ...
+
+Returns true on success, false or exception on error.
+
+=cut
+
+# Provided by Andrew McRae. Version 0.2  anm  09Sep97
+# Copyright 1997 Optimation New Zealand Ltd.
+# May be modified/redistributed under the same terms as Perl.
+#
+sub send_by_smtp {
+    my ($self, @args) = @_;
+
+    # We need the "From:" and "To:" headers to pass to the SMTP mailer:
+    my $hdr = $self->fields();   
+    my $from = $self->get('From');
+    my @to   = $self->get('To');
+
+    # Create SMTP client:
+    require Net::SMTP;
+    my $smtp = MIME::Lite::SMTP->new(@args)
+        or croak "Failed to connect to mail server: $!";
+    $smtp->mail($from)
+        or croak "SMTP MAIL command failed: $!";
+    $smtp->to(@to)
+        or croak "SMTP RCPT command failed: $!";
+    $smtp->data()
+        or croak "SMTP DATA command failed: $!";
+
+    # MIME::Lite can print() to anything with a print() method:
+    $self->print($smtp);
+    $smtp->dataend();
+    $smtp->quit;
+    1;
+}
+
+#------------------------------
+#
+# send_by_sub [\&SUBREF, [ARGS...]]
+#
+# I<Instance method, private.>
+# Send the message via an anonymous subroutine.
+#
+sub send_by_sub {
+    my ($self, $subref, @args) = @_;
+    &$subref($self, @args);
+}
+
+#------------------------------
 
 =item sendmail COMMAND...
 
-I<Class method.>  
-Set up the "sendmail" command used by C<send()>.
-You may supply it as either a single string, or an array of 
-path-to-command-plus-arguments:
-
-    sendmail MIME::Lite "/usr/lib/sendmail", "-t", "-oi", "-oem";
-
-What you see above is the default.
+I<Class method, DEPRECATED.>  
+Declare the sender to be "sendmail", and set up the "sendmail" command.
+I<You should use send() instead.>
 
 =cut
 
 sub sendmail {
     my $self = shift;
-    $SendmailCmd = join(' ', @_);
+    $self->send('sendmail', join(' ', @_));
 }
 
 =back
@@ -1636,7 +1799,7 @@ sub sendmail {
 
 =cut
 
-#------------------------------------------------------------
+#------------------------------
 
 =item quiet ONOFF
 
@@ -1662,6 +1825,20 @@ sub quiet {
 =cut
 
 
+
+#============================================================
+
+package MIME::Lite::SMTP;
+
+#============================================================
+# This class just adds a print() method to Net::SMTP.
+# Notice that we don't use/require it until it's needed!
+
+use strict;
+use vars qw( @ISA );
+@ISA = qw(Net::SMTP);
+
+sub print { shift->datasend(@_) }
 
 
 
@@ -1715,7 +1892,8 @@ sub print {
     1;
 }
 
-
+1;
+__END__
 
 
 #============================================================
@@ -1756,8 +1934,8 @@ your use of MIME::Lite with a healthy diet and exercise.
 
 =head2 Cheap and easy mailing
 
-I thought putting in a sendmail invocation wasn't too bad an idea,
-since a lot of Perlers are on UNIX systems.  The default arguments
+I thought putting in a default "sendmail" invocation wasn't too bad an 
+idea, since a lot of Perlers are on UNIX systems.  The default arguments
 to sendmail (which you can change) are:
 
      -t      Scan message for To:, Cc:, Bcc:, etc.
@@ -1768,6 +1946,10 @@ to sendmail (which you can change) are:
      -oem    On error, mail back the message (I assume to the
              appropriate address, given in the header).
              When mail returns, circle is complete.  Jai guru deva -oem.
+
+If you're not on a Unix system, or if you'd just rather send mail
+some other way, check out the C<send()> method.  There's built in
+support for SMTP delivery, or you can slip in your own hooks. 
 
 
 =head2 Under the hood
@@ -1899,14 +2081,27 @@ non-ASCII characters (e.g., Latin-1, Latin-2, or any other 8-bit alphabet).
 =head1 CHANGE LOG
 
 B<Current version:>
-$Id: Lite.pm,v 1.126 1998/11/13 05:34:49 eryq Exp $
+$Id: Lite.pm,v 1.130 1998/12/14 04:27:41 eryq Exp eryq $
 
 =over 4
 
 
+=item Version 1.130
+
+Added much larger and more-flexible send() facility.
+I<Thanks to Andrew McRae (and Optimation New Zealand Ltd) 
+for the Net::SMTP interface.  Additional thanks to the many folks
+who requested this feature.>
+
+Added get() method for extracting basic attributes.
+
+New... "t" tests!
+
+
 =item Version 1.124
 
-Folded in filehandle (FH) support provided by "miko".
+Folded in filehandle (FH) support in build/attach.
+I<Thanks to Miko O'Sullivan for the code.>
 
 
 =item Version 1.122
@@ -1966,9 +2161,10 @@ Baseline code.
 
 =head1 TERMS AND CONDITIONS
 
-Copyright (c) 1997 by Eryq.  All rights reserved.  This program is free
-software; you can redistribute it and/or modify it under the same terms as
-Perl itself.  
+Copyright (c) 1997 by Eryq.  
+Copyright (c) 1998 by ZeeGee Software Inc.
+All rights reserved.  This program is free software; you can redistribute 
+it and/or modify it under the same terms as Perl itself.  
 
 This software comes with B<NO WARRANTY> of any kind.
 See the COPYING file in the distribution for details.
@@ -1991,13 +2187,10 @@ on any products that bear the name "Lite"...
 
 =head1 AUTHOR
 
-Eryq.  President, ZeeGee Software, Inc.
-F<eryq@zeegee.com> / F<http://www.zeegee.com>.
+Eryq (F<eryq@zeegee.com>).
+President, ZeeGee Software Inc. (F<http://www.zeegee.com>).
 
 Created: 11 December 1996.  Ho ho ho.
 
 =cut
 
-
-#------------------------------------------------------------
-1;
