@@ -244,7 +244,7 @@ use vars qw(
 # GLOBALS, EXTERNAL/CONFIGURATION...
 
 ### The package version, both in 1.23 style *and* usable by MakeMaker:
-$VERSION = substr q$Revision: 2.104 $, 10;
+$VERSION = substr q$Revision: 2.105 $, 10;
 
 ### Don't warn me about dangerous activities:
 $QUIET = undef;
@@ -355,20 +355,6 @@ sub is_mime_field {
 #
 # Unless paranoid, we try to load the real code before supplying our own.
 
-if (eval "require Mail::Address") {
-    push @Uses, "A$Mail::Address::VERSION";
-    eval q{
-#vvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvv	
-sub extract_addrs {
-    return map { $_->format } Mail::Address->parse($_[0]);
-}
-#^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
-    }; ### q
-}
-else {
-    eval q{
-#vvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvv	
-
 my $ATOM      = '[^ \000-\037()<>@,;:\134"\056\133\135]+';
 my $QSTR      = '".*?"';
 my $WORD      = '(?:' . $QSTR . '|' . $ATOM . ')';
@@ -378,7 +364,7 @@ my $ADDR      = '(?:' . $LOCALPART . '@' . $DOMAIN . ')';
 my $PHRASE    = '(?:' . $WORD . ')+';
 my $SEP       = "(?:^\\s*|\\s*,\\s*)";     ### before elems in a list
 
-sub extract_addrs {
+sub my_extract_addrs {
     my $str = shift;
     my @addrs;
     $str =~ s/\s/ /g;     ### collapse whitespace
@@ -396,8 +382,21 @@ sub extract_addrs {
     }
     return @addrs;
 }
-#^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
-  }; ### q
+
+if (eval "require Mail::Address") {
+    push @Uses, "A$Mail::Address::VERSION";
+    eval q{
+	sub extract_addrs {
+	    return map { $_->format } Mail::Address->parse($_[0]);
+	}
+    }; ### q
+}
+else {
+    eval q{
+        sub extract_addrs {
+	    return my_extract_addrs(@_);
+	}
+    }; ### q
 } ### if
 
 
@@ -2618,12 +2617,41 @@ non-ASCII characters (e.g., Latin-1, Latin-2, or any other 8-bit alphabet).
 
 =head1 VERSION
 
-$Id: Lite.pm,v 2.104 2000/09/28 07:06:08 eryq Exp $
+$Id: Lite.pm,v 2.105 2000/10/14 16:31:42 eryq Exp $
 
 
 =head1 CHANGE LOG
 
 =over 4
+
+=item Version 2.105   (2000/10/14)
+
+The regression-test failure was identified, and it was my fault.
+Apparently some of the \-quoting in my "autoloaded" code was
+making Perl 5.6 unhappy.  For this nesting-related idiocy, 
+a nesting kaiku.
+I<Thanks to Scott Schwartz for identifying the problem.>
+
+    In a pattern, my
+       backslash-s dwells peacefully,
+    unambiguous --
+     
+       but I embed it
+          in a double-quoted string    
+       doubling the backslash --
+     
+          interpolating
+             that same double-quoted string 
+          in other patterns --
+           
+             and, worlds within worlds,
+                I single-quote the function
+             to autoload it -- 
+    
+          changing the meaning
+       of the backslash and the 's';
+    and Five-Point-Six growls.
+
 
 =item Version 2.104   (2000/09/28)
 

@@ -953,9 +953,35 @@ A MIME PRIMER
         8-bit alphabet).
 
 VERSION
-    $Id: Lite.pm,v 2.104 2000/09/28 07:06:08 eryq Exp $
+    $Id: Lite.pm,v 2.105 2000/10/14 16:31:42 eryq Exp $
 
 CHANGE LOG
+    Version 2.105   (2000/10/14)
+        The regression-test failure was identified, and it was my fault.
+        Apparently some of the \-quoting in my "autoloaded" code was making
+        Perl 5.6 unhappy. For this nesting-related idiocy, a nesting kaiku.
+        *Thanks to Scott Schwartz for identifying the problem.*
+
+            In a pattern, my
+               backslash-s dwells peacefully,
+            unambiguous --
+             
+               but I embed it
+                  in a double-quoted string    
+               doubling the backslash --
+             
+                  interpolating
+                     that same double-quoted string 
+                  in other patterns --
+                   
+                     and, worlds within worlds,
+                        I single-quote the function
+                     to autoload it -- 
+            
+                  changing the meaning
+               of the backslash and the 's';
+            and Five-Point-Six growls.
+
     Version 2.104   (2000/09/28)
         Now attempts to load and use Mail::Address for parsing email
         addresses *before* falling back to our own method. *Thanks to

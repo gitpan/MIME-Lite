@@ -1422,7 +1422,7 @@ non-ASCII characters (e.g., Latin-1, Latin-2, or any other 8-bit alphabet).
 <A NAME="VERSION"><H2><A HREF="#__TOP__"><IMG SRC="icons/h1bullet.gif" ALT="Top" BORDER="0"></A> VERSION</H2></A>
 
 
-<P>$Id: Lite.pm,v 2.104 2000/09/28 07:06:08 eryq Exp $
+<P>$Id: Lite.pm,v 2.105 2000/10/14 16:31:42 eryq Exp $
 
 
 
@@ -1432,6 +1432,35 @@ non-ASCII characters (e.g., Latin-1, Latin-2, or any other 8-bit alphabet).
 
 
 <DL>
+<P><DT><B><A NAME="item:Version">Version 2.105   (2000/10/14)</A></B></DT>
+<DD>
+The regression-test failure was identified, and it was my fault.
+Apparently some of the \-quoting in my &quot;autoloaded&quot; code was
+making Perl 5.6 unhappy.  For this nesting-related idiocy, 
+a nesting kaiku.
+<I>Thanks to Scott Schwartz for identifying the problem.</I>
+
+<FONT SIZE=3 FACE="courier"><PRE>
+    In a pattern, my
+       backslash-s dwells peacefully,
+    unambiguous --
+     
+       but I embed it
+          in a double-quoted string    
+       doubling the backslash --
+     
+          interpolating
+             that same double-quoted string 
+          in other patterns --
+           
+             and, worlds within worlds,
+                I single-quote the function
+             to autoload it -- 
+    
+          changing the meaning
+       of the backslash and the 's';
+    and Five-Point-Six growls.
+</PRE></FONT>
 <P><DT><B><A NAME="item:Version">Version 2.104   (2000/09/28)</A></B></DT>
 <DD>
 Now attempts to load and use Mail::Address for parsing email 
@@ -1666,7 +1695,7 @@ President, ZeeGee Software Inc. (<I><FILE><A HREF="http://www.zeegee.com">http:/
 
 <P><HR>
 <ADDRESS><FONT SIZE=-1>
-Generated Thu Sep 28 03:07:03 2000 by cvu_pod2html
+Generated Sat Oct 14 12:34:04 2000 by cvu_pod2html
 </FONT></ADDRESS>
 </FONT></BODY>
 </HTML>
