@@ -16,7 +16,15 @@ my @pairs =
       1,
       '<me@myhost.com>'],
 
+     ['  mylogin      ',
+      1,
+      '<mylogin>'],
+
      ['   "Me, Jr." <  me@myhost.com >  ',
+      1,
+      '<me@myhost.com>'],
+
+     ['  Me   <me@myhost.com>',
       1,
       '<me@myhost.com>'],
 
@@ -38,7 +46,11 @@ my @pairs =
 
      ['"Me" <me@myhost.com>, you@yourhost.com, "And also" <she@herhost.com>',
       3,
-      '<me@myhost.com> <you@yourhost.com> <she@herhost.com>']
+      '<me@myhost.com> <you@yourhost.com> <she@herhost.com>'],
+
+     ['"Me" <me@myhost.com>, mylogin  ,yourlogin  , She <she@herhost.com>',
+      4,
+      '<me@myhost.com> <mylogin> <yourlogin> <she@herhost.com>']
      );
       
 

@@ -243,7 +243,7 @@ use vars qw(
 # GLOBALS, EXTERNAL/CONFIGURATION...
 
 ### The package version, both in 1.23 style *and* usable by MakeMaker:
-$VERSION = substr q$Revision: 1.145 $, 10;
+$VERSION = substr q$Revision: 1.146 $, 10;
 
 ### Don't warn me about dangerous activities:
 $QUIET = undef;
@@ -294,13 +294,16 @@ qw(
 my @Uses;
 
 ### Regexps:
-my $ATOM  = '[^ \000-\037()<>@,;:\134"\056\133\135]+';
-my $QSTR  = '".*?"';
-my $WORD  = '(?:' . $QSTR . '|' . $ATOM . ')';
-my $DOMAIN     = '(?:' . $ATOM . '(?:' . '\\.' . $ATOM . ')*' . ')';
-my $LOCALPART  = '(?:' . $WORD . '(?:' . '\\.' . $WORD . ')*' . ')';
-my $ADDR       = '(?:' . $LOCALPART . '@' . $DOMAIN . ')';
-my $PHRASE = $QSTR;
+my $ATOM      = '[^ \000-\037()<>@,;:\134"\056\133\135]+';
+my $QSTR      = '".*?"';
+my $WORD      = '(?:' . $QSTR . '|' . $ATOM . ')';
+my $DOMAIN    = '(?:' . $ATOM . '(?:' . '\\.' . $ATOM . ')*' . ')';
+my $LOCALPART = '(?:' . $WORD . '(?:' . '\\.' . $WORD . ')*' . ')';
+my $ADDR      = '(?:' . $LOCALPART . '@' . $DOMAIN . ')';
+my $PHRASE    = '(?:' . $WORD . ')+';
+
+my $SEP       = "(?:^\\s*|\\s*,\\s*)";     ### before elems in a list
+
 
 #==============================
 #==============================
@@ -361,11 +364,19 @@ sub is_mime_field {
 
 sub extract_addrs {
     my $str = shift;
-    $str =~ s/\s/ /g;     ### collapse whitespace
     my @addrs;
-    while ($str =~ m{\G\s*(($ADDR)|$PHRASE\s*<\s*($ADDR)\s*>)(\s*,)?}go) { 
-	my $addr = $2 ? $2 : $3;
-	push @addrs, $addr;
+    $str =~ s/\s/ /g;     ### collapse whitespace
+
+    pos($str) = 0;
+    while ($str !~ m{\G\s*\Z}gco) {
+	### print STDERR "TACKLING: ".substr($str, pos($str))."\n";
+	if    ($str =~ m{\G$SEP$PHRASE\s*<\s*($ADDR)\s*>}gco) {push @addrs,$1}
+	elsif ($str =~ m{\G$SEP($ADDR)}gco)                   {push @addrs,$1}
+	elsif ($str =~ m{\G$SEP($ATOM)}gco)                   {push @addrs,$1}
+	else { 
+	    my $problem = substr($str, pos($str));
+	    die "can't extract address at <$problem> in <$str>\n";
+	}
     }
     return @addrs;
 }
@@ -500,9 +511,9 @@ sub new {
 
     ### Create basic object:
     my $self = {
-	Attrs => {},
-	Header => [],    ### message header
-	Parts => [],     ### array of parts
+	Attrs   => {},     ### MIME attributes
+	Header  => [],     ### explicit message headers
+	Parts   => [],     ### array of parts
     };    
     bless $self, $class;
 
@@ -630,6 +641,15 @@ I<Alternative to "Path" or "FH".>
 The actual message data.  This may be a scalar or a ref to an array of
 strings; if the latter, the message consists of a simple concatenation 
 of all the strings in the array.
+
+=item Datestamp
+
+I<Optional.>
+If given true (or omitted), we force the creation of a C<Date:> field 
+stamped with the current date/time if this is a top-level message.  
+You may want this if using L</send_by_smtp>.  
+If you don't want this to be done, either provide your own Date
+or explicitly set this to false.
 
 =item Disposition
 
@@ -860,10 +880,20 @@ sub build {
 	$self->get_length;
     }
 
-    
     ### Init the top-level fields:
-    $self->top_level(defined($params{Top}) ? $params{Top} : 1);
+    my $is_top = defined($params{Top}) ? $params{Top} : 1;
+    $self->top_level($is_top);
 
+    ### Datestamp if desired:
+    my $ds_wanted    = $params{Datestamp};
+    my $ds_defaulted = ($is_top and !exists($params{Datestamp}));
+    if (($ds_wanted or $ds_defaulted) and !exists($params{Date})) {
+	my ($u_wdy, $u_mon, $u_mdy, $u_time, $u_y4) = 
+	    split /\s+/, gmtime()."";   ### should be non-locale-dependent
+	my $date = "$u_wdy, $u_mdy $u_mon $u_y4 $u_time UT";
+	$self->add("date", $date);
+    }
+    
     ### Set message headers:
     my @paramz = @params;
     my $field;
@@ -2188,7 +2218,7 @@ __END__
 =head1 NOTES
 
 
-=head2 Limitations
+=head2 Benign limitations
 
 This is "lite", after all...
 
@@ -2261,8 +2291,30 @@ In any case, check out the L</send> method.
 
 =head1 WARNINGS
 
+=head2 Good-vs-bad email addresses with send_by_smtp()
 
-=head2 Lazy formatting of headers
+If using L</send_by_smtp>, be aware that you are forcing MIME::Lite
+to extract email addresses out of a possible list provided in the
+C<To:>, C<Cc:>, and C<Bcc:> fields.  This is tricky stuff, and as such only
+the following sorts of addresses will work reliably:
+
+    username
+    full.name@some.host.com
+    "Name, Full" <full.name@some.host.com>
+
+This last form is discouraged because SMTP must be able to get
+at the I<name> or I<name@domain> portion.
+
+B<Disclaimer:>
+MIME::Lite was never intended to be a Mail User Agent, so please
+don't expect a full implementation of RFC-822.  Restrict yourself to
+the common forms of Internet addresses described herein, and you should
+be fine.  If this is not feasible, then consider using MIME::Lite
+to I<prepare> your message only, and using Net::SMTP explicitly to 
+I<send> your message.
+
+
+=head2 Formatting of headers delayed until print()
 
 This class treats a MIME header in the most abstract sense,
 as being a collection of high-level attributes.  The actual
@@ -2270,7 +2322,7 @@ RFC-822-style header fields are not constructed until it's time
 to actually print the darn thing.
 
 
-=head2 Lazy encoding of data
+=head2 Encoding of data delayed until print()
 
 When you specify message bodies (in L</build> or L</attach>) -- 
 whether by B<FH>, B<Data>, or B<Path> -- be warned that we don't 
@@ -2311,7 +2363,7 @@ MIME::Lite will warn you if you attempt to C<set()> or C<replace()>
 any MIME header field.  Use C<attr()> instead.
 
 
-=head2 Lines consisting of a single dot
+=head2 Beware of lines consisting of a single dot
 
 Julian Haight noted that MIME::Lite allows you to compose messages
 with lines in the body consisting of a single ".".  
@@ -2427,9 +2479,17 @@ non-ASCII characters (e.g., Latin-1, Latin-2, or any other 8-bit alphabet).
 =head1 CHANGE LOG
 
 B<Current version:>
-$Id: Lite.pm,v 1.145 2000/05/06 16:57:20 eryq Exp $
+$Id: Lite.pm,v 1.146 2000/05/18 06:10:38 eryq Exp $
 
 =over 4
+
+=item Version 1.146
+
+Fixed bug in parsing of addresses; please read the WARNINGS section
+which describes recommended address formats for "To:", "Cc:", etc.
+Also added automatic inclusion of a UT "Date:" at top level unless 
+explicitly told not to.
+I<Thanks to Andy Jacobs for the bug report and the suggestion.>
 
 =item Version 1.145 
 

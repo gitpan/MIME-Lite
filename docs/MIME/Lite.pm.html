@@ -29,15 +29,16 @@
 </UL>
 <LI> <A HREF="#NOTES">NOTES</A>
 <UL>
-<LI> <A HREF="#Limitations">Limitations</A>
+<LI> <A HREF="#Benign_limitations">Benign limitations</A>
 <LI> <A HREF="#Cheap_and_easy_mailing">Cheap and easy mailing</A>
 </UL>
 <LI> <A HREF="#WARNINGS">WARNINGS</A>
 <UL>
-<LI> <A HREF="#Lazy_formatting_of_headers">Lazy formatting of headers</A>
-<LI> <A HREF="#Lazy_encoding_of_data">Lazy encoding of data</A>
+<LI> <A HREF="#Good-vs-bad_email_addresses_with_send_by_smtp">Good-vs-bad email addresses with send_by_smtp()</A>
+<LI> <A HREF="#Formatting_of_headers_delayed_until_print">Formatting of headers delayed until print()</A>
+<LI> <A HREF="#Encoding_of_data_delayed_until_print">Encoding of data delayed until print()</A>
 <LI> <A HREF="#MIME_attributes_are_separate_from_header_fields">MIME attributes are separate from header fields!</A>
-<LI> <A HREF="#Lines_consisting_of_a_single_dot">Lines consisting of a single dot</A>
+<LI> <A HREF="#Beware_of_lines_consisting_of_a_single_dot">Beware of lines consisting of a single dot</A>
 </UL>
 <LI> <A HREF="#A_MIME_PRIMER">A MIME PRIMER</A>
 <UL>
@@ -416,6 +417,15 @@ field (and it sort of looks like one too).
 The actual message data.  This may be a scalar or a ref to an array of
 strings; if the latter, the message consists of a simple concatenation 
 of all the strings in the array.
+
+<P><DT><B><A NAME="item:Datestamp">Datestamp</A></B></DT>
+<DD>
+<I>Optional.</I>
+If given true (or omitted), we force the creation of a <CODE>Date:</CODE> field 
+stamped with the current date/time if this is a top-level message.  
+You may want this if using <A HREF="#item:send_by_smtp">send_by_smtp</A>.  
+If you don't want this to be done, either provide your own Date
+or explicitly set this to false.
 
 <P><DT><B><A NAME="item:Disposition">Disposition</A></B></DT>
 <DD>
@@ -1097,7 +1107,7 @@ you should reconsider the whole line.  <CODE>;-)</CODE>
 
 
 <P><HR>
-<A NAME="Limitations"><H3><A HREF="#__TOP__"><IMG SRC="icons/h2bullet.gif" ALT="Top" BORDER="0"></A> Limitations</H3></A>
+<A NAME="Benign_limitations"><H3><A HREF="#__TOP__"><IMG SRC="icons/h2bullet.gif" ALT="Top" BORDER="0"></A> Benign limitations</H3></A>
 
 
 <P>This is &quot;lite&quot;, after all...
@@ -1185,7 +1195,36 @@ In any case, check out the <A HREF="#item:send">send</A> method.
 
 
 <P><HR>
-<A NAME="Lazy_formatting_of_headers"><H3><A HREF="#__TOP__"><IMG SRC="icons/h2bullet.gif" ALT="Top" BORDER="0"></A> Lazy formatting of headers</H3></A>
+<A NAME="Good-vs-bad_email_addresses_with_send_by_smtp"><H3><A HREF="#__TOP__"><IMG SRC="icons/h2bullet.gif" ALT="Top" BORDER="0"></A> Good-vs-bad email addresses with send_by_smtp()</H3></A>
+
+
+<P>If using <A HREF="#item:send_by_smtp">send_by_smtp</A>, be aware that you are forcing MIME::Lite
+to extract email addresses out of a possible list provided in the
+<CODE>To:</CODE>, <CODE>Cc:</CODE>, and <CODE>Bcc:</CODE> fields.  This is tricky stuff, and as such only
+the following sorts of addresses will work reliably:
+
+<PRE>
+    username
+    full.name@some.host.com
+    &quot;Name, Full&quot; &lt;full.name@some.host.com&gt;
+</PRE>
+
+<P>This last form is discouraged because SMTP must be able to get
+at the <I>name</I> or <I>name@domain</I> portion.
+
+
+<P><B>Disclaimer:</B>
+MIME::Lite was never intended to be a Mail User Agent, so please
+don't expect a full implementation of RFC-822.  Restrict yourself to
+the common forms of Internet addresses described herein, and you should
+be fine.  If this is not feasible, then consider using MIME::Lite
+to <I>prepare</I> your message only, and using Net::SMTP explicitly to 
+<I>send</I> your message.
+
+
+
+<P><HR>
+<A NAME="Formatting_of_headers_delayed_until_print"><H3><A HREF="#__TOP__"><IMG SRC="icons/h2bullet.gif" ALT="Top" BORDER="0"></A> Formatting of headers delayed until print()</H3></A>
 
 
 <P>This class treats a MIME header in the most abstract sense,
@@ -1196,7 +1235,7 @@ to actually print the darn thing.
 
 
 <P><HR>
-<A NAME="Lazy_encoding_of_data"><H3><A HREF="#__TOP__"><IMG SRC="icons/h2bullet.gif" ALT="Top" BORDER="0"></A> Lazy encoding of data</H3></A>
+<A NAME="Encoding_of_data_delayed_until_print"><H3><A HREF="#__TOP__"><IMG SRC="icons/h2bullet.gif" ALT="Top" BORDER="0"></A> Encoding of data delayed until print()</H3></A>
 
 
 <P>When you specify message bodies (in <A HREF="#item:build">build</A> or <A HREF="#item:attach">attach</A>) -- 
@@ -1249,7 +1288,7 @@ any MIME header field.  Use <CODE>attr()</CODE> instead.
 
 
 <P><HR>
-<A NAME="Lines_consisting_of_a_single_dot"><H3><A HREF="#__TOP__"><IMG SRC="icons/h2bullet.gif" ALT="Top" BORDER="0"></A> Lines consisting of a single dot</H3></A>
+<A NAME="Beware_of_lines_consisting_of_a_single_dot"><H3><A HREF="#__TOP__"><IMG SRC="icons/h2bullet.gif" ALT="Top" BORDER="0"></A> Beware of lines consisting of a single dot</H3></A>
 
 
 <P>Julian Haight noted that MIME::Lite allows you to compose messages
@@ -1383,11 +1422,19 @@ non-ASCII characters (e.g., Latin-1, Latin-2, or any other 8-bit alphabet).
 
 
 <P><B>Current version:</B>
-$Id: Lite.pm,v 1.145 2000/05/06 16:57:20 eryq Exp $
+$Id: Lite.pm,v 1.146 2000/05/18 06:10:38 eryq Exp $
 
 
 
 <DL>
+<P><DT><B><A NAME="item:Version">Version 1.146</A></B></DT>
+<DD>
+Fixed bug in parsing of addresses; please read the WARNINGS section
+which describes recommended address formats for &quot;To:&quot;, &quot;Cc:&quot;, etc.
+Also added automatic inclusion of a UT &quot;Date:&quot; at top level unless 
+explicitly told not to.
+<I>Thanks to Andy Jacobs for the bug report and the suggestion.</I>
+
 <P><DT><B><A NAME="item:Version">Version 1.145</A></B></DT>
 <DD>
 Fixed bug in encode_7bit(): a lingering <CODE>/e</CODE> modifier was removed.
@@ -1567,7 +1614,7 @@ President, ZeeGee Software Inc. (<I><FILE><A HREF="http://www.zeegee.com">http:/
 
 <P><HR>
 <ADDRESS><FONT SIZE=-1>
-Generated Sat May  6 13:00:17 2000 by cvu_pod2html
+Generated Thu May 18 02:11:07 2000 by cvu_pod2html
 </FONT></ADDRESS>
 </BODY>
 </HTML>

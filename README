@@ -256,6 +256,14 @@ PUBLIC INTERFACE
             message consists of a simple concatenation of all the strings in
             the array.
 
+    Datestamp
+            *Optional.* If given true (or omitted), we force the creation of
+            a `Date:' field stamped with the current date/time if this is a
+            top-level message. You may want this if using the send_by_smtp
+            entry elsewhere in this document . If you don't want this to be
+            done, either provide your own Date or explicitly set this to
+            false.
+
     Disposition
             *Optional.* The content disposition, `"inline"' or
             `"attachment"'. The default is `"inline"'.
@@ -731,7 +739,7 @@ PUBLIC INTERFACE
         should reconsider the whole line. `;-)'
 
 NOTES
-  Limitations
+  Benign limitations
 
     This is "lite", after all...
 
@@ -789,14 +797,36 @@ NOTES
     the the send entry elsewhere in this document method.
 
 WARNINGS
-  Lazy formatting of headers
+  Good-vs-bad email addresses with send_by_smtp()
+
+    If using the send_by_smtp entry elsewhere in this document be aware that
+    you are forcing MIME::Lite to extract email addresses out of a possible
+    list provided in the `To:', `Cc:', and `Bcc:' fields. This is tricky
+    stuff, and as such only the following sorts of addresses will work
+    reliably:
+
+        username
+        full.name@some.host.com
+        "Name, Full" <full.name@some.host.com>
+
+    This last form is discouraged because SMTP must be able to get at the
+    *name* or *name@domain* portion.
+
+    Disclaimer: MIME::Lite was never intended to be a Mail User Agent, so
+    please don't expect a full implementation of RFC-822. Restrict yourself
+    to the common forms of Internet addresses described herein, and you
+    should be fine. If this is not feasible, then consider using MIME::Lite
+    to *prepare* your message only, and using Net::SMTP explicitly to *send*
+    your message.
+
+  Formatting of headers delayed until print()
 
     This class treats a MIME header in the most abstract sense, as being a
     collection of high-level attributes. The actual RFC-822-style header
     fields are not constructed until it's time to actually print the darn
     thing.
 
-  Lazy encoding of data
+  Encoding of data delayed until print()
 
     When you specify message bodies (in the build entry elsewhere in this
     document or the attach entry elsewhere in this document ) -- whether by
@@ -836,7 +866,7 @@ WARNINGS
     will warn you if you attempt to `set()' or `replace()' any MIME header
     field. Use `attr()' instead.
 
-  Lines consisting of a single dot
+  Beware of lines consisting of a single dot
 
     Julian Haight noted that MIME::Lite allows you to compose messages with
     lines in the body consisting of a single ".". This is true: it should be
@@ -921,7 +951,14 @@ A MIME PRIMER
         8-bit alphabet).
 
 CHANGE LOG
-    Current version: $Id: Lite.pm,v 1.145 2000/05/06 16:57:20 eryq Exp $
+    Current version: $Id: Lite.pm,v 1.146 2000/05/18 06:10:38 eryq Exp $
+
+    Version 1.146
+        Fixed bug in parsing of addresses; please read the WARNINGS section
+        which describes recommended address formats for "To:", "Cc:", etc.
+        Also added automatic inclusion of a UT "Date:" at top level unless
+        explicitly told not to. *Thanks to Andy Jacobs for the bug report
+        and the suggestion.*
 
     Version 1.145
         Fixed bug in encode_7bit(): a lingering `/e' modifier was removed.
