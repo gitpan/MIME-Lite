@@ -8,7 +8,7 @@ $msg = new MIME::Lite
      Subject  => 'SMTP test',
      Type     => 'image/gif',		       
      Encoding => 'base64',
-     Path     => "./docs/MIME/mime-sm.gif";
+     Path     => "./docs/MIME/icons/zeegee.gif";
 
 # sendmail...
 $msg->replace('Subject', "smtptest: 1: sendmail via send");

@@ -951,7 +951,13 @@ A MIME PRIMER
         8-bit alphabet).
 
 CHANGE LOG
-    Current version: $Id: Lite.pm,v 1.146 2000/05/18 06:10:38 eryq Exp $
+    Current version: $Id: Lite.pm,v 1.147 2000/06/02 06:52:15 eryq Exp $
+
+    Version 1.147
+        Fixed buglet where lack of Cc:/Bcc: was causing extract_addrs to
+        emit "undefined variable" warnings. Also, lack of a "To:" field now
+        causes a croak. *Thanks to David Mitchell for the bug report and
+        suggested patch.*
 
     Version 1.146
         Fixed bug in parsing of addresses; please read the WARNINGS section

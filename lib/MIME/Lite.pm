@@ -220,6 +220,7 @@ Default is B<true>.
 
 =cut
 
+require 5.004;     ### for /c modifier in m/\G.../gc modifier
 
 use Carp;
 use FileHandle;
@@ -243,7 +244,7 @@ use vars qw(
 # GLOBALS, EXTERNAL/CONFIGURATION...
 
 ### The package version, both in 1.23 style *and* usable by MakeMaker:
-$VERSION = substr q$Revision: 1.146 $, 10;
+$VERSION = substr q$Revision: 1.147 $, 10;
 
 ### Don't warn me about dangerous activities:
 $QUIET = undef;
@@ -2046,23 +2047,29 @@ sub send_by_smtp {
     my ($self, @args) = @_;
 
     ### We need the "From:" and "To:" headers to pass to the SMTP mailer:
-    my $hdr = $self->fields();   
+    my $hdr  = $self->fields();   
     my $from = $self->get('From');
+    my $to   = $self->get('To');
 
+    ### Sanity check:
+    defined($to) or croak "send_by_smtp: missing 'To:' address\n";
+ 	       
     ### Get the destinations as a simple array of addresses:
-    my @to   = extract_addrs($self->get('To'));
+    my @to_all = extract_addrs($to);
     if ($AUTO_CC) {
-	push @to, extract_addrs($self->get('Cc')), 
-	          extract_addrs($self->get('Bcc'));
+	foreach my $field (qw(Cc Bcc)) {
+	    my $value = $self->get($field);
+	    push @to_all, extract_addrs($value) if defined($value);
+	}
     }
-		
+
     ### Create SMTP client:
     require Net::SMTP;
     my $smtp = MIME::Lite::SMTP->new(@args)
         or croak "Failed to connect to mail server: $!";
     $smtp->mail($from)
         or croak "SMTP MAIL command failed: $!";
-    $smtp->to(@to)
+    $smtp->to(@to_all)
         or croak "SMTP RCPT command failed: $!";
     $smtp->data()
         or croak "SMTP DATA command failed: $!";
@@ -2479,9 +2486,17 @@ non-ASCII characters (e.g., Latin-1, Latin-2, or any other 8-bit alphabet).
 =head1 CHANGE LOG
 
 B<Current version:>
-$Id: Lite.pm,v 1.146 2000/05/18 06:10:38 eryq Exp $
+$Id: Lite.pm,v 1.147 2000/06/02 06:52:15 eryq Exp $
 
 =over 4
+
+=item Version 1.147
+
+Fixed buglet where lack of Cc:/Bcc: was causing extract_addrs
+to emit "undefined variable" warnings.  Also, lack of a "To:" field
+now causes a croak.
+I<Thanks to David Mitchell for the bug report and suggested patch.>
+
 
 =item Version 1.146
 

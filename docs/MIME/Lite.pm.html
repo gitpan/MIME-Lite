@@ -1422,11 +1422,18 @@ non-ASCII characters (e.g., Latin-1, Latin-2, or any other 8-bit alphabet).
 
 
 <P><B>Current version:</B>
-$Id: Lite.pm,v 1.146 2000/05/18 06:10:38 eryq Exp $
+$Id: Lite.pm,v 1.147 2000/06/02 06:52:15 eryq Exp $
 
 
 
 <DL>
+<P><DT><B><A NAME="item:Version">Version 1.147</A></B></DT>
+<DD>
+Fixed buglet where lack of Cc:/Bcc: was causing extract_addrs
+to emit &quot;undefined variable&quot; warnings.  Also, lack of a &quot;To:&quot; field
+now causes a croak.
+<I>Thanks to David Mitchell for the bug report and suggested patch.</I>
+
 <P><DT><B><A NAME="item:Version">Version 1.146</A></B></DT>
 <DD>
 Fixed bug in parsing of addresses; please read the WARNINGS section
@@ -1614,7 +1621,7 @@ President, ZeeGee Software Inc. (<I><FILE><A HREF="http://www.zeegee.com">http:/
 
 <P><HR>
 <ADDRESS><FONT SIZE=-1>
-Generated Thu May 18 02:11:07 2000 by cvu_pod2html
+Generated Fri Jun  2 02:53:01 2000 by cvu_pod2html
 </FONT></ADDRESS>
 </BODY>
 </HTML>
