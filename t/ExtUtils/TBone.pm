@@ -88,7 +88,7 @@ use FileHandle;
 use File::Basename;
 
 # The package version, both in 1.23 style *and* usable by MakeMaker:
-$VERSION = substr q$Revision: 1.116 $, 10;
+$VERSION = substr q$Revision: 1.117 $, 10;
 
 
 
@@ -480,7 +480,7 @@ sub catfile {
 =head1 CHANGE LOG
 
 B<Current version:>
-$Id: TBone.pm,v 1.116 2000/03/23 07:17:40 eryq Exp $
+$Id: TBone.pm,v 1.117 2000/08/16 05:08:09 eryq Exp $
 
 =over 4
 

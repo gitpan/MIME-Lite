@@ -1039,6 +1039,16 @@ to indicate a forged envelope.  To avoid this, you can either
     command to your <I>sendmail.cf</I> file 
     (e.g.: <CODE>Teryq</CODE> if the script is running as user &quot;eryq&quot;).
 
+<P><DT><B><A NAME="item:FromSender">FromSender</A></B></DT>
+<DD>
+If defined, this is identical to setting SetSender to true, 
+except that instead of looking at the &quot;From:&quot; field we use 
+the address given by this option.
+Thus:
+
+<FONT SIZE=3 FACE="courier"><PRE>
+    FromSender =&gt; 'me@myhost.com'
+</PRE></FONT>
 </DL>
 
 <P><DT><B><A NAME="item:send_by_smtp">send_by_smtp ARGS...</A></B></DT>
@@ -1412,7 +1422,7 @@ non-ASCII characters (e.g., Latin-1, Latin-2, or any other 8-bit alphabet).
 <A NAME="VERSION"><H2><A HREF="#__TOP__"><IMG SRC="icons/h1bullet.gif" ALT="Top" BORDER="0"></A> VERSION</H2></A>
 
 
-<P>$Id: Lite.pm,v 2.102 2000/08/15 01:32:50 eryq Exp $
+<P>$Id: Lite.pm,v 2.104 2000/09/28 07:06:08 eryq Exp $
 
 
 
@@ -1422,6 +1432,28 @@ non-ASCII characters (e.g., Latin-1, Latin-2, or any other 8-bit alphabet).
 
 
 <DL>
+<P><DT><B><A NAME="item:Version">Version 2.104   (2000/09/28)</A></B></DT>
+<DD>
+Now attempts to load and use Mail::Address for parsing email 
+addresses <I>before</I> falling back to our own method.
+<I>Thanks to numerous people for suggesting this.</I>
+
+<FONT SIZE=3 FACE="courier"><PRE>
+    Parsing addresses
+       is too damn hard. One last hope:
+    Let Graham Barr do it!
+</PRE></FONT>
+
+<P>For the curious, the version of Mail::Address appears 
+as the &quot;A&quot; number in the X-Mailer:
+
+<FONT SIZE=3 FACE="courier"><PRE>
+    X-Mailer: MIME::Lite 2.104  (A1.15; B2.09; Q2.03)
+</PRE></FONT>
+
+<P>Added <B>FromSender</B> option to send_by_sendmail().
+<I>Thanks to Bill Moseley for suggesting this feature.</I>
+
 <P><DT><B><A NAME="item:Version">Version 2.101   (2000/06/06)</A></B></DT>
 <DD>
 Major revision to print_body() and body_as_string() so that
@@ -1634,7 +1666,7 @@ President, ZeeGee Software Inc. (<I><FILE><A HREF="http://www.zeegee.com">http:/
 
 <P><HR>
 <ADDRESS><FONT SIZE=-1>
-Generated Mon Aug 14 23:13:57 2000 by cvu_pod2html
+Generated Thu Sep 28 03:07:03 2000 by cvu_pod2html
 </FONT></ADDRESS>
 </FONT></BODY>
 </HTML>

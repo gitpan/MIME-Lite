@@ -54,6 +54,14 @@ my @pairs =
      );
       
 
+# Abort?
+if (eval "require Mail::Address") {
+    $T->begin(1);
+    $T->ok(1, "we have and trust Mail::Address");
+    $T->end;
+    exit 0;
+}  
+
 # Begin testing:
 $T->begin(2 * @pairs);
 
@@ -61,7 +69,7 @@ $T->begin(2 * @pairs);
 foreach my $pair (@pairs) {
     my ($to, $count, $result) = @$pair;
     my @addrs = MIME::Lite::extract_addrs($to);
-    
+
     $T->ok_eqnum(int(@addrs), $count,
                  "compare count",
 		 In => $to);

@@ -244,7 +244,7 @@ use vars qw(
 # GLOBALS, EXTERNAL/CONFIGURATION...
 
 ### The package version, both in 1.23 style *and* usable by MakeMaker:
-$VERSION = substr q$Revision: 2.102 $, 10;
+$VERSION = substr q$Revision: 2.104 $, 10;
 
 ### Don't warn me about dangerous activities:
 $QUIET = undef;
@@ -294,16 +294,6 @@ qw(
 ### What external packages do we use for encoding?
 my @Uses;
 
-### Regexps:
-my $ATOM      = '[^ \000-\037()<>@,;:\134"\056\133\135]+';
-my $QSTR      = '".*?"';
-my $WORD      = '(?:' . $QSTR . '|' . $ATOM . ')';
-my $DOMAIN    = '(?:' . $ATOM . '(?:' . '\\.' . $ATOM . ')*' . ')';
-my $LOCALPART = '(?:' . $WORD . '(?:' . '\\.' . $WORD . ')*' . ')';
-my $ADDR      = '(?:' . $LOCALPART . '@' . $DOMAIN . ')';
-my $PHRASE    = '(?:' . $WORD . ')+';
-
-my $SEP       = "(?:^\\s*|\\s*,\\s*)";     ### before elems in a list
 
 
 #==============================
@@ -362,6 +352,31 @@ sub is_mime_field {
 # extract_addrs STRING
 #
 # Split STRING into an array of email addresses: somewhat of a KLUDGE.
+#
+# Unless paranoid, we try to load the real code before supplying our own.
+
+if (eval "require Mail::Address") {
+    push @Uses, "A$Mail::Address::VERSION";
+    eval q{
+#vvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvv	
+sub extract_addrs {
+    return map { $_->format } Mail::Address->parse($_[0]);
+}
+#^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+    }; ### q
+}
+else {
+    eval q{
+#vvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvv	
+
+my $ATOM      = '[^ \000-\037()<>@,;:\134"\056\133\135]+';
+my $QSTR      = '".*?"';
+my $WORD      = '(?:' . $QSTR . '|' . $ATOM . ')';
+my $DOMAIN    = '(?:' . $ATOM . '(?:' . '\\.' . $ATOM . ')*' . ')';
+my $LOCALPART = '(?:' . $WORD . '(?:' . '\\.' . $WORD . ')*' . ')';
+my $ADDR      = '(?:' . $LOCALPART . '@' . $DOMAIN . ')';
+my $PHRASE    = '(?:' . $WORD . ')+';
+my $SEP       = "(?:^\\s*|\\s*,\\s*)";     ### before elems in a list
 
 sub extract_addrs {
     my $str = shift;
@@ -381,6 +396,10 @@ sub extract_addrs {
     }
     return @addrs;
 }
+#^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  }; ### q
+} ### if
+
 
 
 #==============================
@@ -457,6 +476,7 @@ sub encode_qp {
 } ### sub
   } ### q
 } ### if
+
 
 #------------------------------
 #
@@ -2053,6 +2073,15 @@ to indicate a forged envelope.  To avoid this, you can either
     command to your I<sendmail.cf> file 
     (e.g.: C<Teryq> if the script is running as user "eryq").
 
+=item FromSender
+
+If defined, this is identical to setting SetSender to true, 
+except that instead of looking at the "From:" field we use 
+the address given by this option.
+Thus:
+
+    FromSender => 'me@myhost.com'
+
 =back
 
 =cut
@@ -2076,9 +2105,12 @@ sub send_by_sendmail {
 	### Start with the command and basic args:
 	my @cmd = ($p{Sendmail}, @{$p{BaseArgs} || ['-t', '-oi', '-oem']});
 
-	### Add the -f argument, if desired:
+	### See if we are forcibly setting the sender:
+	$p{SetSender} = 1 if defined($p{FromSender});
+
+	### Add the -f argument, unless we're explicitly told NOT to:
 	unless (exists($p{SetSender}) and !$p{SetSender}) {
-	    my $from = ($self->get('From'))[0];
+	    my $from = $p{FromSender} || ($self->get('From'))[0];
 	    if ($from) {
 		my ($from_addr) = extract_addrs($from);
 		push @cmd, "-f$from_addr"       if $from_addr;
@@ -2586,12 +2618,31 @@ non-ASCII characters (e.g., Latin-1, Latin-2, or any other 8-bit alphabet).
 
 =head1 VERSION
 
-$Id: Lite.pm,v 2.102 2000/08/15 01:32:50 eryq Exp $
+$Id: Lite.pm,v 2.104 2000/09/28 07:06:08 eryq Exp $
 
 
 =head1 CHANGE LOG
 
 =over 4
+
+=item Version 2.104   (2000/09/28)
+
+Now attempts to load and use Mail::Address for parsing email 
+addresses I<before> falling back to our own method.
+I<Thanks to numerous people for suggesting this.>
+
+    Parsing addresses
+       is too damn hard. One last hope:
+    Let Graham Barr do it!
+
+For the curious, the version of Mail::Address appears 
+as the "A" number in the X-Mailer:
+
+    X-Mailer: MIME::Lite 2.104  (A1.15; B2.09; Q2.03)
+
+Added B<FromSender> option to send_by_sendmail().
+I<Thanks to Bill Moseley for suggesting this feature.>
+
 
 =item Version 2.101   (2000/06/06)
 

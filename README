@@ -709,6 +709,13 @@ PUBLIC INTERFACE
             adding a `T' configuration command to your *sendmail.cf* file
             (e.g.: `Teryq' if the script is running as user "eryq").
 
+    FromSender
+            If defined, this is identical to setting SetSender to true,
+            except that instead of looking at the "From:" field we use the
+            address given by this option. Thus:
+
+                FromSender => 'me@myhost.com'
+
     send_by_smtp ARGS...
         *Instance method.* Send message via SMTP, using Net::SMTP. The
         optional ARGS are sent into Net::SMTP::new(): usually, these are
@@ -946,9 +953,26 @@ A MIME PRIMER
         8-bit alphabet).
 
 VERSION
-    $Id: Lite.pm,v 2.102 2000/08/15 01:32:50 eryq Exp $
+    $Id: Lite.pm,v 2.104 2000/09/28 07:06:08 eryq Exp $
 
 CHANGE LOG
+    Version 2.104   (2000/09/28)
+        Now attempts to load and use Mail::Address for parsing email
+        addresses *before* falling back to our own method. *Thanks to
+        numerous people for suggesting this.*
+
+            Parsing addresses
+               is too damn hard. One last hope:
+            Let Graham Barr do it!
+
+        For the curious, the version of Mail::Address appears as the "A"
+        number in the X-Mailer:
+
+            X-Mailer: MIME::Lite 2.104  (A1.15; B2.09; Q2.03)
+
+        Added FromSender option to send_by_sendmail(). *Thanks to Bill
+        Moseley for suggesting this feature.*
+
     Version 2.101   (2000/06/06)
         Major revision to print_body() and body_as_string() so that "body"
         really means "the part after the header", which is what most people
