@@ -6,46 +6,48 @@ SYNOPSIS
        
     Create a single-part message:
 
-        # Create a new single-part message, to send a GIF file:
-        $msg = new MIME::Lite 
-                    From     =>'me@myhost.com',
-                    To       =>'you@yourhost.com',
-                    Cc       =>'some@other.com, some@more.com',
-                    Subject  =>'Helloooooo, nurse!',
-                    Type     =>'image/gif',
-                    Encoding =>'base64',
-                    Path     =>'hellonurse.gif';
+        ### Create a new single-part message, to send a GIF file:
+        $msg = MIME::Lite->new(
+                     From     =>'me@myhost.com',
+                     To       =>'you@yourhost.com',
+                     Cc       =>'some@other.com, some@more.com',
+                     Subject  =>'Helloooooo, nurse!',
+                     Type     =>'image/gif',
+                     Encoding =>'base64',
+                     Path     =>'hellonurse.gif'
+                     );
 
     Create a multipart message (i.e., one with attachments):
 
-        # Create a new multipart message:
-        $msg = new MIME::Lite 
-                    From    =>'me@myhost.com',
-                    To      =>'you@yourhost.com',
-                    Cc      =>'some@other.com, some@more.com',
-                    Subject =>'A message with 2 parts...',
-                    Type    =>'multipart/mixed';
+        ### Create a new multipart message:
+        $msg = MIME::Lite->new( 
+                     From    =>'me@myhost.com',
+                     To      =>'you@yourhost.com',
+                     Cc      =>'some@other.com, some@more.com',
+                     Subject =>'A message with 2 parts...',
+                     Type    =>'multipart/mixed'
+                     );
         
-        # Add parts (each "attach" has same arguments as "new"):
-        attach $msg 
-                    Type     =>'TEXT',   
-                    Data     =>"Here's the GIF file you wanted";  
-        attach $msg 
-                    Type     =>'image/gif',
-                    Path     =>'aaa000123.gif',
-                    Filename =>'logo.gif';
+        ### Add parts (each "attach" has same arguments as "new"):
+        $msg->attach(Type     =>'TEXT',   
+                     Data     =>"Here's the GIF file you wanted"
+                     );  
+        $msg->attach(Type     =>'image/gif',
+                     Path     =>'aaa000123.gif',
+                     Filename =>'logo.gif'
+                     );
 
     Output a message:
 
-        # Format as a string:
+        ### Format as a string:
         $str = $msg->as_string;
         
-        # Print to a filehandle (say, a "sendmail" stream):
+        ### Print to a filehandle (say, a "sendmail" stream):
         $msg->print(\*SENDMAIL);
 
     Send a message:
 
-        # Send in the "best" way (the default is to use "sendmail"):
+        ### Send in the "best" way (the default is to use "sendmail"):
         $msg->send;
 
 DESCRIPTION
@@ -70,56 +72,119 @@ DESCRIPTION
     this one.
 
 MORE EXAMPLES
-    Create a multipart message exactly as above, but using the "attach to
-    singlepart" hack:
+  Attach a GIF to a text message
 
-        # Create a new multipart message:
-        $msg = new MIME::Lite 
-                    From    =>'me@myhost.com',
-                    To      =>'you@yourhost.com',
-                    Cc      =>'some@other.com, some@more.com',
-                    Subject =>'A message with 2 parts...',
-                    Type    =>'TEXT',
-                    Data    =>"Here's the GIF file you wanted";  
+    This will create a multipart message exactly as above, but using the
+    "attach to singlepart" hack:
+
+        ### Create a new multipart message:
+        $msg = MIME::Lite->new(
+                     From    =>'me@myhost.com',
+                     To      =>'you@yourhost.com',
+                     Cc      =>'some@other.com, some@more.com',
+                     Subject =>'A message with 2 parts...',
+                     Type    =>'TEXT',
+                     Data    =>"Here's the GIF file you wanted"
+                     );  
         
-        # Attach a part:
-        attach $msg Type     =>'image/gif',
-                    Path     =>'aaa000123.gif',
-                    Filename =>'logo.gif';
+        ### Attach a part:
+        $msg->attach(Type     =>'image/gif',
+                     Path     =>'aaa000123.gif',
+                     Filename =>'logo.gif'
+                     );
 
-    Output a message to a filehandle:
+  Send an HTML document... with images included!
 
-        # Write it to a filehandle:
+        $msg = MIME::Lite->new(
+                     To      =>'you@yourhost.com',
+                     Subject =>'HTML with in-line images!',
+                     Type    =>'multipart/related'
+                     );
+        $msg->attach(Type => 'text/html',
+                     Data => qq{ <body>
+                                 Here's <i>my</i> image: 
+                                 <img src="cid:myimage.gif"> 
+                                 </body> }
+                     );
+        $msg->attach(Type => 'image/gif',
+                     Id   => 'myimage.gif',
+                     Path => '/path/to/somefile.gif',
+                     );
+        $msg->send();
+
+  Output a message to a filehandle
+
+        ### Write it to a filehandle:
         $msg->print(\*STDOUT); 
          
-        # Write just the header:
+        ### Write just the header:
         $msg->print_header(\*STDOUT); 
          
-        # Write just the encoded body:
+        ### Write just the encoded body:
         $msg->print_body(\*STDOUT); 
 
-    Get a message as a string:
+  Get a message as a string
 
-        # Get entire message as a string:
+        ### Get entire message as a string:
         $str = $msg->as_string;
          
-        # Get just the header:
+        ### Get just the header:
         $str = $msg->header_as_string;
          
-        # Get just the encoded body:
+        ### Get just the encoded body:
         $str = $msg->body_as_string;
 
-    Change how messages are sent:
+  Change how messages are sent
 
-        # Do something like this in your 'main':
+        ### Do something like this in your 'main':
         if ($I_DONT_HAVE_SENDMAIL) {
            MIME::Lite->send('smtp', "smtp.myisp.net", Timeout=>60);
         }
          
-        # Now this will do the right thing:
-        $msg->send;         # will now use Net::SMTP as shown above
+        ### Now this will do the right thing:
+        $msg->send;         ### will now use Net::SMTP as shown above
 
 PUBLIC INTERFACE
+  Global configuration
+
+    To alter the way the entire module behaves, you have the following
+    methods/options:
+
+    MIME::Lite->quiet()
+        This classmethod can be used to suppress/unsuppress all warnings
+        coming from this module.
+
+    MIME::Lite->send()
+        When used as a classmethod, this can be used to specify a different
+        default mechanism for sending message. The initial default is:
+
+            MIME::Lite->send("sendmail", "/usr/lib/sendmail -t -oi -oem");
+
+        However, you should consider the similar but smarter and taint-safe
+        variant:
+
+            MIME::Lite->send("sendmail");
+
+        Or, for non-Unix users:
+
+            MIME::Lite->send("smtp");
+
+    $MIME::Lite::PARANOID
+        If true, we won't attempt to use MIME::Base64/MIME::QuotedPrint,
+        even if they're available. Default is false.
+
+    $MIME::Lite::AUTO_ENCODE
+        If true, automatically choose the encoding from the content type.
+        Default is true.
+
+    $MIME::Lite::AUTO_CC
+        If true, automatically send to the Cc/Bcc addresses for
+        send_by_smtp(). Default is true.
+
+    $MIME::Lite::AUTO_VERIFY
+        If true, check paths to attachments right before printing, raising
+        an exception if any path is unreadable. Default is true.
+
   Construction
 
     new [PARAMHASH]
@@ -197,24 +262,27 @@ PUBLIC INTERFACE
 
     Encoding
             *Optional.* The content transfer encoding that should be used to
-            encode your data. The default is `"binary"', which means "no
-            encoding": this is generally *not* suitable for sending anything
-            but ASCII text files with short lines, so consider using one of
-            the following values instead:
+            encode your data:
 
                Use encoding:     If your message contains:
                ------------------------------------------------------------
                7bit              Only 7-bit text, all lines <1000 characters
                8bit              8-bit text, all lines <1000 characters
                quoted-printable  8-bit text or long lines (MUCH more reliable than "8bit")
-               base64            Largely binary data: a GIF, a tar file, etc.
+               base64            Largely non-textual data: a GIF, a tar file, etc.
 
-            Be sure to pick an appropriate encoding. In the case of
-            "7bit"/"8bit", long lines are automatically chopped to legal
-            length; in the case of "7bit", all 8-bit characters are
-            automatically *removed*. This may not be what you want, so pick
-            your encoding well! There's a the section on "A MIME PRIMER" in
-            this document with more info.
+            The default is taken from the Type; generally it is "binary" (no
+            encoding) for text/*, message/*, and multipart/*, and "base64"
+            for everything else. A value of `"binary"' is generally *not*
+            suitable for sending anything but ASCII text files with lines
+            under 1000 characters, so consider using one of the other values
+            instead.
+
+            In the case of "7bit"/"8bit", long lines are automatically
+            chopped to legal length; in the case of "7bit", all 8-bit
+            characters are automatically *removed*. This may not be what you
+            want, so pick your encoding well! For more info, see the section
+            on "A MIME PRIMER".
 
     FH      *Alternative to "Data" or "Path".* Filehandle containing the data,
             opened for reading. See "ReadNow" also.
@@ -223,6 +291,8 @@ PUBLIC INTERFACE
             *Optional.* The name of the attachment. You can use this to
             supply a filename if the one in the Path is inadequate, or if
             you're using the Data argument.
+
+    Id      *Optional.* Same as setting "content-id".
 
     Length  *Optional.* Set the content length explicitly. Normally, this header
             is automatically computed, but only under certain circumstances
@@ -255,40 +325,38 @@ PUBLIC INTERFACE
         it's probably more of an "icon" than a "picture", but I digress...),
         here are some examples:
 
-            $msg = build MIME::Lite 
+            $msg = MIME::Lite->build( 
                        From     => 'yelling@inter.com',
                        To       => 'stocking@fish.net',
                        Subject  => "Hi there!",
                        Type     => 'TEXT',
                        Encoding => '7bit',
-                       Data     => "Just a quick note to say hi!";
+                       Data     => "Just a quick note to say hi!");
          
-            $msg = build MIME::Lite 
+            $msg = MIME::Lite->build(
                        From     => 'dorothy@emerald-city.oz',
                        To       => 'gesundheit@edu.edu.edu',
                        Subject  => "A gif for U"
                        Type     => 'image/gif',
-                       Path     => "/home/httpd/logo.gif";
+                       Path     => "/home/httpd/logo.gif");
          
-            $msg = build MIME::Lite 
+            $msg = MIME::Lite->build( 
                        From     => 'laughing@all.of.us',
                        To       => 'scarlett@fiddle.dee.de',
                        Subject  => "A gzipp'ed tar file",
                        Type     => 'x-gzip',
                        Path     => "gzip < /usr/inc/somefile.tar |",
                        ReadNow  => 1,
-                       Filename => "somefile.tgz";
+                       Filename => "somefile.tgz");
 
         To show you what's really going on, that last example could also
         have been written:
 
             $msg = new MIME::Lite;
-            
             $msg->build(Type     => 'x-gzip',
                         Path     => "gzip < /usr/inc/somefile.tar |",
                         ReadNow  => 1,
-                        Filename => "somefile.tgz");
-            
+                        Filename => "somefile.tgz");    
             $msg->add(From    => "laughing@all.of.us");
             $msg->add(To      => "scarlett@fiddle.dee.de");
             $msg->add(Subject => "A gzipp'ed tar file");  
@@ -336,8 +404,8 @@ PUBLIC INTERFACE
 
         Supplying no VALUE argument just returns the attribute's value:
 
-            $type = $msg->attr("content-type");        # returns "text/html"
-            $name = $msg->attr("content-type.name");   # returns "homepage.html"
+            $type = $msg->attr("content-type");        ### returns "text/html"
+            $name = $msg->attr("content-type.name");   ### returns "homepage.html"
 
     delete TAG
         Delete field TAG with the given VALUE to the end of the header. The
@@ -493,6 +561,12 @@ PUBLIC INTERFACE
 
         The content-length is recomputed.
 
+    verify_data
+        *Instance method.* Verify that all "paths" to attached data exist,
+        recursively. It might be a good idea for you to do this before a
+        print(), to prevent accidental partial output if a file might be
+        missing. Raises exception if any path is not readable.
+
   Output
 
     print [OUTHANDLE]
@@ -552,17 +626,20 @@ PUBLIC INTERFACE
 
         *As a class method* (with a HOW argument and optional HOWARGS), sets
         up how the instance method will work for all objects until further
-        notice. It treats HOW as a facility name, with optional HOWARGS
-        handled by the facility. There are three facilities:
+        notice It treats HOW as a facility name, with optional HOWARGS
+        handled by the facility (and returns the previous HOW and HOWARGS as
+        an array). There are three facilities:
 
-    "sendmail", SENDMAILCMD
+    "sendmail", ARGS...
             Send a message by piping it into the "sendmail" command. Uses
-            the `send_by_sendmail()' method, giving it the SENDMAILCMD. This
-            usage implements (and deprecates) the `sendmail()' method. =item
-            "smtp", [HOSTNAME]
+            the the send_by_sendmail entry elsewhere in this document
+            method, giving it the ARGS. This usage implements (and
+            deprecates) the `sendmail()' method.
 
+    "smtp", [HOSTNAME]
             Send a message by SMTP, using optional HOSTNAME as SMTP-sending
-            host. Uses the `send_by_smtp()' method.
+            host. Uses the the send_by_smtp entry elsewhere in this document
+            method.
 
     "sub", \&SUBREF, ARGS...
             Sends a message MSG by invoking the subroutine SUBREF of your
@@ -584,18 +661,56 @@ PUBLIC INTERFACE
         your $msg->send invocations will work as expected.
 
     send_by_sendmail SENDMAILCMD
-        *Instance method.* Send message via the external "sendmail" program,
-        SENDMAILCMD. Returns true on success, false or exception on error.
+    send_by_sendmail PARAM=>VALUE, ...
+        *Instance method.* Send message via an external "sendmail" program
+        (this will probably only work out-of-the-box on Unix systems).
 
-        *Note:* this facility will probably only work on Unix systems. The
-        SENDMAILCMD for this facility must get all its message-specific
-        information from the standard input.
+        Returns true on success, false or exception on error.
 
-    send_by_smtp [ARGS...]
-        *Instance method.* Send message via SMTP, using Net::SMTP. The ARGS
-        are sent into Net::SMTP::new(): usually, these are
+        You can specify the program and all its arguments by giving a single
+        string, SENDMAILCMD. Nothing fancy is done; the message is simply
+        piped in.
+
+        However, if your needs are a little more advanced, you can specify
+        zero or more of the following PARAM/VALUE pairs; a Unix-style,
+        taint-safe "sendmail" command will be constructed for you:
+
+    Sendmail
+            Full path to the program to use. Default is "/usr/lib/sendmail".
+
+    BaseArgs
+            Ref to the basic array of arguments we start with. Default is
+            `["-t", "-oi", "-oem"]'.
+
+    SetSender
+            Unless this is *explicitly* given as false, we attempt to
+            automatically set the `-f' argument to the first address that
+            can be extracted from the "From:" field of the message (if there
+            is one).
+
+            *What is the -f, and why do we use it?* Suppose we did *not* use
+            `-f', and you gave an explicit "From:" field in your message: in
+            this case, the sendmail "envelope" would indicate the *real*
+            user your process was running under, as a way of preventing mail
+            forgery. Using the `-f' switch causes the sender to be set in
+            the envelope as well.
+
+            *So when would I NOT want to use it?* If sendmail doesn't regard
+            you as a "trusted" user, it will permit the `-f' but also add an
+            "X-Authentication-Warning" header to the message to indicate a
+            forged envelope. To avoid this, you can either (1) have
+            SetSender be false, or (2) make yourself a trusted user by
+            adding a `T' configuration command to your *sendmail.cf* file
+            (e.g.: `Teryq' if the script is running as user "eryq").
+
+    send_by_smtp ARGS...
+        *Instance method.* Send message via SMTP, using Net::SMTP. The
+        optional ARGS are sent into Net::SMTP::new(): usually, these are
 
             MAILHOST, OPTION=>VALUE, ...
+
+        Note that the list of recipients is taken from the "To", "Cc" and
+        "Bcc" fields.
 
         Returns true on success, false or exception on error.
 
@@ -609,7 +724,7 @@ PUBLIC INTERFACE
         *Class method.* Suppress/unsuppress all warnings coming from this
         module.
 
-            quiet MIME::Lite 1;       # I know what I'm doing
+            MIME::Lite->quiet(1);       ### I know what I'm doing
 
         I recommend that you include that comment as well. And while you
         type it, say it out loud: if it doesn't feel right, then maybe you
@@ -639,8 +754,12 @@ NOTES
   Cheap and easy mailing
 
     I thought putting in a default "sendmail" invocation wasn't too bad an
-    idea, since a lot of Perlers are on UNIX systems. The default arguments
-    to sendmail (which you can change) are:
+    idea, since a lot of Perlers are on UNIX systems. The out-of-the-box
+    configuration is:
+
+         MIME::Lite->send('sendmail', "/usr/lib/sendmail -t -oi -oem");
+
+    By the way, these arguments to sendmail are:
 
          -t      Scan message for To:, Cc:, Bcc:, etc.
                   
@@ -651,18 +770,55 @@ NOTES
                  appropriate address, given in the header).
                  When mail returns, circle is complete.  Jai guru deva -oem.
 
-    If you're not on a Unix system, or if you'd just rather send mail some
-    other way, check out the `send()' method. There's built in support for
-    SMTP delivery, or you can slip in your own hooks.
+    Note that these are the same arguments you get if you configure to use
+    the smarter, taint-safe mailing:
 
-  Under the hood
+         MIME::Lite->send('sendmail');
+
+    If you get "X-Authentication-Warning" headers from this, you can forgo
+    diddling with the envelope by instead specifying:
+
+         MIME::Lite->send('sendmail', SetSender=>0);
+
+    And, if you're not on a Unix system, or if you'd just rather send mail
+    some other way, there's always:
+
+         MIME::Lite->send('smtp', "smtp.myisp.net");
+
+    Or you can set up your own subroutine to call. In any case, check out
+    the the send entry elsewhere in this document method.
+
+WARNINGS
+  Lazy formatting of headers
 
     This class treats a MIME header in the most abstract sense, as being a
     collection of high-level attributes. The actual RFC-822-style header
     fields are not constructed until it's time to actually print the darn
     thing.
 
-WARNINGS
+  Lazy encoding of data
+
+    When you specify message bodies (in the build entry elsewhere in this
+    document or the attach entry elsewhere in this document ) -- whether by
+    FH, Data, or Path -- be warned that we don't attempt to open files, read
+    filehandles, or encode the data until the print entry elsewhere in this
+    document is invoked.
+
+    In the past, this created some confusion for users of sendmail who gave
+    the wrong path to an attachment body, since enough of the print() would
+    succeed to get the initial part of the message out. Nowadays,
+    $AUTO_VERIFY is used to spot-check the Paths given before the mail
+    facility is employed. A whisker slower, but tons safer.
+
+    Note that if you give a message body via FH, and try to print() a
+    message twice, the second print() will not do the right thing unless you
+    explicitly rewind the filehandle.
+
+    You can get past these difficulties by using the ReadNow option,
+    provided that you have enough memory to handle your messages.
+
+  MIME attributes are separate from header fields!
+
     Important: the MIME attributes are stored and manipulated separately
     from the message header fields; when it comes time to print the header
     out, *any explicitly-given header fields override the ones that would be
@@ -679,6 +835,21 @@ WARNINGS
     need. And, like any escape hatch, it's got an alarm on it: MIME::Lite
     will warn you if you attempt to `set()' or `replace()' any MIME header
     field. Use `attr()' instead.
+
+  Lines consisting of a single dot
+
+    Julian Haight noted that MIME::Lite allows you to compose messages with
+    lines in the body consisting of a single ".". This is true: it should be
+    completely harmless so long as "sendmail" is used with the -oi option
+    (see the section on "Cheap and easy mailing").
+
+    However, I don't know if using Net::SMTP to transfer such a message is
+    equally safe. Feedback is welcomed.
+
+    My perspective: I don't want to magically diddle with a user's message
+    unless absolutely positively necessary. Some users may want to send
+    files with "." alone on a line; my well-meaning tinkering could
+    seriously harm them.
 
 A MIME PRIMER
   Content types
@@ -750,7 +921,51 @@ A MIME PRIMER
         8-bit alphabet).
 
 CHANGE LOG
-    Current version: $Id: Lite.pm,v 1.135 1999/04/18 14:32:13 eryq Exp $
+    Current version: $Id: Lite.pm,v 1.145 2000/05/06 16:57:20 eryq Exp $
+
+    Version 1.145
+        Fixed bug in encode_7bit(): a lingering `/e' modifier was removed.
+        *Thanks to Michael A. Chase for the patch.*
+
+    Version 1.142
+        Added new, taint-safe invocation of "sendmail", one which also sets
+        up the `-f' option. Unfortunately, I couldn't make this automatic:
+        the change could have broken a lot of code out there which used
+        send_by_sendmail() with unusual "sendmail" variants. So you'll have
+        to configure "send" to use the new mechanism:
+
+            MIME::Lite->send('sendmail');       ### no args!
+
+        *Thanks to Jeremy Howard for suggesting these features.*
+
+    Version 1.140
+        Fixed bug in support for "To", "Cc", and "Bcc" in send_by_smtp():
+        multiple (comma-separated) addresses should now work fine. We try
+        real hard to extract addresses from the flat text strings. *Thanks
+        to John Mason for motivating this change.*
+
+        Added automatic verification that attached data files exist, done
+        immediately before the "send" action is invoked. To turn this off,
+        set $MIME::Lite::AUTO_VERIFY to false.
+
+    Version 1.137
+        Added support for "Cc" and "Bcc" in send_by_smtp(). To turn this
+        off, set $MIME::Lite::AUTO_CC to false. *Thanks to Lucas Maneos for
+        the patch, and tons of others for the suggestion.*
+
+        Chooses a better default content-transfer-encoding if the content-
+        type is "image/*", "audio/*", etc. To turn this off, set
+        $MIME::Lite::AUTO_ENCODE to false. *Thanks to many folks for the
+        suggestion.*
+
+        Fixed bug in QP-encoding where a non-local `$_' was being modified.
+        *Thanks to Jochen Stenzel for finding this very obscure bug!*
+
+        Removed references to `$`', `$'', and `$&' (bad variables which slow
+        things down).
+
+        Added an example of how to send HTML files with enclosed in-line
+        images, per popular demand.
 
     Version 1.133
         Fixed bug in "Data" handling: arrayrefs were not being handled

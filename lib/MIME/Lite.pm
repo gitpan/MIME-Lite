@@ -243,7 +243,7 @@ use vars qw(
 # GLOBALS, EXTERNAL/CONFIGURATION...
 
 ### The package version, both in 1.23 style *and* usable by MakeMaker:
-$VERSION = substr q$Revision: 1.144 $, 10;
+$VERSION = substr q$Revision: 1.145 $, 10;
 
 ### Don't warn me about dangerous activities:
 $QUIET = undef;
@@ -468,7 +468,7 @@ sub encode_8bit {
 
 sub encode_7bit {
     my $str = shift;
-    $str =~ s/[\x80-\xFF]//eg; 
+    $str =~ s/[\x80-\xFF]//g; 
     $str =~ s/^(.{990})/$1\n/mg;
     $str;
 }
@@ -2427,9 +2427,15 @@ non-ASCII characters (e.g., Latin-1, Latin-2, or any other 8-bit alphabet).
 =head1 CHANGE LOG
 
 B<Current version:>
-$Id: Lite.pm,v 1.144 2000/05/02 23:42:52 eryq Exp $
+$Id: Lite.pm,v 1.145 2000/05/06 16:57:20 eryq Exp $
 
 =over 4
+
+=item Version 1.145 
+
+Fixed bug in encode_7bit(): a lingering C</e> modifier was removed.
+I<Thanks to Michael A. Chase for the patch.>
+
 
 =item Version 1.142
 

@@ -1383,11 +1383,16 @@ non-ASCII characters (e.g., Latin-1, Latin-2, or any other 8-bit alphabet).
 
 
 <P><B>Current version:</B>
-$Id: Lite.pm,v 1.144 2000/05/02 23:42:52 eryq Exp $
+$Id: Lite.pm,v 1.145 2000/05/06 16:57:20 eryq Exp $
 
 
 
 <DL>
+<P><DT><B><A NAME="item:Version">Version 1.145</A></B></DT>
+<DD>
+Fixed bug in encode_7bit(): a lingering <CODE>/e</CODE> modifier was removed.
+<I>Thanks to Michael A. Chase for the patch.</I>
+
 <P><DT><B><A NAME="item:Version">Version 1.142</A></B></DT>
 <DD>
 Added new, taint-safe invocation of &quot;sendmail&quot;, one which also
@@ -1562,7 +1567,7 @@ President, ZeeGee Software Inc. (<I><FILE><A HREF="http://www.zeegee.com">http:/
 
 <P><HR>
 <ADDRESS><FONT SIZE=-1>
-Generated Tue May  2 19:45:15 2000 by cvu_pod2html
+Generated Sat May  6 13:00:17 2000 by cvu_pod2html
 </FONT></ADDRESS>
 </BODY>
 </HTML>

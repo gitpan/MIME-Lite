@@ -1,6 +1,6 @@
 MENU perlmod
 
-SECTION Modules
+SECTION Overview
 
 ITEM MIME::Lite
 HREF MIME/Lite.pm.html
