@@ -51,29 +51,31 @@ SYNOPSIS
         $msg->send;
 
 DESCRIPTION
-    In the never-ending quest for great taste with fewer calories, we proudly
-    present: *MIME::Lite*.
+    In the never-ending quest for great taste with fewer calories, we
+    proudly present: *MIME::Lite*.
 
-    MIME::Lite is intended as a simple, standalone module for generating (not
-    parsing!) MIME messages... specifically, it allows you to output a simple,
-    decent single- or multi-part message with text or binary attachments. It
-    does not require that you have the Mail:: or MIME:: modules installed.
+    MIME::Lite is intended as a simple, standalone module for generating
+    (not parsing!) MIME messages... specifically, it allows you to output a
+    simple, decent single- or multi-part message with text or binary
+    attachments. It does not require that you have the Mail:: or MIME::
+    modules installed.
 
-    You can specify each message part as either the literal data itself (in a
-    scalar or array), or as a string which can be given to open() to get a
+    You can specify each message part as either the literal data itself (in
+    a scalar or array), or as a string which can be given to open() to get a
     readable filehandle (e.g., "<filename" or "somecommand|").
 
-    You don't need to worry about encoding your message data: this module will
-    do that for you. It handles the 5 standard MIME encodings.
+    You don't need to worry about encoding your message data: this module
+    will do that for you. It handles the 5 standard MIME encodings.
 
-    If you need more sophisticated behavior, please get the MIME-tools package
-    instead. I will be more likely to add stuff to that toolkit over this one.
+    If you need more sophisticated behavior, please get the MIME-tools
+    package instead. I will be more likely to add stuff to that toolkit over
+    this one.
 
 MORE EXAMPLES
   Attach a GIF to a text message
 
-    This will create a multipart message exactly as above, but using the "attach
-    to singlepart" hack:
+    This will create a multipart message exactly as above, but using the
+    "attach to singlepart" hack:
 
         ### Create a new multipart message:
         $msg = MIME::Lite->new(
@@ -149,8 +151,8 @@ PUBLIC INTERFACE
     methods/options:
 
     MIME::Lite->quiet()
-        This classmethod can be used to suppress/unsuppress all warnings coming
-        from this module.
+        This classmethod can be used to suppress/unsuppress all warnings
+        coming from this module.
 
     MIME::Lite->send()
         When used as a classmethod, this can be used to specify a different
@@ -168,57 +170,59 @@ PUBLIC INTERFACE
             MIME::Lite->send("smtp");
 
     $MIME::Lite::PARANOID
-        If true, we won't attempt to use MIME::Base64/MIME::QuotedPrint, even if
-        they're available. Default is false.
+        If true, we won't attempt to use MIME::Base64/MIME::QuotedPrint,
+        even if they're available. Default is false.
 
     $MIME::Lite::AUTO_ENCODE
         If true, automatically choose the encoding from the content type.
         Default is true.
 
     $MIME::Lite::AUTO_CC
-        If true, automatically send to the Cc/Bcc addresses for send_by_smtp().
-        Default is true.
+        If true, automatically send to the Cc/Bcc addresses for
+        send_by_smtp(). Default is true.
 
     $MIME::Lite::AUTO_VERIFY
-        If true, check paths to attachments right before printing, raising an
-        exception if any path is unreadable. Default is true.
+        If true, check paths to attachments right before printing, raising
+        an exception if any path is unreadable. Default is true.
 
   Construction
 
     new [PARAMHASH]
         *Class method, constructor.* Create a new message object.
 
-        If any arguments are given, they are passed into `build()'; otherwise,
-        just the empty object is created.
+        If any arguments are given, they are passed into `build()';
+        otherwise, just the empty object is created.
 
     attach [OBJECT|PARAMHASH]
-        *Instance method.* Add a new part to this message, and return the new
-        part.
+        *Instance method.* Add a new part to this message, and return the
+        new part.
 
-        You can attach a MIME::Lite OBJECT, or have it create one by specifying
-        a PARAMHASH that will be automatically given to `new()'.
+        You can attach a MIME::Lite OBJECT, or have it create one by
+        specifying a PARAMHASH that will be automatically given to `new()'.
 
-        One of the possibly-quite-useful hacks thrown into this is the "attach-
-        to-singlepart" hack: if you attempt to attach a part (let's call it
-        "part 1") to a message that doesn't have a content-type of "multipart"
-        or "message", the following happens:
+        One of the possibly-quite-useful hacks thrown into this is the
+        "attach-to-singlepart" hack: if you attempt to attach a part (let's
+        call it "part 1") to a message that doesn't have a content-type of
+        "multipart" or "message", the following happens:
 
     *       A new part (call it "part 0") is made.
 
-    *       The MIME attributes and data (but *not* the other headers) are cut from
-            the "self" message, and pasted into "part 0".
+    *       The MIME attributes and data (but *not* the other headers) are cut
+            from the "self" message, and pasted into "part 0".
 
     *       The "self" is turned into a "multipart/mixed" message.
 
-    *       The new "part 0" is added to the "self", and *then* "part 1" is added.
+    *       The new "part 0" is added to the "self", and *then* "part 1" is
+            added.
 
-        One of the nice side-effects is that you can create a text message and
-        then add zero or more attachments to it, much in the same way that a
-        user agent like Netscape allows you to do.
+        One of the nice side-effects is that you can create a text message
+        and then add zero or more attachments to it, much in the same way
+        that a user agent like Netscape allows you to do.
 
     build [PARAMHASH]
-        *Class/instance method, initiallizer.* Create (or initiallize) a MIME
-        message object. Normally, you'll use the following keys in PARAMHASH:
+        *Class/instance method, initiallizer.* Create (or initiallize) a
+        MIME message object. Normally, you'll use the following keys in
+        PARAMHASH:
 
            * Data, FH, or Path      (either one of these, or none if multipart)
            * Type                   (e.g., "image/jpeg")
@@ -228,7 +232,8 @@ PUBLIC INTERFACE
 
     (fieldname)
             Any field you want placed in the message header, taken from the
-            standard list of header fields (you don't need to worry about case):
+            standard list of header fields (you don't need to worry about
+            case):
 
                 Bcc           Encrypted     Received      Sender         
                 Cc            From          References    Subject 
@@ -237,92 +242,95 @@ PUBLIC INTERFACE
                 Date          MIME-Version  Return-Path   
                               Organization
 
-            To give experienced users some veto power, these fields will be set
-            *after* the ones I set... so be careful: *don't set any MIME fields*
-            (like `Content-type') unless you know what you're doing!
+            To give experienced users some veto power, these fields will be
+            set *after* the ones I set... so be careful: *don't set any MIME
+            fields* (like `Content-type') unless you know what you're doing!
 
             To specify a fieldname that's *not* in the above list, even one
-            that's identical to an option below, just give it with a trailing
-            `":"', like `"My-field:"'. When in doubt, that *always* signals a
-            mail field (and it sort of looks like one too).
+            that's identical to an option below, just give it with a
+            trailing `":"', like `"My-field:"'. When in doubt, that *always*
+            signals a mail field (and it sort of looks like one too).
 
-    Data    *Alternative to "Path" or "FH".* The actual message data. This may be a
-            scalar or a ref to an array of strings; if the latter, the message
-            consists of a simple concatenation of all the strings in the array.
+    Data    *Alternative to "Path" or "FH".* The actual message data. This may
+            be a scalar or a ref to an array of strings; if the latter, the
+            message consists of a simple concatenation of all the strings in
+            the array.
 
     Datestamp
-            *Optional.* If given true (or omitted), we force the creation of a
-            `Date:' field stamped with the current date/time if this is a top-
-            level message. You may want this if using send_by_smtp(). If you
-            don't want this to be done, either provide your own Date or
+            *Optional.* If given true (or omitted), we force the creation of
+            a `Date:' field stamped with the current date/time if this is a
+            top-level message. You may want this if using send_by_smtp(). If
+            you don't want this to be done, either provide your own Date or
             explicitly set this to false.
 
     Disposition
-            *Optional.* The content disposition, `"inline"' or `"attachment"'.
-            The default is `"inline"'.
+            *Optional.* The content disposition, `"inline"' or
+            `"attachment"'. The default is `"inline"'.
 
     Encoding
             *Optional.* The content transfer encoding that should be used to
             encode your data:
 
-               Use encoding:     If your message contains:
+               Use encoding:     | If your message contains:
                ------------------------------------------------------------
-               7bit              Only 7-bit text, all lines <1000 characters
-               8bit              8-bit text, all lines <1000 characters
-               quoted-printable  8-bit text or long lines (MUCH more reliable than "8bit")
-               base64            Largely non-textual data: a GIF, a tar file, etc.
+               7bit              | Only 7-bit text, all lines <1000 characters
+               8bit              | 8-bit text, all lines <1000 characters
+               quoted-printable  | 8-bit text or long lines (more reliable than "8bit")
+               base64            | Largely non-textual data: a GIF, a tar file, etc.
 
             The default is taken from the Type; generally it is "binary" (no
-            encoding) for text/*, message/*, and multipart/*, and "base64" for
-            everything else. A value of `"binary"' is generally *not* suitable
-            for sending anything but ASCII text files with lines under 1000
-            characters, so consider using one of the other values instead.
+            encoding) for text/*, message/*, and multipart/*, and "base64"
+            for everything else. A value of `"binary"' is generally *not*
+            suitable for sending anything but ASCII text files with lines
+            under 1000 characters, so consider using one of the other values
+            instead.
 
-            In the case of "7bit"/"8bit", long lines are automatically chopped
-            to legal length; in the case of "7bit", all 8-bit characters are
-            automatically *removed*. This may not be what you want, so pick your
-            encoding well! For more info, see the section on "A MIME PRIMER".
+            In the case of "7bit"/"8bit", long lines are automatically
+            chopped to legal length; in the case of "7bit", all 8-bit
+            characters are automatically *removed*. This may not be what you
+            want, so pick your encoding well! For more info, see the section
+            on "A MIME PRIMER".
 
     FH      *Alternative to "Data" or "Path".* Filehandle containing the data,
             opened for reading. See "ReadNow" also.
 
     Filename
-            *Optional.* The name of the attachment. You can use this to supply a
-            filename if the one in the Path is inadequate, or if you're using
-            the Data argument.
+            *Optional.* The name of the attachment. You can use this to
+            supply a filename if the one in the Path is inadequate, or if
+            you're using the Data argument.
 
     Id      *Optional.* Same as setting "content-id".
 
-    Length  *Optional.* Set the content length explicitly. Normally, this header is
-            automatically computed, but only under certain circumstances (see
-            the section on "Limitations").
+    Length  *Optional.* Set the content length explicitly. Normally, this header
+            is automatically computed, but only under certain circumstances
+            (see the section on "Limitations").
 
-    Path    *Alternative to "Data" or "FH".* Path to a file containing the data...
-            actually, it can be any open()able expression. If it looks like a
-            path, the last element will automatically be treated as the
-            filename. See "ReadNow" also.
+    Path    *Alternative to "Data" or "FH".* Path to a file containing the
+            data... actually, it can be any open()able expression. If it
+            looks like a path, the last element will automatically be
+            treated as the filename. See "ReadNow" also.
 
-    ReadNow *Optional, for use with "Path".* If true, will open the path and slurp
-            the contents into core now. This is useful if the Path points to a
-            command and you don't want to run the command over and over if
-            outputting the message several times. Fatal exception raised if the
-            open fails.
+    ReadNow *Optional, for use with "Path".* If true, will open the path and
+            slurp the contents into core now. This is useful if the Path
+            points to a command and you don't want to run the command over
+            and over if outputting the message several times. Fatal
+            exception raised if the open fails.
 
-    Top     *Optional.* If defined, indicates whether or not this is a "top-level"
-            MIME message. The parts of a multipart message are *not* top-level.
-            Default is true.
+    Top     *Optional.* If defined, indicates whether or not this is a "top-
+            level" MIME message. The parts of a multipart message are *not*
+            top-level. Default is true.
 
-    Type    *Optional.* The MIME content type, or one of these special values (case-
-            sensitive):
+    Type    *Optional.* The MIME content type, or one of these special values
+            (case-sensitive):
 
                  "TEXT"   means "text/plain"
                  "BINARY" means "application/octet-stream"
 
             The default is `"TEXT"'.
 
-        A picture being worth 1000 words (which is of course 2000 bytes, so it's
-        probably more of an "icon" than a "picture", but I digress...), here are
-        some examples:
+        A picture being worth 1000 words (which is of course 2000 bytes, so
+        it's probably more of an "icon" than a "picture", but I digress...),
+        here are some examples:
 
             $msg = MIME::Lite->build( 
                        From     => 'yelling@inter.com',
@@ -348,8 +356,8 @@ PUBLIC INTERFACE
                        ReadNow  => 1,
                        Filename => "somefile.tgz");
 
-        To show you what's really going on, that last example could also have
-        been written:
+        To show you what's really going on, that last example could also
+        have been written:
 
             $msg = new MIME::Lite;
             $msg->build(Type     => 'x-gzip',
@@ -364,12 +372,12 @@ PUBLIC INTERFACE
 
     add TAG,VALUE
         Add field TAG with the given VALUE to the end of the header. The TAG
-        will be converted to all-lowercase, and the VALUE will be made "safe"
-        (returns will be given a trailing space).
+        will be converted to all-lowercase, and the VALUE will be made
+        "safe" (returns will be given a trailing space).
 
-        Beware: any MIME fields you "add" will override any MIME attributes I
-        have when it comes time to output those fields. Normally, you will use
-        this method to add *non-MIME* fields:
+        Beware: any MIME fields you "add" will override any MIME attributes
+        I have when it comes time to output those fields. Normally, you will
+        use this method to add *non-MIME* fields:
 
             $msg->add("Subject" => "Hi there!");
 
@@ -377,14 +385,15 @@ PUBLIC INTERFACE
 
             $msg->add("Received" => ["here", "there", "everywhere"]
 
-        *Note:* add() is probably going to be more efficient than `replace()',
-        so you're better off using it for most applications.
+        *Note:* add() is probably going to be more efficient than
+        `replace()', so you're better off using it for most applications.
 
         *Note:* the name comes from Mail::Header.
 
     attr ATTR,[VALUE]
-        Set MIME attribute ATTR to the string VALUE. ATTR is converted to all-
-        lowercase. This method is normally used to set/get MIME attributes:
+        Set MIME attribute ATTR to the string VALUE. ATTR is converted to
+        all-lowercase. This method is normally used to set/get MIME
+        attributes:
 
             $msg->attr("content-type"         => "text/html");
             $msg->attr("content-type.charset" => "US-ASCII");
@@ -394,11 +403,11 @@ PUBLIC INTERFACE
 
             Content-type: text/html; charset=US-ASCII; name="homepage.html"
 
-        Note that the special empty sub-field tag indicates the anonymous first
-        sub-field.
+        Note that the special empty sub-field tag indicates the anonymous
+        first sub-field.
 
-        Giving VALUE as undefined will cause the contents of the named subfield
-        to be deleted.
+        Giving VALUE as undefined will cause the contents of the named
+        subfield to be deleted.
 
         Supplying no VALUE argument just returns the attribute's value:
 
@@ -406,18 +415,18 @@ PUBLIC INTERFACE
             $name = $msg->attr("content-type.name");   ### returns "homepage.html"
 
     delete TAG
-        Delete field TAG with the given VALUE to the end of the header. The TAG
-        will be converted to all-lowercase.
+        Delete field TAG with the given VALUE to the end of the header. The
+        TAG will be converted to all-lowercase.
 
             $msg->delete("Subject");
 
         *Note:* the name comes from Mail::Header.
 
     fields
-        Return the full header for the object, as a ref to an array of `[TAG,
-        VALUE]' pairs, where each TAG is all-lowercase. Note that any fields the
-        user has explicitly set will override the corresponding MIME fields that
-        we would otherwise generate. So, don't say...
+        Return the full header for the object, as a ref to an array of
+        `[TAG, VALUE]' pairs, where each TAG is all-lowercase. Note that any
+        fields the user has explicitly set will override the corresponding
+        MIME fields that we would otherwise generate. So, don't say...
 
             $msg->set("Content-type" => "text/html; charset=US-ASCII");
 
@@ -429,25 +438,25 @@ PUBLIC INTERFACE
         confusing.
 
     filename [FILENAME]
-        Set the filename which this data will be reported as. This actually sets
-        both "standard" attributes.
+        Set the filename which this data will be reported as. This actually
+        sets both "standard" attributes.
 
         With no argument, returns the filename as dictated by the content-
         disposition.
 
     get TAG,[INDEX]
-        Get the contents of field TAG, which might have been set with set() or
-        replace(). Returns the text of the field.
+        Get the contents of field TAG, which might have been set with set()
+        or replace(). Returns the text of the field.
 
             $ml->get('Subject', 0);
 
         If the optional 0-based INDEX is given, then we return the INDEX'th
-        occurence of field TAG. Otherwise, we look at the context: In a scalar
-        context, only the first (0th) occurence of the field is returned; in an
-        array context, *all* occurences are returned.
+        occurence of field TAG. Otherwise, we look at the context: In a
+        scalar context, only the first (0th) occurence of the field is
+        returned; in an array context, *all* occurences are returned.
 
-        *Warning:* this should only be used with non-MIME fields. Behavior with
-        MIME fields is TBD, and will raise an exception for now.
+        *Warning:* this should only be used with non-MIME fields. Behavior
+        with MIME fields is TBD, and will raise an exception for now.
 
     get_length
         Recompute the content length for the message *if the process is
@@ -458,32 +467,32 @@ PUBLIC INTERFACE
         Returns the length, or undefined if not set.
 
         *Note:* the content length can be difficult to compute, since it
-        involves assembling the entire encoded body and taking the length of it
-        (which, in the case of multipart messages, means freezing all the sub-
-        parts, etc.).
+        involves assembling the entire encoded body and taking the length of
+        it (which, in the case of multipart messages, means freezing all the
+        sub-parts, etc.).
 
         This method only sets the content length to a defined value if the
         message is a singlepart with `"binary"' encoding, *and* the body is
         available either in-core or as a simple file. Otherwise, the content
         length is set to the undefined value.
 
-        Since content-length is not a standard MIME field anyway (that's right,
-        kids: it's not in the MIME RFCs, it's an HTTP thing), this seems pretty
-        fair.
+        Since content-length is not a standard MIME field anyway (that's
+        right, kids: it's not in the MIME RFCs, it's an HTTP thing), this
+        seems pretty fair.
 
     replace TAG,VALUE
-        Delete all occurences of fields named TAG, and add a new field with the
-        given VALUE. TAG is converted to all-lowercase.
+        Delete all occurences of fields named TAG, and add a new field with
+        the given VALUE. TAG is converted to all-lowercase.
 
-        Beware: any MIME fields you "replace" will override any MIME attributes
-        I have when it comes time to output those fields. Normally, you will use
-        this method to set *non-MIME* fields:
+        Beware: any MIME fields you "replace" will override any MIME
+        attributes I have when it comes time to output those fields.
+        Normally, you will use this method to set *non-MIME* fields:
 
             $msg->replace("Subject" => "Hi there!");
 
-        Giving VALUE as undefined will simply cause the contents of the named
-        field to be deleted. Giving VALUE as an arrayref will cause all the
-        values in the array to be added.
+        Giving VALUE as undefined will simply cause the contents of the
+        named field to be deleted. Giving VALUE as an arrayref will cause
+        all the values in the array to be added.
 
         *Note:* the name comes from Mail::Header.
 
@@ -497,57 +506,59 @@ PUBLIC INTERFACE
         The default behavior is that any content type other than `text/*' or
         `message/*' is binmode'd; this should in general work fine.
 
-        With a defined argument, this method sets an explicit "override" value.
-        An undefined argument unsets the override. The new current value is
-        returned.
+        With a defined argument, this method sets an explicit "override"
+        value. An undefined argument unsets the override. The new current
+        value is returned.
 
     data [DATA]
         Get/set the literal DATA of the message. The DATA may be either a
         scalar, or a reference to an array of scalars (which will simply be
         joined).
 
-        *Warning:* setting the data causes the "content-length" attribute to be
-        recomputed (possibly to nothing).
+        *Warning:* setting the data causes the "content-length" attribute to
+        be recomputed (possibly to nothing).
 
     path [PATH]
         Get/set the PATH to the message data.
 
         *Warning:* setting the path recomputes any existing "content-length"
-        field, and re-sets the "filename" (to the last element of the path if it
-        looks like a simple path, and to nothing if not).
+        field, and re-sets the "filename" (to the last element of the path
+        if it looks like a simple path, and to nothing if not).
 
     fh [FILEHANDLE]
         Get/set the FILEHANDLE which contains the message data.
 
-        Takes a filehandle as an input and stores it in the object. This routine
-        is similar to path(); one important difference is that no attempt is
-        made to set the content length.
+        Takes a filehandle as an input and stores it in the object. This
+        routine is similar to path(); one important difference is that no
+        attempt is made to set the content length.
 
     resetfh [FILEHANDLE]
-        Set the current position of the filehandle back to the beginning. Only
-        applies if you used "FH" in build() or attach() for this message.
+        Set the current position of the filehandle back to the beginning.
+        Only applies if you used "FH" in build() or attach() for this
+        message.
 
         Returns false if unable to reset the filehandle (since not all
         filehandles are seekable).
 
     read_now
-        Forces data from the path/filehandle (as specified by `build()') to be
-        read into core immediately, just as though you had given it literally
-        with the `Data' keyword.
+        Forces data from the path/filehandle (as specified by `build()') to
+        be read into core immediately, just as though you had given it
+        literally with the `Data' keyword.
 
         Note that the in-core data will always be used if available.
 
         Be aware that everything is slurped into a giant scalar: you may not
-        want to use this if sending tar files! The benefit of *not* reading in
-        the data is that very large files can be handled by this module if left
-        on disk until the message is output via `print()' or `print_body()'.
+        want to use this if sending tar files! The benefit of *not* reading
+        in the data is that very large files can be handled by this module
+        if left on disk until the message is output via `print()' or
+        `print_body()'.
 
     sign PARAMHASH
-        Sign the message. This forces the message to be read into core, after
-        which the signature is appended to it.
+        Sign the message. This forces the message to be read into core,
+        after which the signature is appended to it.
 
-    Data    As in `build()': the literal signature data. Can be either a scalar or a
-            ref to an array of scalars.
+    Data    As in `build()': the literal signature data. Can be either a scalar
+            or a ref to an array of scalars.
 
     Path    As in `build()': the path to the file.
 
@@ -566,40 +577,42 @@ PUBLIC INTERFACE
   Output
 
     print [OUTHANDLE]
-        *Instance method.* Print the message to the given output handle, or to
-        the currently-selected filehandle if none was given.
+        *Instance method.* Print the message to the given output handle, or
+        to the currently-selected filehandle if none was given.
 
-        All OUTHANDLE has to be is a filehandle (possibly a glob ref), or any
-        object that responds to a print() message.
+        All OUTHANDLE has to be is a filehandle (possibly a glob ref), or
+        any object that responds to a print() message.
 
     print_body [OUTHANDLE]
         *Instance method.* Print the body of a message to the given output
         handle, or to the currently-selected filehandle if none was given.
 
-        All OUTHANDLE has to be is a filehandle (possibly a glob ref), or any
-        object that responds to a print() message.
+        All OUTHANDLE has to be is a filehandle (possibly a glob ref), or
+        any object that responds to a print() message.
 
-        Fatal exception raised if unable to open any of the input files, or if a
-        part contains no data, or if an unsupported encoding is encountered.
+        Fatal exception raised if unable to open any of the input files, or
+        if a part contains no data, or if an unsupported encoding is
+        encountered.
 
     print_header [OUTHANDLE]
-        *Instance method.* Print the header of the message to the given output
-        handle, or to the currently-selected filehandle if none was given.
+        *Instance method.* Print the header of the message to the given
+        output handle, or to the currently-selected filehandle if none was
+        given.
 
-        All OUTHANDLE has to be is a filehandle (possibly a glob ref), or any
-        object that responds to a print() message.
+        All OUTHANDLE has to be is a filehandle (possibly a glob ref), or
+        any object that responds to a print() message.
 
     as_string
-        *Instance method.* Return the entire message as a string, with a header
-        and an encoded body.
+        *Instance method.* Return the entire message as a string, with a
+        header and an encoded body.
 
     body_as_string
         *Instance method.* Return the encoded body as a string. This is the
         portion after the header and the blank line.
 
-        *Note:* actually prepares the body by "printing" to a scalar. Proof that
-        you can hand the `print*()' methods any blessed object that responds to
-        a `print()' message.
+        *Note:* actually prepares the body by "printing" to a scalar. Proof
+        that you can hand the `print*()' methods any blessed object that
+        responds to a `print()' message.
 
     header_as_string
         *Instance method.* Return the header as a string.
@@ -608,27 +621,27 @@ PUBLIC INTERFACE
 
     send
     send HOW, HOWARGS...
-        *Class/instance method.* This is the principle method for sending mail,
-        and for configuring how mail will be sent.
+        *Class/instance method.* This is the principle method for sending
+        mail, and for configuring how mail will be sent.
 
         *As an instance method* (with no arguments), sends the message by
         whatever means has been set up (the default is to use the Unix
-        "sendmail" program). Returns whatever the mail-handling routine returns:
-        this should be true on success, false/exception on error:
+        "sendmail" program). Returns whatever the mail-handling routine
+        returns: this should be true on success, false/exception on error:
 
             $msg = MIME::Lite->new(From=>...);
             $msg->send || die "you DON'T have mail!";
 
-        *As a class method* (with a HOW argument and optional HOWARGS), sets up
-        how the instance method will work for all objects until further notice
-        It treats HOW as a facility name, with optional HOWARGS handled by the
-        facility (and returns the previous HOW and HOWARGS as an array). There
-        are three facilities:
+        *As a class method* (with a HOW argument and optional HOWARGS), sets
+        up how the instance method will work for all objects until further
+        notice It treats HOW as a facility name, with optional HOWARGS
+        handled by the facility (and returns the previous HOW and HOWARGS as
+        an array). There are three facilities:
 
     "sendmail", ARGS...
-            Send a message by piping it into the "sendmail" command. Uses the
-            send_by_sendmail() method, giving it the ARGS. This usage implements
-            (and deprecates) the `sendmail()' method.
+            Send a message by piping it into the "sendmail" command. Uses
+            the send_by_sendmail() method, giving it the ARGS. This usage
+            implements (and deprecates) the `sendmail()' method.
 
     "smtp", [HOSTNAME]
             Send a message by SMTP, using optional HOSTNAME as SMTP-sending
@@ -639,9 +652,9 @@ PUBLIC INTERFACE
             choosing, with MSG as the first argument, and ARGS following.
 
         *For example:* let's say you're on an OS which lacks the usual Unix
-        "sendmail" facility, but you've installed something a lot like it, and
-        you need to configure your Perl script to use this "sendmail.exe"
-        program. Do this following in your script's setup:
+        "sendmail" facility, but you've installed something a lot like it,
+        and you need to configure your Perl script to use this
+        "sendmail.exe" program. Do this following in your script's setup:
 
             MIME::Lite->send('sendmail', "d:\\programs\\sendmail.exe");
 
@@ -649,66 +662,67 @@ PUBLIC INTERFACE
 
             $msg->send;
 
-        That's it. Now, if you ever move your script to a Unix box, all you need
-        to do is change that line in the setup and you're done. All of your
-        $msg->send invocations will work as expected.
+        That's it. Now, if you ever move your script to a Unix box, all you
+        need to do is change that line in the setup and you're done. All of
+        your $msg->send invocations will work as expected.
 
     send_by_sendmail SENDMAILCMD
     send_by_sendmail PARAM=>VALUE, ...
-        *Instance method.* Send message via an external "sendmail" program (this
-        will probably only work out-of-the-box on Unix systems).
+        *Instance method.* Send message via an external "sendmail" program
+        (this will probably only work out-of-the-box on Unix systems).
 
         Returns true on success, false or exception on error.
 
         You can specify the program and all its arguments by giving a single
-        string, SENDMAILCMD. Nothing fancy is done; the message is simply piped
-        in.
+        string, SENDMAILCMD. Nothing fancy is done; the message is simply
+        piped in.
 
-        However, if your needs are a little more advanced, you can specify zero
-        or more of the following PARAM/VALUE pairs; a Unix-style, taint-safe
-        "sendmail" command will be constructed for you:
+        However, if your needs are a little more advanced, you can specify
+        zero or more of the following PARAM/VALUE pairs; a Unix-style,
+        taint-safe "sendmail" command will be constructed for you:
 
     Sendmail
             Full path to the program to use. Default is "/usr/lib/sendmail".
 
     BaseArgs
-            Ref to the basic array of arguments we start with. Default is `["-
-            t", "-oi", "-oem"]'.
+            Ref to the basic array of arguments we start with. Default is
+            `["-t", "-oi", "-oem"]'.
 
     SetSender
             Unless this is *explicitly* given as false, we attempt to
-            automatically set the `-f' argument to the first address that can be
-            extracted from the "From:" field of the message (if there is one).
+            automatically set the `-f' argument to the first address that
+            can be extracted from the "From:" field of the message (if there
+            is one).
 
-            *What is the -f, and why do we use it?* Suppose we did *not* use `-
-            f', and you gave an explicit "From:" field in your message: in this
-            case, the sendmail "envelope" would indicate the *real* user your
-            process was running under, as a way of preventing mail forgery.
-            Using the `-f' switch causes the sender to be set in the envelope as
-            well.
+            *What is the -f, and why do we use it?* Suppose we did *not* use
+            `-f', and you gave an explicit "From:" field in your message: in
+            this case, the sendmail "envelope" would indicate the *real*
+            user your process was running under, as a way of preventing mail
+            forgery. Using the `-f' switch causes the sender to be set in
+            the envelope as well.
 
-            *So when would I NOT want to use it?* If sendmail doesn't regard you
-            as a "trusted" user, it will permit the `-f' but also add an "X-
-            Authentication-Warning" header to the message to indicate a forged
-            envelope. To avoid this, you can either (1) have SetSender be false,
-            or (2) make yourself a trusted user by adding a `T' configuration
-            command to your *sendmail.cf* file (e.g.: `Teryq' if the script is
-            running as user "eryq").
+            *So when would I NOT want to use it?* If sendmail doesn't regard
+            you as a "trusted" user, it will permit the `-f' but also add an
+            "X-Authentication-Warning" header to the message to indicate a
+            forged envelope. To avoid this, you can either (1) have
+            SetSender be false, or (2) make yourself a trusted user by
+            adding a `T' configuration command to your *sendmail.cf* file
+            (e.g.: `Teryq' if the script is running as user "eryq").
 
     send_by_smtp ARGS...
-        *Instance method.* Send message via SMTP, using Net::SMTP. The optional
-        ARGS are sent into Net::SMTP::new(): usually, these are
+        *Instance method.* Send message via SMTP, using Net::SMTP. The
+        optional ARGS are sent into Net::SMTP::new(): usually, these are
 
             MAILHOST, OPTION=>VALUE, ...
 
-        Note that the list of recipients is taken from the "To", "Cc" and "Bcc"
-        fields.
+        Note that the list of recipients is taken from the "To", "Cc" and
+        "Bcc" fields.
 
         Returns true on success, false or exception on error.
 
     sendmail COMMAND...
-        *Class method, DEPRECATED.* Declare the sender to be "sendmail", and set
-        up the "sendmail" command. *You should use send() instead.*
+        *Class method, DEPRECATED.* Declare the sender to be "sendmail", and
+        set up the "sendmail" command. *You should use send() instead.*
 
   Miscellaneous
 
@@ -718,9 +732,9 @@ PUBLIC INTERFACE
 
             MIME::Lite->quiet(1);       ### I know what I'm doing
 
-        I recommend that you include that comment as well. And while you type
-        it, say it out loud: if it doesn't feel right, then maybe you should
-        reconsider the whole line. `;-)'
+        I recommend that you include that comment as well. And while you
+        type it, say it out loud: if it doesn't feel right, then maybe you
+        should reconsider the whole line. `;-)'
 
 NOTES
   Benign limitations
@@ -730,23 +744,24 @@ NOTES
     *   There's no parsing. Get MIME-tools if you need to parse MIME messages.
 
     *   MIME::Lite messages are currently *not* interchangeable with either
-        Mail::Internet or MIME::Entity objects. This is a completely separate
-        module.
+        Mail::Internet or MIME::Entity objects. This is a completely
+        separate module.
 
     *   A content-length field is only inserted if the encoding is binary, the
         message is a singlepart, and all the document data is available at
-        `build()' time by virtue of residing in a simple path, or in-core. Since
-        content-length is not a standard MIME field anyway (that's right, kids:
-        it's not in the MIME RFCs, it's an HTTP thing), this seems pretty fair.
+        `build()' time by virtue of residing in a simple path, or in-core.
+        Since content-length is not a standard MIME field anyway (that's
+        right, kids: it's not in the MIME RFCs, it's an HTTP thing), this
+        seems pretty fair.
 
-    *   MIME::Lite alone cannot help you lose weight. You must supplement your use
-        of MIME::Lite with a healthy diet and exercise.
+    *   MIME::Lite alone cannot help you lose weight. You must supplement your
+        use of MIME::Lite with a healthy diet and exercise.
 
   Cheap and easy mailing
 
-    I thought putting in a default "sendmail" invocation wasn't too bad an idea,
-    since a lot of Perlers are on UNIX systems. The out-of-the-box configuration
-    is:
+    I thought putting in a default "sendmail" invocation wasn't too bad an
+    idea, since a lot of Perlers are on UNIX systems. The out-of-the-box
+    configuration is:
 
          MIME::Lite->send('sendmail', "/usr/lib/sendmail -t -oi -oem");
 
@@ -761,8 +776,8 @@ NOTES
                  appropriate address, given in the header).
                  When mail returns, circle is complete.  Jai guru deva -oem.
 
-    Note that these are the same arguments you get if you configure to use the
-    smarter, taint-safe mailing:
+    Note that these are the same arguments you get if you configure to use
+    the smarter, taint-safe mailing:
 
          MIME::Lite->send('sendmail');
 
@@ -771,103 +786,105 @@ NOTES
 
          MIME::Lite->send('sendmail', SetSender=>0);
 
-    And, if you're not on a Unix system, or if you'd just rather send mail some
-    other way, there's always:
+    And, if you're not on a Unix system, or if you'd just rather send mail
+    some other way, there's always:
 
          MIME::Lite->send('smtp', "smtp.myisp.net");
 
-    Or you can set up your own subroutine to call. In any case, check out the
-    send() method.
+    Or you can set up your own subroutine to call. In any case, check out
+    the send() method.
 
 WARNINGS
   Good-vs-bad email addresses with send_by_smtp()
 
-    If using send_by_smtp(), be aware that you are forcing MIME::Lite to extract
-    email addresses out of a possible list provided in the `To:', `Cc:', and
-    `Bcc:' fields. This is tricky stuff, and as such only the following sorts of
-    addresses will work reliably:
+    If using send_by_smtp(), be aware that you are forcing MIME::Lite to
+    extract email addresses out of a possible list provided in the `To:',
+    `Cc:', and `Bcc:' fields. This is tricky stuff, and as such only the
+    following sorts of addresses will work reliably:
 
         username
         full.name@some.host.com
         "Name, Full" <full.name@some.host.com>
 
-    This last form is discouraged because SMTP must be able to get at the *name*
-    or *name@domain* portion.
+    This last form is discouraged because SMTP must be able to get at the
+    *name* or *name@domain* portion.
 
-    Disclaimer: MIME::Lite was never intended to be a Mail User Agent, so please
-    don't expect a full implementation of RFC-822. Restrict yourself to the
-    common forms of Internet addresses described herein, and you should be fine.
-    If this is not feasible, then consider using MIME::Lite to *prepare* your
-    message only, and using Net::SMTP explicitly to *send* your message.
+    Disclaimer: MIME::Lite was never intended to be a Mail User Agent, so
+    please don't expect a full implementation of RFC-822. Restrict yourself
+    to the common forms of Internet addresses described herein, and you
+    should be fine. If this is not feasible, then consider using MIME::Lite
+    to *prepare* your message only, and using Net::SMTP explicitly to *send*
+    your message.
 
   Formatting of headers delayed until print()
 
     This class treats a MIME header in the most abstract sense, as being a
-    collection of high-level attributes. The actual RFC-822-style header fields
-    are not constructed until it's time to actually print the darn thing.
+    collection of high-level attributes. The actual RFC-822-style header
+    fields are not constructed until it's time to actually print the darn
+    thing.
 
   Encoding of data delayed until print()
 
-    When you specify message bodies (in build() or attach()) -- whether by FH,
-    Data, or Path -- be warned that we don't attempt to open files, read
+    When you specify message bodies (in build() or attach()) -- whether by
+    FH, Data, or Path -- be warned that we don't attempt to open files, read
     filehandles, or encode the data until print() is invoked.
 
-    In the past, this created some confusion for users of sendmail who gave the
-    wrong path to an attachment body, since enough of the print() would succeed
-    to get the initial part of the message out. Nowadays, $AUTO_VERIFY is used
-    to spot-check the Paths given before the mail facility is employed. A
-    whisker slower, but tons safer.
+    In the past, this created some confusion for users of sendmail who gave
+    the wrong path to an attachment body, since enough of the print() would
+    succeed to get the initial part of the message out. Nowadays,
+    $AUTO_VERIFY is used to spot-check the Paths given before the mail
+    facility is employed. A whisker slower, but tons safer.
 
-    Note that if you give a message body via FH, and try to print() a message
-    twice, the second print() will not do the right thing unless you explicitly
-    rewind the filehandle.
+    Note that if you give a message body via FH, and try to print() a
+    message twice, the second print() will not do the right thing unless you
+    explicitly rewind the filehandle.
 
-    You can get past these difficulties by using the ReadNow option, provided
-    that you have enough memory to handle your messages.
+    You can get past these difficulties by using the ReadNow option,
+    provided that you have enough memory to handle your messages.
 
   MIME attributes are separate from header fields!
 
-    Important: the MIME attributes are stored and manipulated separately from
-    the message header fields; when it comes time to print the header out, *any
-    explicitly-given header fields override the ones that would be created from
-    the MIME attributes.* That means that this:
+    Important: the MIME attributes are stored and manipulated separately
+    from the message header fields; when it comes time to print the header
+    out, *any explicitly-given header fields override the ones that would be
+    created from the MIME attributes.* That means that this:
 
         ### DANGER ### DANGER ### DANGER ### DANGER ### DANGER ###
         $msg->add("Content-type", "text/html; charset=US-ASCII");
 
-    will set the exact `"Content-type"' field in the header I write, *regardless
-    of what the actual MIME attributes are.*
+    will set the exact `"Content-type"' field in the header I write,
+    *regardless of what the actual MIME attributes are.*
 
-    *This feature is for experienced users only,* as an escape hatch in case the
-    code that normally formats MIME header fields isn't doing what you need.
-    And, like any escape hatch, it's got an alarm on it: MIME::Lite will warn
-    you if you attempt to `set()' or `replace()' any MIME header field. Use
-    `attr()' instead.
+    *This feature is for experienced users only,* as an escape hatch in case
+    the code that normally formats MIME header fields isn't doing what you
+    need. And, like any escape hatch, it's got an alarm on it: MIME::Lite
+    will warn you if you attempt to `set()' or `replace()' any MIME header
+    field. Use `attr()' instead.
 
   Beware of lines consisting of a single dot
 
     Julian Haight noted that MIME::Lite allows you to compose messages with
     lines in the body consisting of a single ".". This is true: it should be
-    completely harmless so long as "sendmail" is used with the -oi option (see
-    the section on "Cheap and easy mailing").
+    completely harmless so long as "sendmail" is used with the -oi option
+    (see the section on "Cheap and easy mailing").
 
     However, I don't know if using Net::SMTP to transfer such a message is
     equally safe. Feedback is welcomed.
 
     My perspective: I don't want to magically diddle with a user's message
-    unless absolutely positively necessary. Some users may want to send files
-    with "." alone on a line; my well-meaning tinkering could seriously harm
-    them.
+    unless absolutely positively necessary. Some users may want to send
+    files with "." alone on a line; my well-meaning tinkering could
+    seriously harm them.
 
 A MIME PRIMER
   Content types
 
-    The "Type" parameter of `build()' is a *content type*. This is the actual
-    type of data you are sending. Generally this is a string of the form
-    `"majortype/minortype"'.
+    The "Type" parameter of `build()' is a *content type*. This is the
+    actual type of data you are sending. Generally this is a string of the
+    form `"majortype/minortype"'.
 
-    Here are the major MIME types. A more-comprehensive listing may be found in
-    RFC-2046.
+    Here are the major MIME types. A more-comprehensive listing may be found
+    in RFC-2046.
 
     application
         Data which does not fit in any of the other categories, particularly
@@ -903,21 +920,21 @@ A MIME PRIMER
     found in RFC-2045.
 
     7bit
-        Basically, no *real* encoding is done. However, this label guarantees
-        that no 8-bit characters are present, and that lines do not exceed 1000
-        characters in length.
+        Basically, no *real* encoding is done. However, this label
+        guarantees that no 8-bit characters are present, and that lines do
+        not exceed 1000 characters in length.
 
     8bit
-        Basically, no *real* encoding is done. The message might contain 8-bit
-        characters, but this encoding guarantees that lines do not exceed 1000
-        characters in length.
+        Basically, no *real* encoding is done. The message might contain 8-
+        bit characters, but this encoding guarantees that lines do not
+        exceed 1000 characters in length.
 
     binary
-        No encoding is done at all. Message might contain 8-bit characters, and
-        lines might be longer than 1000 characters long.
+        No encoding is done at all. Message might contain 8-bit characters,
+        and lines might be longer than 1000 characters long.
 
-        The most liberal, and the least likely to get through mail gateways. Use
-        sparingly, or (better yet) not at all.
+        The most liberal, and the least likely to get through mail gateways.
+        Use sparingly, or (better yet) not at all.
 
     base64
         Like "uuencode", but very well-defined. This is how you should send
@@ -925,76 +942,78 @@ A MIME PRIMER
 
     quoted-printable
         Useful for encoding messages which are textual in nature, yet which
-        contain non-ASCII characters (e.g., Latin-1, Latin-2, or any other 8-bit
-        alphabet).
+        contain non-ASCII characters (e.g., Latin-1, Latin-2, or any other
+        8-bit alphabet).
+
+VERSION
+    $Id: Lite.pm,v 2.102 2000/08/15 01:32:50 eryq Exp $
 
 CHANGE LOG
-    Current version: $Id: Lite.pm,v 2.101 2000/06/06 03:52:43 eryq Exp $
-
-    Version 2.101
+    Version 2.101   (2000/06/06)
         Major revision to print_body() and body_as_string() so that "body"
         really means "the part after the header", which is what most people
         would want in this context. This is not how it was used 1.x, where
         "body" only meant "the body of a simple singlepart". Hopefully, this
         change will solve many problems and create very few ones.
 
-        Added support for attaching a part to a "message/rfc822", treating the
-        "message" type as a multipart-like container.
+        Added support for attaching a part to a "message/rfc822", treating
+        the "message" type as a multipart-like container.
 
-        Now takes care not to include "Bcc:" in header when using send_by_smtp,
-        as a safety precaution against qmail's behavior. *Thanks to Tatsuhiko
-        Miyagawa for identifying this problem.*
+        Now takes care not to include "Bcc:" in header when using
+        send_by_smtp, as a safety precaution against qmail's behavior.
+        *Thanks to Tatsuhiko Miyagawa for identifying this problem.*
 
         Improved efficieny of many stringifying operations by using string-
-        arrays which are joined, instead of doing multiple appends to a scalar.
+        arrays which are joined, instead of doing multiple appends to a
+        scalar.
 
         Cleaned up the "examples" directory.
 
-    Version 1.147
-        Fixed buglet where lack of Cc:/Bcc: was causing extract_addrs to emit
-        "undefined variable" warnings. Also, lack of a "To:" field now causes a
-        croak. *Thanks to David Mitchell for the bug report and suggested
-        patch.*
+    Version 1.147   (2000/06/02)
+        Fixed buglet where lack of Cc:/Bcc: was causing extract_addrs to
+        emit "undefined variable" warnings. Also, lack of a "To:" field now
+        causes a croak. *Thanks to David Mitchell for the bug report and
+        suggested patch.*
 
-    Version 1.146
+    Version 1.146   (2000/05/18)
         Fixed bug in parsing of addresses; please read the WARNINGS section
-        which describes recommended address formats for "To:", "Cc:", etc. Also
-        added automatic inclusion of a UT "Date:" at top level unless explicitly
-        told not to. *Thanks to Andy Jacobs for the bug report and the
-        suggestion.*
+        which describes recommended address formats for "To:", "Cc:", etc.
+        Also added automatic inclusion of a UT "Date:" at top level unless
+        explicitly told not to. *Thanks to Andy Jacobs for the bug report
+        and the suggestion.*
 
-    Version 1.145
+    Version 1.145   (2000/05/06)
         Fixed bug in encode_7bit(): a lingering `/e' modifier was removed.
         *Thanks to Michael A. Chase for the patch.*
 
-    Version 1.142
-        Added new, taint-safe invocation of "sendmail", one which also sets up
-        the `-f' option. Unfortunately, I couldn't make this automatic: the
-        change could have broken a lot of code out there which used
-        send_by_sendmail() with unusual "sendmail" variants. So you'll have to
-        configure "send" to use the new mechanism:
+    Version 1.142   (2000/05/02)
+        Added new, taint-safe invocation of "sendmail", one which also sets
+        up the `-f' option. Unfortunately, I couldn't make this automatic:
+        the change could have broken a lot of code out there which used
+        send_by_sendmail() with unusual "sendmail" variants. So you'll have
+        to configure "send" to use the new mechanism:
 
             MIME::Lite->send('sendmail');       ### no args!
 
         *Thanks to Jeremy Howard for suggesting these features.*
 
-    Version 1.140
+    Version 1.140   (2000/04/27)
         Fixed bug in support for "To", "Cc", and "Bcc" in send_by_smtp():
-        multiple (comma-separated) addresses should now work fine. We try real
-        hard to extract addresses from the flat text strings. *Thanks to John
-        Mason for motivating this change.*
+        multiple (comma-separated) addresses should now work fine. We try
+        real hard to extract addresses from the flat text strings. *Thanks
+        to John Mason for motivating this change.*
 
         Added automatic verification that attached data files exist, done
-        immediately before the "send" action is invoked. To turn this off, set
-        $MIME::Lite::AUTO_VERIFY to false.
+        immediately before the "send" action is invoked. To turn this off,
+        set $MIME::Lite::AUTO_VERIFY to false.
 
-    Version 1.137
-        Added support for "Cc" and "Bcc" in send_by_smtp(). To turn this off,
-        set $MIME::Lite::AUTO_CC to false. *Thanks to Lucas Maneos for the
-        patch, and tons of others for the suggestion.*
+    Version 1.137   (2000/03/22)
+        Added support for "Cc" and "Bcc" in send_by_smtp(). To turn this
+        off, set $MIME::Lite::AUTO_CC to false. *Thanks to Lucas Maneos for
+        the patch, and tons of others for the suggestion.*
 
-        Chooses a better default content-transfer-encoding if the content-type
-        is "image/*", "audio/*", etc. To turn this off, set
+        Chooses a better default content-transfer-encoding if the content-
+        type is "image/*", "audio/*", etc. To turn this off, set
         $MIME::Lite::AUTO_ENCODE to false. *Thanks to many folks for the
         suggestion.*
 
@@ -1004,42 +1023,44 @@ CHANGE LOG
         Removed references to `$`', `$'', and `$&' (bad variables which slow
         things down).
 
-        Added an example of how to send HTML files with enclosed in-line images,
-        per popular demand.
+        Added an example of how to send HTML files with enclosed in-line
+        images, per popular demand.
 
-    Version 1.133
-        Fixed bug in "Data" handling: arrayrefs were not being handled properly.
+    Version 1.133   (1999/04/17)
+        Fixed bug in "Data" handling: arrayrefs were not being handled
+        properly.
 
-    Version 1.130
-        Added much larger and more-flexible send() facility. *Thanks to Andrew
-        McRae (and Optimation New Zealand Ltd) for the Net::SMTP interface.
-        Additional thanks to the many folks who requested this feature.*
+    Version 1.130   (1998/12/14)
+        Added much larger and more-flexible send() facility. *Thanks to
+        Andrew McRae (and Optimation New Zealand Ltd) for the Net::SMTP
+        interface. Additional thanks to the many folks who requested this
+        feature.*
 
         Added get() method for extracting basic attributes.
 
         New... "t" tests!
 
-    Version 1.124
+    Version 1.124   (1998/11/13)
         Folded in filehandle (FH) support in build/attach. *Thanks to Miko
         O'Sullivan for the code.*
 
-    Version 1.122
+    Version 1.122   (1998/01/19)
         MIME::Base64 and MIME::QuotedPrint are used if available.
 
         The 7bit encoding no longer does "escapes"; it merely strips 8-bit
         characters.
 
-    Version 1.121
-        Filename attribute is now no longer ignored by build(). *Thanks to Ian
-        Smith for finding and patching this bug.*
+    Version 1.121   (1997/04/08)
+        Filename attribute is now no longer ignored by build(). *Thanks to
+        Ian Smith for finding and patching this bug.*
 
-    Version 1.120
+    Version 1.120   (1997/03/29)
         Efficiency hack to speed up MIME::Lite::IO_Scalar. *Thanks to David
         Aspinwall for the patch.*
 
-    Version 1.116
-        Small bug in our private copy of encode_base64() was patched. *Thanks to
-        Andreas Koenig for pointing this out.*
+    Version 1.116   (1997/03/19)
+        Small bug in our private copy of encode_base64() was patched.
+        *Thanks to Andreas Koenig for pointing this out.*
 
         New, prettier way of specifying mail message headers in `build()'.
 
@@ -1047,40 +1068,42 @@ CHANGE LOG
 
         Changed "stringify" methods to more-standard "as_string" methods.
 
-    Version 1.112
+    Version 1.112   (1997/03/06)
         Added `read_now()', and `binmode()' method for our non-Unix-using
-        brethren: file data is now read using binmode() if appropriate. *Thanks
-        to Xiangzhou Wang for pointing out this bug.*
+        brethren: file data is now read using binmode() if appropriate.
+        *Thanks to Xiangzhou Wang for pointing out this bug.*
 
-    Version 1.110
+    Version 1.110   (1997/03/06)
         Fixed bug in opening the data filehandle.
 
-    Version 1.102
+    Version 1.102   (1997/03/01)
         Initial release.
 
-    Version 1.101
+    Version 1.101   (1997/03/01)
         Baseline code.
 
 TERMS AND CONDITIONS
-    Copyright (c) 1997 by Eryq. Copyright (c) 1998 by ZeeGee Software Inc. All
-    rights reserved. This program is free software; you can redistribute it
-    and/or modify it under the same terms as Perl itself.
+    Copyright (c) 1997 by Eryq. Copyright (c) 1998 by ZeeGee Software Inc.
+    All rights reserved. This program is free software; you can redistribute
+    it and/or modify it under the same terms as Perl itself.
 
-    This software comes with NO WARRANTY of any kind. See the COPYING file in
-    the distribution for details.
+    This software comes with NO WARRANTY of any kind. See the COPYING file
+    in the distribution for details.
 
 NUTRITIONAL INFORMATION
     For some reason, the US FDA says that this is now required by law on any
     products that bear the name "Lite"...
 
-        Serving size:             1 module
-        Servings per container:   1
-        Calories:                 0
-        Fat:                      0g
-          Saturated Fat:          0g
+        MIME::Lite                | 
+        ------------------------------------------------------------
+        Serving size:             | 1 module
+        Servings per container:   | 1
+        Calories:                 | 0
+        Fat:                      | 0g
+          Saturated Fat:          | 0g
 
-        Warning: for consumption by hardware only!  May produce 
-        indigestion in humans if taken internally.
+    Warning: for consumption by hardware only! May produce indigestion in
+    humans if taken internally.
 
 AUTHOR
     Eryq (eryq@zeegee.com). President, ZeeGee Software Inc.

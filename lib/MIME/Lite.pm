@@ -244,7 +244,7 @@ use vars qw(
 # GLOBALS, EXTERNAL/CONFIGURATION...
 
 ### The package version, both in 1.23 style *and* usable by MakeMaker:
-$VERSION = substr q$Revision: 2.101 $, 10;
+$VERSION = substr q$Revision: 2.102 $, 10;
 
 ### Don't warn me about dangerous activities:
 $QUIET = undef;
@@ -663,12 +663,12 @@ The default is C<"inline">.
 I<Optional.>
 The content transfer encoding that should be used to encode your data:
 
-   Use encoding:     If your message contains:
+   Use encoding:     | If your message contains:
    ------------------------------------------------------------
-   7bit              Only 7-bit text, all lines <1000 characters
-   8bit              8-bit text, all lines <1000 characters
-   quoted-printable  8-bit text or long lines (MUCH more reliable than "8bit")
-   base64            Largely non-textual data: a GIF, a tar file, etc.
+   7bit              | Only 7-bit text, all lines <1000 characters
+   8bit              | 8-bit text, all lines <1000 characters
+   quoted-printable  | 8-bit text or long lines (more reliable than "8bit")
+   base64            | Largely non-textual data: a GIF, a tar file, etc.
 
 The default is taken from the Type; generally it is "binary" (no
 encoding) for text/*, message/*, and multipart/*, and "base64" for
@@ -2584,14 +2584,16 @@ non-ASCII characters (e.g., Latin-1, Latin-2, or any other 8-bit alphabet).
 
 
 
-=head1 CHANGE LOG
+=head1 VERSION
 
-B<Current version:>
-$Id: Lite.pm,v 2.101 2000/06/06 03:52:43 eryq Exp $
+$Id: Lite.pm,v 2.102 2000/08/15 01:32:50 eryq Exp $
+
+
+=head1 CHANGE LOG
 
 =over 4
 
-=item Version 2.101
+=item Version 2.101   (2000/06/06)
 
 Major revision to print_body() and body_as_string() so that
 "body" really means "the part after the header", which is what most
@@ -2613,7 +2615,7 @@ to a scalar.
 Cleaned up the "examples" directory.
 
 
-=item Version 1.147
+=item Version 1.147   (2000/06/02)
 
 Fixed buglet where lack of Cc:/Bcc: was causing extract_addrs
 to emit "undefined variable" warnings.  Also, lack of a "To:" field
@@ -2621,7 +2623,7 @@ now causes a croak.
 I<Thanks to David Mitchell for the bug report and suggested patch.>
 
 
-=item Version 1.146
+=item Version 1.146   (2000/05/18)
 
 Fixed bug in parsing of addresses; please read the WARNINGS section
 which describes recommended address formats for "To:", "Cc:", etc.
@@ -2629,13 +2631,13 @@ Also added automatic inclusion of a UT "Date:" at top level unless
 explicitly told not to.
 I<Thanks to Andy Jacobs for the bug report and the suggestion.>
 
-=item Version 1.145 
+=item Version 1.145   (2000/05/06)
 
 Fixed bug in encode_7bit(): a lingering C</e> modifier was removed.
 I<Thanks to Michael A. Chase for the patch.>
 
 
-=item Version 1.142
+=item Version 1.142   (2000/05/02)
 
 Added new, taint-safe invocation of "sendmail", one which also
 sets up the C<-f> option.  Unfortunately, I couldn't make this automatic:
@@ -2648,7 +2650,7 @@ So you'll have to configure "send" to use the new mechanism:
 I<Thanks to Jeremy Howard for suggesting these features.>
 
 
-=item Version 1.140
+=item Version 1.140   (2000/04/27)
 
 Fixed bug in support for "To", "Cc", and "Bcc" in send_by_smtp():
 multiple (comma-separated) addresses should now work fine.
@@ -2659,7 +2661,7 @@ Added automatic verification that attached data files exist,
 done immediately before the "send" action is invoked.
 To turn this off, set $MIME::Lite::AUTO_VERIFY to false.
 
-=item Version 1.137
+=item Version 1.137   (2000/03/22)
 
 Added support for "Cc" and "Bcc" in send_by_smtp().
 To turn this off, set $MIME::Lite::AUTO_CC to false.
@@ -2681,13 +2683,13 @@ Added an example of how to send HTML files with enclosed in-line
 images, per popular demand.
 
 
-=item Version 1.133
+=item Version 1.133   (1999/04/17)
 
 Fixed bug in "Data" handling: arrayrefs were not being handled
 properly.
 
 
-=item Version 1.130
+=item Version 1.130   (1998/12/14)
 
 Added much larger and more-flexible send() facility.
 I<Thanks to Andrew McRae (and Optimation New Zealand Ltd) 
@@ -2699,32 +2701,32 @@ Added get() method for extracting basic attributes.
 New... "t" tests!
 
 
-=item Version 1.124
+=item Version 1.124   (1998/11/13)
 
 Folded in filehandle (FH) support in build/attach.
 I<Thanks to Miko O'Sullivan for the code.>
 
 
-=item Version 1.122
+=item Version 1.122   (1998/01/19)
 
 MIME::Base64 and MIME::QuotedPrint are used if available.
 
 The 7bit encoding no longer does "escapes"; it merely strips 8-bit characters.
 
 
-=item Version 1.121
+=item Version 1.121   (1997/04/08)
 
 Filename attribute is now no longer ignored by build().
 I<Thanks to Ian Smith for finding and patching this bug.>
 
 
-=item Version 1.120
+=item Version 1.120   (1997/03/29)
 
 Efficiency hack to speed up MIME::Lite::IO_Scalar.
 I<Thanks to David Aspinwall for the patch.>
 
 
-=item Version 1.116
+=item Version 1.116   (1997/03/19)
 
 Small bug in our private copy of encode_base64() was patched.
 I<Thanks to Andreas Koenig for pointing this out.>
@@ -2736,24 +2738,24 @@ New quiet method to turn off warnings.
 Changed "stringify" methods to more-standard "as_string" methods.
 
 
-=item Version 1.112
+=item Version 1.112   (1997/03/06)
 
 Added C<read_now()>, and C<binmode()> method for our non-Unix-using brethren: 
 file data is now read using binmode() if appropriate.
 I<Thanks to Xiangzhou Wang for pointing out this bug.>
 
 
-=item Version 1.110
+=item Version 1.110   (1997/03/06)
 
 Fixed bug in opening the data filehandle.
 
 
-=item Version 1.102
+=item Version 1.102   (1997/03/01)
 
 Initial release.
 
 
-=item Version 1.101
+=item Version 1.101   (1997/03/01)
 
 Baseline code.
 
@@ -2776,14 +2778,16 @@ See the COPYING file in the distribution for details.
 For some reason, the US FDA says that this is now required by law
 on any products that bear the name "Lite"...
 
-    Serving size:             1 module
-    Servings per container:   1
-    Calories:                 0
-    Fat:                      0g
-      Saturated Fat:          0g
+    MIME::Lite                | 
+    ------------------------------------------------------------
+    Serving size:             | 1 module
+    Servings per container:   | 1
+    Calories:                 | 0
+    Fat:                      | 0g
+      Saturated Fat:          | 0g
 
-    Warning: for consumption by hardware only!  May produce 
-    indigestion in humans if taken internally.
+Warning: for consumption by hardware only!  May produce 
+indigestion in humans if taken internally.
 
 
 =head1 AUTHOR

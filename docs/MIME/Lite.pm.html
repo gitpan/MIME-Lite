@@ -3,10 +3,9 @@
   <TITLE>MIME::Lite</TITLE>
 </HEAD>
 <BODY 
-       bgcolor="#FFFFFF" link="#BE1B58" vlink="#8C337C" alink="#F28EAA">
-<A HREF="http://www.zeegee.com" TARGET="_top"><IMG SRC="icons/zeegee.gif" ALT="ZeeGee Software" ALIGN="RIGHT" BORDER="0"></A><A NAME="__TOP__"><H1>MIME::Lite</H1>
-</A>
-<P><B>This module is <FONT COLOR="#990000">BETA</FONT> code, which means that the interfaces are fairly stable BUT it has not been out in the community long enough to guarantee much testing. Use with caution! Please report any errors back to <A HREF="mailto:eryq@zeegee.com">eryq@zeegee.com</A> as soon as you can.</B><UL>
+       bgcolor="#FFFFFF" link="#CC3366" vlink="#993366" alink="#FF6666">
+<FONT FACE="sans-serif" SIZE=-1><A HREF="http://www.zeegee.com" TARGET="_top"><IMG SRC="icons/zeegee.gif" ALT="ZeeGee Software" ALIGN="RIGHT" BORDER="0"></A><A NAME="__TOP__"><H1>MIME::Lite</H1>
+</A><UL>
 <LI> <A HREF="#NAME">NAME</A>
 <LI> <A HREF="#SYNOPSIS">SYNOPSIS</A>
 <LI> <A HREF="#DESCRIPTION">DESCRIPTION</A>
@@ -46,6 +45,7 @@
 <LI> <A HREF="#Content_types">Content types</A>
 <LI> <A HREF="#Content_transfer_encodings">Content transfer encodings</A>
 </UL>
+<LI> <A HREF="#VERSION">VERSION</A>
 <LI> <A HREF="#CHANGE_LOG">CHANGE LOG</A>
 <LI> <A HREF="#TERMS_AND_CONDITIONS">TERMS AND CONDITIONS</A>
 <LI> <A HREF="#NUTRITIONAL_INFORMATION">NUTRITIONAL INFORMATION</A>
@@ -64,12 +64,12 @@
 <P><HR>
 <A NAME="SYNOPSIS"><H2><A HREF="#__TOP__"><IMG SRC="icons/h1bullet.gif" ALT="Top" BORDER="0"></A> SYNOPSIS</H2></A>
 
-<PRE>
+<FONT SIZE=3 FACE="courier"><PRE>
     use MIME::Lite;
    
 Create a single-part message:
-</PRE>
-<PRE>
+</PRE></FONT>
+<FONT SIZE=3 FACE="courier"><PRE>
     ### Create a new single-part message, to send a GIF file:
     $msg = MIME::Lite-&gt;new(
                  From     =&gt;'me@myhost.com',
@@ -80,11 +80,11 @@ Create a single-part message:
                  Encoding =&gt;'base64',
                  Path     =&gt;'hellonurse.gif'
 		 );
-</PRE>
+</PRE></FONT>
 
 <P>Create a multipart message (i.e., one with attachments):
 
-<PRE>
+<FONT SIZE=3 FACE="courier"><PRE>
     ### Create a new multipart message:
     $msg = MIME::Lite-&gt;new( 
                  From    =&gt;'me@myhost.com',
@@ -102,25 +102,25 @@ Create a single-part message:
                  Path     =&gt;'aaa000123.gif',
                  Filename =&gt;'logo.gif'
 		 );
-</PRE>
+</PRE></FONT>
 
 <P>Output a message:
 
-<PRE>
+<FONT SIZE=3 FACE="courier"><PRE>
     ### Format as a string:
     $str = $msg-&gt;as_string;
     
     ### Print to a filehandle (say, a &quot;sendmail&quot; stream):
     $msg-&gt;print(\*SENDMAIL);
-</PRE>
+</PRE></FONT>
 
 <P>Send a message:
 
-<PRE>
+<FONT SIZE=3 FACE="courier"><PRE>
     ### Send in the &quot;best&quot; way (the default is to use &quot;sendmail&quot;):
     $msg-&gt;send;
       
-</PRE>
+</PRE></FONT>
 
 
 <P><HR>
@@ -165,7 +165,7 @@ over this one.
 <P>This will create a multipart message exactly as above, but using the 
 &quot;attach to singlepart&quot; hack:
 
-<PRE>
+<FONT SIZE=3 FACE="courier"><PRE>
     ### Create a new multipart message:
     $msg = MIME::Lite-&gt;new(
                  From    =&gt;'me@myhost.com',
@@ -181,13 +181,13 @@ over this one.
                  Path     =&gt;'aaa000123.gif',
                  Filename =&gt;'logo.gif'
                  );
-</PRE>
+</PRE></FONT>
 
 
 <P><HR>
 <A NAME="Send_an_HTML_document_with_images_included"><H3><A HREF="#__TOP__"><IMG SRC="icons/h2bullet.gif" ALT="Top" BORDER="0"></A> Send an HTML document... with images included!</H3></A>
 
-<PRE>
+<FONT SIZE=3 FACE="courier"><PRE>
     $msg = MIME::Lite-&gt;new(
                  To      =&gt;'you@yourhost.com',
                  Subject =&gt;'HTML with in-line images!',
@@ -204,13 +204,13 @@ over this one.
                  Path =&gt; '/path/to/somefile.gif',
                  );
     $msg-&gt;send();
-</PRE>
+</PRE></FONT>
 
 
 <P><HR>
 <A NAME="Output_a_message_to_a_filehandle"><H3><A HREF="#__TOP__"><IMG SRC="icons/h2bullet.gif" ALT="Top" BORDER="0"></A> Output a message to a filehandle</H3></A>
 
-<PRE>
+<FONT SIZE=3 FACE="courier"><PRE>
     ### Write it to a filehandle:
     $msg-&gt;print(\*STDOUT); 
      
@@ -219,13 +219,13 @@ over this one.
      
     ### Write just the encoded body:
     $msg-&gt;print_body(\*STDOUT); 
-</PRE>
+</PRE></FONT>
 
 
 <P><HR>
 <A NAME="Get_a_message_as_a_string"><H3><A HREF="#__TOP__"><IMG SRC="icons/h2bullet.gif" ALT="Top" BORDER="0"></A> Get a message as a string</H3></A>
 
-<PRE>
+<FONT SIZE=3 FACE="courier"><PRE>
     ### Get entire message as a string:
     $str = $msg-&gt;as_string;
      
@@ -234,13 +234,13 @@ over this one.
      
     ### Get just the encoded body:
     $str = $msg-&gt;body_as_string;
-</PRE>
+</PRE></FONT>
 
 
 <P><HR>
 <A NAME="Change_how_messages_are_sent"><H3><A HREF="#__TOP__"><IMG SRC="icons/h2bullet.gif" ALT="Top" BORDER="0"></A> Change how messages are sent</H3></A>
 
-<PRE>
+<FONT SIZE=3 FACE="courier"><PRE>
     ### Do something like this in your 'main':
     if ($I_DONT_HAVE_SENDMAIL) {
        MIME::Lite-&gt;send('smtp', &quot;smtp.myisp.net&quot;, Timeout=&gt;60);
@@ -248,7 +248,7 @@ over this one.
      
     ### Now this will do the right thing:
     $msg-&gt;send;         ### will now use Net::SMTP as shown above
-</PRE>
+</PRE></FONT>
 
 
 <P><HR>
@@ -277,21 +277,21 @@ When used as a <A HREF="#item:send">classmethod</A>, this can be used to specify
 a different default mechanism for sending message.  
 The initial default is:
 
-<PRE>
+<FONT SIZE=3 FACE="courier"><PRE>
     MIME::Lite-&gt;send(&quot;sendmail&quot;, &quot;/usr/lib/sendmail -t -oi -oem&quot;);
-</PRE>
+</PRE></FONT>
 
 <P>However, you should consider the similar but smarter and taint-safe variant:
 
-<PRE>
+<FONT SIZE=3 FACE="courier"><PRE>
     MIME::Lite-&gt;send(&quot;sendmail&quot;);
-</PRE>
+</PRE></FONT>
 
 <P>Or, for non-Unix users:
 
-<PRE>
+<FONT SIZE=3 FACE="courier"><PRE>
     MIME::Lite-&gt;send(&quot;smtp&quot;);
-</PRE>
+</PRE></FONT>
 <P><DT><B><A NAME="item:MIME_Lite_PARANOID">$MIME::Lite::PARANOID</A></B></DT>
 <DD>
 If true, we won't attempt to use MIME::Base64/MIME::QuotedPrint, even
@@ -377,12 +377,7 @@ that a user agent like Netscape allows you to do.
 Create (or initiallize) a MIME message object.  
 Normally, you'll use the following keys in PARAMHASH:
 
-<PRE>
-   * Data, FH, or Path      (either one of these, or none if multipart)
-   * Type                   (e.g., &quot;image/jpeg&quot;)
-   * From, To, and Subject  (if this is the &quot;top level&quot; of a message)
-</PRE>
-
+<P><UL><LI> Data, FH, or Path      (either one of these, or none if multipart)<LI> Type                   (e.g., &quot;image/jpeg&quot;)<LI> From, To, and Subject  (if this is the &quot;top level&quot; of a message)</UL>
 <P>The PARAMHASH can contain the following keys:
 
 
@@ -393,14 +388,14 @@ Normally, you'll use the following keys in PARAMHASH:
 Any field you want placed in the message header, taken from the
 standard list of header fields (you don't need to worry about case):
 
-<PRE>
+<FONT SIZE=3 FACE="courier"><PRE>
     Bcc           Encrypted     Received      Sender         
     Cc            From          References    Subject 
     Comments	  Keywords      Reply-To      To 
     Content-*	  Message-ID    Resent-*      X-*
     Date          MIME-Version  Return-Path   
                   Organization
-</PRE>
+</PRE></FONT>
 
 <P>To give experienced users some veto power, these fields will be set 
 <I>after</I> the ones I set... so be careful: <I>don't set any MIME fields</I>
@@ -439,15 +434,7 @@ The default is <CODE>&quot;inline&quot;</CODE>.
 <I>Optional.</I>
 The content transfer encoding that should be used to encode your data:
 
-<PRE>
-   Use encoding:     If your message contains:
-   ------------------------------------------------------------
-   7bit              Only 7-bit text, all lines &lt;1000 characters
-   8bit              8-bit text, all lines &lt;1000 characters
-   quoted-printable  8-bit text or long lines (MUCH more reliable than &quot;8bit&quot;)
-   base64            Largely non-textual data: a GIF, a tar file, etc.
-</PRE>
-
+<P><TABLE CELLPADDING=4 CELLSPACING=0 BORDER=1 ALIGN=CENTER BGCOLOR=#EEEEEE><TR><TH BGCOLOR=#AA0055 ALIGN=LEFT><FONT SIZE=2 COLOR=#FFFFFF FACE="sans-serif">Use encoding:&nbsp;</FONT></TH BGCOLOR=#AA0055><TH BGCOLOR=#AA0055 ALIGN=LEFT><FONT SIZE=2 COLOR=#FFFFFF FACE="sans-serif">If your message contains:&nbsp;</FONT></TH BGCOLOR=#AA0055></TR><TR><TD ALIGN=LEFT><FONT SIZE=2 COLOR=#000000 FACE="sans-serif">7bit</FONT></TD><TD ALIGN=LEFT><FONT SIZE=2 COLOR=#000000 FACE="sans-serif">Only 7-bit text, all lines &lt;1000 characters</FONT></TD></TR><TR><TD ALIGN=LEFT><FONT SIZE=2 COLOR=#000000 FACE="sans-serif">8bit</FONT></TD><TD ALIGN=LEFT><FONT SIZE=2 COLOR=#000000 FACE="sans-serif">8-bit text, all lines &lt;1000 characters</FONT></TD></TR><TR><TD ALIGN=LEFT><FONT SIZE=2 COLOR=#000000 FACE="sans-serif">quoted-printable</FONT></TD><TD ALIGN=LEFT><FONT SIZE=2 COLOR=#000000 FACE="sans-serif">8-bit text or long lines (more reliable than &quot;8bit&quot;)</FONT></TD></TR><TR><TD ALIGN=LEFT><FONT SIZE=2 COLOR=#000000 FACE="sans-serif">base64</FONT></TD><TD ALIGN=LEFT><FONT SIZE=2 COLOR=#000000 FACE="sans-serif">Largely non-textual data: a GIF, a tar file, etc.</FONT></TD></TR></UL></TABLE>
 <P>The default is taken from the Type; generally it is &quot;binary&quot; (no
 encoding) for text/*, message/*, and multipart/*, and &quot;base64&quot; for
 everything else.  A value of <CODE>&quot;binary&quot;</CODE> is generally <I>not</I> suitable
@@ -511,10 +498,10 @@ Default is true.
 <I>Optional.</I>
 The MIME content type, or one of these special values (case-sensitive):
 
-<PRE>
+<FONT SIZE=3 FACE="courier"><PRE>
      &quot;TEXT&quot;   means &quot;text/plain&quot;
      &quot;BINARY&quot; means &quot;application/octet-stream&quot;
-</PRE>
+</PRE></FONT>
 
 <P>The default is <CODE>&quot;TEXT&quot;</CODE>.
 
@@ -525,7 +512,7 @@ The MIME content type, or one of these special values (case-sensitive):
 is of course 2000 bytes, so it's probably more of an &quot;icon&quot; than a &quot;picture&quot;,
 but I digress...), here are some examples:
 
-<PRE>
+<FONT SIZE=3 FACE="courier"><PRE>
     $msg = MIME::Lite-&gt;build( 
                From     =&gt; 'yelling@inter.com',
                To       =&gt; 'stocking@fish.net',
@@ -549,12 +536,12 @@ but I digress...), here are some examples:
                Path     =&gt; &quot;gzip &lt; /usr/inc/somefile.tar |&quot;,
                ReadNow  =&gt; 1,
                Filename =&gt; &quot;somefile.tgz&quot;);
-</PRE>
+</PRE></FONT>
 
 <P>To show you what's really going on, that last example could also 
 have been written:
 
-<PRE>
+<FONT SIZE=3 FACE="courier"><PRE>
     $msg = new MIME::Lite;
     $msg-&gt;build(Type     =&gt; 'x-gzip',
                 Path     =&gt; &quot;gzip &lt; /usr/inc/somefile.tar |&quot;,
@@ -563,7 +550,7 @@ have been written:
     $msg-&gt;add(From    =&gt; &quot;laughing@all.of.us&quot;);
     $msg-&gt;add(To      =&gt; &quot;scarlett@fiddle.dee.de&quot;);
     $msg-&gt;add(Subject =&gt; &quot;A gzipp'ed tar file&quot;);  
-</PRE>
+</PRE></FONT>
 </DL>
 
 
@@ -585,15 +572,15 @@ will be made &quot;safe&quot; (returns will be given a trailing space).
 attributes I have when it comes time to output those fields.
 Normally, you will use this method to add <I>non-MIME</I> fields:
 
-<PRE>
+<FONT SIZE=3 FACE="courier"><PRE>
     $msg-&gt;add(&quot;Subject&quot; =&gt; &quot;Hi there!&quot;);
-</PRE>
+</PRE></FONT>
 
 <P>Giving VALUE an arrayref will cause all those values to be added:
 
-<PRE>
+<FONT SIZE=3 FACE="courier"><PRE>
     $msg-&gt;add(&quot;Received&quot; =&gt; [&quot;here&quot;, &quot;there&quot;, &quot;everywhere&quot;]
-</PRE>
+</PRE></FONT>
 
 <P><I>Note:</I> add() is probably going to be more efficient than <CODE>replace()</CODE>,
 so you're better off using it for most applications.
@@ -607,17 +594,17 @@ Set MIME attribute ATTR to the string VALUE.
 ATTR is converted to all-lowercase.
 This method is normally used to set/get MIME attributes:
 
-<PRE>
+<FONT SIZE=3 FACE="courier"><PRE>
     $msg-&gt;attr(&quot;content-type&quot;         =&gt; &quot;text/html&quot;);
     $msg-&gt;attr(&quot;content-type.charset&quot; =&gt; &quot;US-ASCII&quot;);
     $msg-&gt;attr(&quot;content-type.name&quot;    =&gt; &quot;homepage.html&quot;);
-</PRE>
+</PRE></FONT>
 
 <P>This would cause the final output to look something like this:
 
-<PRE>
+<FONT SIZE=3 FACE="courier"><PRE>
     Content-type: text/html; charset=US-ASCII; name=&quot;homepage.html&quot;
-</PRE>
+</PRE></FONT>
 
 <P>Note that the special empty sub-field tag indicates the anonymous 
 first sub-field.
@@ -629,18 +616,18 @@ subfield to be deleted.
 
 <P>Supplying no VALUE argument just returns the attribute's value:
 
-<PRE>
+<FONT SIZE=3 FACE="courier"><PRE>
     $type = $msg-&gt;attr(&quot;content-type&quot;);        ### returns &quot;text/html&quot;
     $name = $msg-&gt;attr(&quot;content-type.name&quot;);   ### returns &quot;homepage.html&quot;
-</PRE>
+</PRE></FONT>
 <P><DT><B><A NAME="item:delete">delete TAG</A></B></DT>
 <DD>
 Delete field TAG with the given VALUE to the end of the header.  
 The TAG will be converted to all-lowercase.
 
-<PRE>
+<FONT SIZE=3 FACE="courier"><PRE>
     $msg-&gt;delete(&quot;Subject&quot;);
-</PRE>
+</PRE></FONT>
 
 <P><I>Note:</I> the name comes from Mail::Header.
 
@@ -652,9 +639,9 @@ Note that any fields the user has explicitly set will override the
 corresponding MIME fields that we would otherwise generate.  
 So, don't say...
 
-<PRE>
+<FONT SIZE=3 FACE="courier"><PRE>
     $msg-&gt;set(&quot;Content-type&quot; =&gt; &quot;text/html; charset=US-ASCII&quot;);
-</PRE>
+</PRE></FONT>
 
 <P>unless you want the above value to override the &quot;Content-type&quot;
 MIME field that we would normally generate.
@@ -678,9 +665,9 @@ content-disposition.
 Get the contents of field TAG, which might have been set 
 with set() or replace().  Returns the text of the field.
 
-<PRE>
+<FONT SIZE=3 FACE="courier"><PRE>
     $ml-&gt;get('Subject', 0);
-</PRE>
+</PRE></FONT>
 
 <P>If the optional 0-based INDEX is given, then we return the INDEX'th
 occurence of field TAG.  Otherwise, we look at the context:
@@ -696,9 +683,9 @@ Behavior with MIME fields is TBD, and will raise an exception for now.
 Recompute the content length for the message <I>if the process is trivial</I>, 
 setting the &quot;content-length&quot; attribute as a side-effect:
 
-<PRE>
+<FONT SIZE=3 FACE="courier"><PRE>
     $msg-&gt;get_length;
-</PRE>
+</PRE></FONT>
 
 <P>Returns the length, or undefined if not set.
 
@@ -728,9 +715,9 @@ field with the given VALUE.  TAG is converted to all-lowercase.
 attributes I have when it comes time to output those fields.
 Normally, you will use this method to set <I>non-MIME</I> fields:
 
-<PRE>
+<FONT SIZE=3 FACE="courier"><PRE>
     $msg-&gt;replace(&quot;Subject&quot; =&gt; &quot;Hi there!&quot;);
-</PRE>
+</PRE></FONT>
 
 <P>Giving VALUE as undefined will simply cause the contents of the named
 field to be deleted.  Giving VALUE as an arrayref will cause all the values
@@ -838,9 +825,9 @@ As in <CODE>build()</CODE>: the path to the file.
 
 <P>If no arguments are given, the default is:
 
-<PRE>
+<FONT SIZE=3 FACE="courier"><PRE>
     Path =&gt; &quot;$ENV{HOME}/.signature&quot;
-</PRE>
+</PRE></FONT>
 
 <P>The content-length is recomputed.
 
@@ -942,10 +929,10 @@ means has been set up (the default is to use the Unix &quot;sendmail&quot; progr
 Returns whatever the mail-handling routine returns: this should be true 
 on success, false/exception on error:
 
-<PRE>
+<FONT SIZE=3 FACE="courier"><PRE>
     $msg = MIME::Lite-&gt;new(From=&gt;...);
     $msg-&gt;send || die &quot;you DON'T have mail!&quot;;
-</PRE>
+</PRE></FONT>
 
 <P><I>As a class method</I> (with a HOW argument and optional HOWARGS), sets up 
 how the instance method will work for all objects until further notice
@@ -980,15 +967,15 @@ with MSG as the first argument, and ARGS following.
 you need to configure your Perl script to use this &quot;sendmail.exe&quot; program.
 Do this following in your script's setup:
 
-<PRE>
+<FONT SIZE=3 FACE="courier"><PRE>
     MIME::Lite-&gt;send('sendmail', &quot;d:\\programs\\sendmail.exe&quot;);
-</PRE>
+</PRE></FONT>
 
 <P>Then, whenever you need to send a message $msg, just say:
 
-<PRE>
+<FONT SIZE=3 FACE="courier"><PRE>
     $msg-&gt;send;
-</PRE>
+</PRE></FONT>
 
 <P>That's it.  Now, if you ever move your script to a Unix box, all you
 need to do is change that line in the setup and you're done.
@@ -1060,9 +1047,9 @@ to indicate a forged envelope.  To avoid this, you can either
 Send message via SMTP, using Net::SMTP.  
 The optional ARGS are sent into Net::SMTP::new(): usually, these are
 
-<PRE>
+<FONT SIZE=3 FACE="courier"><PRE>
     MAILHOST, OPTION=&gt;VALUE, ...
-</PRE>
+</PRE></FONT>
 
 <P>Note that the list of recipients is taken from the 
 &quot;To&quot;, &quot;Cc&quot; and &quot;Bcc&quot; fields.
@@ -1091,9 +1078,9 @@ Declare the sender to be &quot;sendmail&quot;, and set up the &quot;sendmail&quo
 <I>Class method.</I>  
 Suppress/unsuppress all warnings coming from this module.
 
-<PRE>
+<FONT SIZE=3 FACE="courier"><PRE>
     MIME::Lite-&gt;quiet(1);       ### I know what I'm doing
-</PRE>
+</PRE></FONT>
 
 <P>I recommend that you include that comment as well.  And while
 you type it, say it out loud: if it doesn't feel right, then maybe
@@ -1148,13 +1135,13 @@ your use of MIME::Lite with a healthy diet and exercise.
 idea, since a lot of Perlers are on UNIX systems. 
 The out-of-the-box configuration is:
 
-<PRE>
+<FONT SIZE=3 FACE="courier"><PRE>
      MIME::Lite-&gt;send('sendmail', &quot;/usr/lib/sendmail -t -oi -oem&quot;);
-</PRE>
+</PRE></FONT>
 
 <P>By the way, these arguments to sendmail are:
 
-<PRE>
+<FONT SIZE=3 FACE="courier"><PRE>
      -t      Scan message for To:, Cc:, Bcc:, etc.
               
      -oi     Do NOT treat a single &quot;.&quot; on a line as a message terminator.
@@ -1163,28 +1150,28 @@ The out-of-the-box configuration is:
      -oem    On error, mail back the message (I assume to the
              appropriate address, given in the header).
              When mail returns, circle is complete.  Jai guru deva -oem.
-</PRE>
+</PRE></FONT>
 
 <P>Note that these are the same arguments you get if you configure to use
 the smarter, taint-safe mailing:
 
-<PRE>
+<FONT SIZE=3 FACE="courier"><PRE>
      MIME::Lite-&gt;send('sendmail');
-</PRE>
+</PRE></FONT>
 
 <P>If you get &quot;X-Authentication-Warning&quot; headers from this, you can forgo
 diddling with the envelope by instead specifying:
 
-<PRE>
+<FONT SIZE=3 FACE="courier"><PRE>
      MIME::Lite-&gt;send('sendmail', SetSender=&gt;0);
-</PRE>
+</PRE></FONT>
 
 <P>And, if you're not on a Unix system, or if you'd just rather send mail
 some other way, there's always:
 
-<PRE>
+<FONT SIZE=3 FACE="courier"><PRE>
      MIME::Lite-&gt;send('smtp', &quot;smtp.myisp.net&quot;);
-</PRE>
+</PRE></FONT>
 
 <P>Or you can set up your own subroutine to call.
 In any case, check out the <A HREF="#item:send">send()</A> method. 
@@ -1206,11 +1193,11 @@ provided in the <CODE>To:</CODE>, <CODE>Cc:</CODE>, and <CODE>Bcc:</CODE> fields
 stuff, and as such only the following sorts of addresses will work
 reliably:
 
-<PRE>
+<FONT SIZE=3 FACE="courier"><PRE>
     username
     full.name@some.host.com
     &quot;Name, Full&quot; &lt;full.name@some.host.com&gt;
-</PRE>
+</PRE></FONT>
 
 <P>This last form is discouraged because SMTP must be able to get
 at the <I>name</I> or <I>name@domain</I> portion.
@@ -1274,10 +1261,10 @@ from the message header fields; when it comes time to print the
 header out, <I>any explicitly-given header fields override the ones that
 would be created from the MIME attributes.</I>  That means that this:
 
-<PRE>
+<FONT SIZE=3 FACE="courier"><PRE>
     ### DANGER ### DANGER ### DANGER ### DANGER ### DANGER ###
     $msg-&gt;add(&quot;Content-type&quot;, &quot;text/html; charset=US-ASCII&quot;);
-</PRE>
+</PRE></FONT>
 
 <P>will set the exact <CODE>&quot;Content-type&quot;</CODE> field in the header I write, 
 <I>regardless of what the actual MIME attributes are.</I>
@@ -1422,16 +1409,20 @@ non-ASCII characters (e.g., Latin-1, Latin-2, or any other 8-bit alphabet).
 
 
 <P><HR>
+<A NAME="VERSION"><H2><A HREF="#__TOP__"><IMG SRC="icons/h1bullet.gif" ALT="Top" BORDER="0"></A> VERSION</H2></A>
+
+
+<P>$Id: Lite.pm,v 2.102 2000/08/15 01:32:50 eryq Exp $
+
+
+
+<P><HR>
 <A NAME="CHANGE_LOG"><H2><A HREF="#__TOP__"><IMG SRC="icons/h1bullet.gif" ALT="Top" BORDER="0"></A> CHANGE LOG</H2></A>
-
-
-<P><B>Current version:</B>
-$Id: Lite.pm,v 2.101 2000/06/06 03:52:43 eryq Exp $
 
 
 
 <DL>
-<P><DT><B><A NAME="item:Version">Version 2.101</A></B></DT>
+<P><DT><B><A NAME="item:Version">Version 2.101   (2000/06/06)</A></B></DT>
 <DD>
 Major revision to print_body() and body_as_string() so that
 &quot;body&quot; really means &quot;the part after the header&quot;, which is what most
@@ -1456,14 +1447,14 @@ to a scalar.
 
 <P>Cleaned up the &quot;examples&quot; directory.
 
-<P><DT><B><A NAME="item:Version">Version 1.147</A></B></DT>
+<P><DT><B><A NAME="item:Version">Version 1.147   (2000/06/02)</A></B></DT>
 <DD>
 Fixed buglet where lack of Cc:/Bcc: was causing extract_addrs
 to emit &quot;undefined variable&quot; warnings.  Also, lack of a &quot;To:&quot; field
 now causes a croak.
 <I>Thanks to David Mitchell for the bug report and suggested patch.</I>
 
-<P><DT><B><A NAME="item:Version">Version 1.146</A></B></DT>
+<P><DT><B><A NAME="item:Version">Version 1.146   (2000/05/18)</A></B></DT>
 <DD>
 Fixed bug in parsing of addresses; please read the WARNINGS section
 which describes recommended address formats for &quot;To:&quot;, &quot;Cc:&quot;, etc.
@@ -1471,12 +1462,12 @@ Also added automatic inclusion of a UT &quot;Date:&quot; at top level unless
 explicitly told not to.
 <I>Thanks to Andy Jacobs for the bug report and the suggestion.</I>
 
-<P><DT><B><A NAME="item:Version">Version 1.145</A></B></DT>
+<P><DT><B><A NAME="item:Version">Version 1.145   (2000/05/06)</A></B></DT>
 <DD>
 Fixed bug in encode_7bit(): a lingering <CODE>/e</CODE> modifier was removed.
 <I>Thanks to Michael A. Chase for the patch.</I>
 
-<P><DT><B><A NAME="item:Version">Version 1.142</A></B></DT>
+<P><DT><B><A NAME="item:Version">Version 1.142   (2000/05/02)</A></B></DT>
 <DD>
 Added new, taint-safe invocation of &quot;sendmail&quot;, one which also
 sets up the <CODE>-f</CODE> option.  Unfortunately, I couldn't make this automatic:
@@ -1484,13 +1475,13 @@ the change could have broken a lot of code out there which used
 send_by_sendmail() with unusual &quot;sendmail&quot; variants.  
 So you'll have to configure &quot;send&quot; to use the new mechanism:
 
-<PRE>
+<FONT SIZE=3 FACE="courier"><PRE>
     MIME::Lite-&gt;send('sendmail');       ### no args!
-</PRE>
+</PRE></FONT>
 
 <P><I>Thanks to Jeremy Howard for suggesting these features.</I>
 
-<P><DT><B><A NAME="item:Version">Version 1.140</A></B></DT>
+<P><DT><B><A NAME="item:Version">Version 1.140   (2000/04/27)</A></B></DT>
 <DD>
 Fixed bug in support for &quot;To&quot;, &quot;Cc&quot;, and &quot;Bcc&quot; in send_by_smtp():
 multiple (comma-separated) addresses should now work fine.
@@ -1502,7 +1493,7 @@ We try real hard to extract addresses from the flat text strings.
 done immediately before the &quot;send&quot; action is invoked.
 To turn this off, set $MIME::Lite::AUTO_VERIFY to false.
 
-<P><DT><B><A NAME="item:Version">Version 1.137</A></B></DT>
+<P><DT><B><A NAME="item:Version">Version 1.137   (2000/03/22)</A></B></DT>
 <DD>
 Added support for &quot;Cc&quot; and &quot;Bcc&quot; in send_by_smtp().
 To turn this off, set $MIME::Lite::AUTO_CC to false.
@@ -1527,12 +1518,12 @@ which slow things down).
 <P>Added an example of how to send HTML files with enclosed in-line
 images, per popular demand.
 
-<P><DT><B><A NAME="item:Version">Version 1.133</A></B></DT>
+<P><DT><B><A NAME="item:Version">Version 1.133   (1999/04/17)</A></B></DT>
 <DD>
 Fixed bug in &quot;Data&quot; handling: arrayrefs were not being handled
 properly.
 
-<P><DT><B><A NAME="item:Version">Version 1.130</A></B></DT>
+<P><DT><B><A NAME="item:Version">Version 1.130   (1998/12/14)</A></B></DT>
 <DD>
 Added much larger and more-flexible send() facility.
 <I>Thanks to Andrew McRae (and Optimation New Zealand Ltd) 
@@ -1545,29 +1536,29 @@ who requested this feature.</I>
 
 <P>New... &quot;t&quot; tests!
 
-<P><DT><B><A NAME="item:Version">Version 1.124</A></B></DT>
+<P><DT><B><A NAME="item:Version">Version 1.124   (1998/11/13)</A></B></DT>
 <DD>
 Folded in filehandle (FH) support in build/attach.
 <I>Thanks to Miko O'Sullivan for the code.</I>
 
-<P><DT><B><A NAME="item:Version">Version 1.122</A></B></DT>
+<P><DT><B><A NAME="item:Version">Version 1.122   (1998/01/19)</A></B></DT>
 <DD>
 MIME::Base64 and MIME::QuotedPrint are used if available.
 
 
 <P>The 7bit encoding no longer does &quot;escapes&quot;; it merely strips 8-bit characters.
 
-<P><DT><B><A NAME="item:Version">Version 1.121</A></B></DT>
+<P><DT><B><A NAME="item:Version">Version 1.121   (1997/04/08)</A></B></DT>
 <DD>
 Filename attribute is now no longer ignored by build().
 <I>Thanks to Ian Smith for finding and patching this bug.</I>
 
-<P><DT><B><A NAME="item:Version">Version 1.120</A></B></DT>
+<P><DT><B><A NAME="item:Version">Version 1.120   (1997/03/29)</A></B></DT>
 <DD>
 Efficiency hack to speed up MIME::Lite::IO_Scalar.
 <I>Thanks to David Aspinwall for the patch.</I>
 
-<P><DT><B><A NAME="item:Version">Version 1.116</A></B></DT>
+<P><DT><B><A NAME="item:Version">Version 1.116   (1997/03/19)</A></B></DT>
 <DD>
 Small bug in our private copy of encode_base64() was patched.
 <I>Thanks to Andreas Koenig for pointing this out.</I>
@@ -1581,21 +1572,21 @@ Small bug in our private copy of encode_base64() was patched.
 
 <P>Changed &quot;stringify&quot; methods to more-standard &quot;as_string&quot; methods.
 
-<P><DT><B><A NAME="item:Version">Version 1.112</A></B></DT>
+<P><DT><B><A NAME="item:Version">Version 1.112   (1997/03/06)</A></B></DT>
 <DD>
 Added <CODE>read_now()</CODE>, and <CODE>binmode()</CODE> method for our non-Unix-using brethren: 
 file data is now read using binmode() if appropriate.
 <I>Thanks to Xiangzhou Wang for pointing out this bug.</I>
 
-<P><DT><B><A NAME="item:Version">Version 1.110</A></B></DT>
+<P><DT><B><A NAME="item:Version">Version 1.110   (1997/03/06)</A></B></DT>
 <DD>
 Fixed bug in opening the data filehandle.
 
-<P><DT><B><A NAME="item:Version">Version 1.102</A></B></DT>
+<P><DT><B><A NAME="item:Version">Version 1.102   (1997/03/01)</A></B></DT>
 <DD>
 Initial release.
 
-<P><DT><B><A NAME="item:Version">Version 1.101</A></B></DT>
+<P><DT><B><A NAME="item:Version">Version 1.101   (1997/03/01)</A></B></DT>
 <DD>
 Baseline code.
 
@@ -1625,17 +1616,10 @@ See the COPYING file in the distribution for details.
 <P>For some reason, the US FDA says that this is now required by law
 on any products that bear the name &quot;Lite&quot;...
 
-<PRE>
-    Serving size:             1 module
-    Servings per container:   1
-    Calories:                 0
-    Fat:                      0g
-      Saturated Fat:          0g
-</PRE>
-<PRE>
-    Warning: for consumption by hardware only!  May produce 
-    indigestion in humans if taken internally.
-</PRE>
+<P><TABLE CELLPADDING=4 CELLSPACING=0 BORDER=1 ALIGN=CENTER BGCOLOR=#EEEEEE><TR><TH BGCOLOR=#AA0055 ALIGN=LEFT><FONT SIZE=2 COLOR=#FFFFFF FACE="sans-serif">MIME::Lite&nbsp;</FONT></TH BGCOLOR=#AA0055><TH BGCOLOR=#AA0055 ALIGN=LEFT><FONT SIZE=2 COLOR=#FFFFFF FACE="sans-serif">&nbsp;</FONT></TH BGCOLOR=#AA0055></TR><TR><TD ALIGN=LEFT><FONT SIZE=2 COLOR=#000000 FACE="sans-serif">Serving size:</FONT></TD><TD ALIGN=LEFT><FONT SIZE=2 COLOR=#000000 FACE="sans-serif">1 module</FONT></TD></TR><TR><TD ALIGN=LEFT><FONT SIZE=2 COLOR=#000000 FACE="sans-serif">Servings per container:</FONT></TD><TD ALIGN=LEFT><FONT SIZE=2 COLOR=#000000 FACE="sans-serif">1</FONT></TD></TR><TR><TD ALIGN=LEFT><FONT SIZE=2 COLOR=#000000 FACE="sans-serif">Calories:</FONT></TD><TD ALIGN=LEFT><FONT SIZE=2 COLOR=#000000 FACE="sans-serif">0</FONT></TD></TR><TR><TD ALIGN=LEFT><FONT SIZE=2 COLOR=#000000 FACE="sans-serif">Fat:</FONT></TD><TD ALIGN=LEFT><FONT SIZE=2 COLOR=#000000 FACE="sans-serif">0g</FONT></TD></TR><TR><TD ALIGN=LEFT><FONT SIZE=2 COLOR=#000000 FACE="sans-serif">Saturated Fat:</FONT></TD><TD ALIGN=LEFT><FONT SIZE=2 COLOR=#000000 FACE="sans-serif">0g</FONT></TD></TR></UL></TABLE>
+<P>Warning: for consumption by hardware only!  May produce 
+indigestion in humans if taken internally.
+
 
 
 <P><HR>
@@ -1650,7 +1634,7 @@ President, ZeeGee Software Inc. (<I><FILE><A HREF="http://www.zeegee.com">http:/
 
 <P><HR>
 <ADDRESS><FONT SIZE=-1>
-Generated Mon Jun  5 23:59:01 2000 by cvu_pod2html
+Generated Mon Aug 14 23:13:57 2000 by cvu_pod2html
 </FONT></ADDRESS>
-</BODY>
+</FONT></BODY>
 </HTML>
