@@ -2,6 +2,11 @@
 
 =over 4
 
+=item Version 3.01 (2003/04/25)
+
+Eryq has reappeared long enough to graciously hand over the maintaince of the
+module to me. Thanks.
+
 =item Version 3.00 (2003/04/24)
 
 Eryq has disappeared. His web site remains but he doesnt answer emails.

@@ -340,14 +340,7 @@ use vars qw(
 #==============================
 #
 # GLOBALS, EXTERNAL/CONFIGURATION...
-
-### The package version, both in 1.23 style *and* usable by MakeMaker:
-#$VERSION = substr q$Revision: 2 $, 10;
-#Changed by hand so that code that depends on MIME::Types can error on an unpatched M::L
-#Changed to 3.0 to reflect new maintained release. I will be using a different source control
-#system which uses different numbers.
-#demerphq
-$VERSION = "3.0";
+$VERSION = "3.01";
 
 ### Automatically interpret CC/BCC for SMTP:
 $AUTO_CC = 1;
@@ -3230,21 +3223,11 @@ you provide.
 
 =head1 VERSION
 
-Demerphq version: 3.0 (Maintenance release and a new caretaker!)
+Version: 3.01 (Maintenance release and a new caretaker!)
 
 =head1 CHANGE LOG
 
-=over 4
-
-=item Version 3.00 (2003/04/24) 
-
-Eryq has disappeared. His web site remains but he doesnt answer emails.
-
-I have taken it onto myself to take over maintenance until he returns to
-reclaim his excellent work.
-
-I don't intend to develop this in an serious way. I'll patch it if people 
-have a patch and generally keep it ticking over, but dont expect new features.
+Moved to ./changes.pod
 
 =head1 TERMS AND CONDITIONS
 
@@ -3285,7 +3268,8 @@ President, ZeeGee Software Inc. (F<http://www.zeegee.com>).
 Go to F<http://www.zeegee.com> for the latest downloads
 and on-line documentation for this module.  Enjoy.
 
-Patches by Yves Orton demerphq@hotmail.com.
+Patches And Maintenance by Yves Orton demerphq@hotmail.com and many others. Consult
+./changes.pod
 
 =cut
 
