@@ -1,0 +1,10 @@
+On most systems, do this:
+
+    ./Makefile.PL
+    make test
+    make install
+
+If that fails, copy the file ./lib/MIME/Lite.pm into 
+$FOO/MIME/Lite.pm, where $FOO is a directory in your Perl
+@INC path.
+
