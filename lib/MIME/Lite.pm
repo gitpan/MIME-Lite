@@ -40,9 +40,9 @@ Create a multipart message (i.e., one with attachments):
 		 );  
     $msg->attach(Type     =>'image/gif',
                  Path     =>'aaa000123.gif',
-                 Filename =>'logo.gif'
+                 Filename =>'logo.gif',
+		 Disposition => 'attachment'
 		 );
-
 
 Output a message:
 
@@ -78,7 +78,7 @@ a readable filehandle (e.g., "<filename" or "somecommand|").
 You don't need to worry about encoding your message data:
 this module will do that for you.  It handles the 5 standard MIME encodings.
 
-If you need more sophisticated behavior, please get the MIME-tools
+If you need more sophisticated behavior, please get the MIME-tools 
 package instead.  I will be more likely to add stuff to that toolkit
 over this one.
 
@@ -105,6 +105,17 @@ This will create a multipart message exactly as above, but using the
                  Path     =>'aaa000123.gif',
                  Filename =>'logo.gif'
                  );
+
+
+=head2 Attach a pre-prepared part (allows fine-tuning):
+
+    $part = MIME::Lite->new(
+                 Type     =>'text/html',
+                 Data     =>'<H1>Hello</H1>',
+                 );
+    $part->attr('content-type.charset' => 'UTF8');
+    $part->add('X-Comment' => 'A message for you');
+    $msg->attach($part);
 
 
 =head2 Send an HTML document... with images included!
@@ -317,7 +328,7 @@ use vars qw(
 # GLOBALS, EXTERNAL/CONFIGURATION...
 
 ### The package version, both in 1.23 style *and* usable by MakeMaker:
-$VERSION = substr q$Revision: 2.106 $, 10;
+$VERSION = substr q$Revision: 2.107 $, 10;
 
 ### Don't warn me about dangerous activities:
 $QUIET = undef;
@@ -362,6 +373,8 @@ qw(
    from        keywords    message-id    mime-version  organization
    received    references  reply-to      return-path   sender        
    subject     to
+
+   approved
    );
 
 ### What external packages do we use for encoding?
@@ -617,13 +630,17 @@ sub new {
 
 #------------------------------
 
-=item attach [OBJECT|PARAMHASH]
+=item attach PART
+
+=item attach PARAMHASH...
 
 I<Instance method.>
 Add a new part to this message, and return the new part.
 
-You can attach a MIME::Lite OBJECT, or have it create one by specifying
-a PARAMHASH that will be automatically given to C<new()>.
+If you supply a single PART argument, it will be regarded
+as a MIME::Lite object to be attached.  Otherwise, this
+method assumes that you are giving in the pairs of a PARAMHASH
+which will be sent into C<new()> to create the new part.
 
 One of the possibly-quite-useful hacks thrown into this is the 
 "attach-to-singlepart" hack: if you attempt to attach a part (let's
@@ -712,12 +729,12 @@ The PARAMHASH can contain the following keys:
 Any field you want placed in the message header, taken from the
 standard list of header fields (you don't need to worry about case):
 
-    Bcc           Encrypted     Received      Sender         
-    Cc            From          References    Subject 
-    Comments	  Keywords      Reply-To      To 
-    Content-*	  Message-ID    Resent-*      X-*
-    Date          MIME-Version  Return-Path   
-                  Organization
+    Approved      Encrypted     Received      Sender         
+    Bcc           From          References    Subject 
+    Cc            Keywords      Reply-To      To 
+    Comments      Message-ID    Resent-*      X-*
+    Content-*     MIME-Version  Return-Path   
+    Date                        Organization
 
 To give experienced users some veto power, these fields will be set 
 I<after> the ones I set... so be careful: I<don't set any MIME fields>
@@ -784,9 +801,10 @@ See "ReadNow" also.
 I<Optional.>
 The name of the attachment.  You can use this to supply a 
 recommended filename for the end-user who is saving the attachment 
-to disk, if the one in the Path is inadequate, or if you're using 
-the Data argument.  You should I<not> put path information in here
-(e.g., no "/" or "\" or ":" characters).
+to disk.  You only need this if the filename at the end of the 
+"Path" is inadequate, or if you're using "Data" instead of "Path".
+You should I<not> put path information in here (e.g., no "/" 
+or "\" or ":" characters should be used).
 
 =item Id
 
@@ -1098,7 +1116,9 @@ sub add {
 	if (is_mime_field($tag) && !$QUIET);
 
     ### Get array of clean values:
-    my @vals = ref($value) ? @{$value} : ($value);
+    my @vals = ((ref($value) and (ref($value) eq 'ARRAY'))
+		? @{$value} 
+		: ($value.''));
     map { s/\n/\n /g } @vals;
 
     ### Add them:
@@ -1902,7 +1922,7 @@ sub print_simple_body {
     ### Is the data in-core?  If so, blit it out...
     if (defined($self->{Data})) {
       DATA: 
-	{ $_ = $encoding;
+	{ local $_ = $encoding;
 
 	  /^BINARY$/ and do {
 	      $out->print($self->{Data}); 
@@ -1917,7 +1937,11 @@ sub print_simple_body {
 	      last DATA;
 	  };
 	  /^QUOTED-PRINTABLE$/ and do {
-	      while ($self->{Data}=~ m{^(.*[\r\n]*)}mg) {
+	      ### UNTAINT since m//mg on tainted data loops forever:
+	      my ($untainted) = ($self->{Data} =~ m/\A(.*)\Z/s);
+
+	      ### Encode it line by line:
+	      while ($untainted =~ m{^(.*[\r\n]*)}mg) {
 		  $out->print(encode_qp($1)); ### have to do it line by line...
 	      }
 	      last DATA;	 
@@ -1950,7 +1974,7 @@ sub print_simple_body {
 		
 	### Encode piece by piece:
       PATH: 
-	{   $_ = $encoding;
+	{   local $_ = $encoding;
 	    
 	    /^BINARY$/ and do {
 		$out->print($_)                while read($DATA, $_, 2048); 
@@ -2678,6 +2702,20 @@ Some users may want to send files with "." alone on a line;
 my well-meaning tinkering could seriously harm them.
 
 
+=head2 Infinite loops may mean tainted data!
+
+Stefan Sautter noticed a bug in 2.106 where a m//gc match was
+failing due to tainted data, leading to an infinite loop inside
+MIME::Lite.  
+
+I am attempting to correct for this, but be advised that my fix will
+silently untaint the data (given the context in which the problem
+occurs, this should be benign: I've labelled the source code with
+UNTAINT comments for the curious).
+
+So: don't depend on taint-checking to save you from outputting
+tainted data in a message.
+
 
 =head1 A MIME PRIMER
 
@@ -2777,12 +2815,49 @@ non-ASCII characters (e.g., Latin-1, Latin-2, or any other 8-bit alphabet).
 
 =head1 VERSION
 
-$Id: Lite.pm,v 2.106 2000/11/21 08:16:32 eryq Exp $
+$Id: Lite.pm,v 2.107 2001/03/28 05:22:46 eryq Exp $
 
 
 =head1 CHANGE LOG
 
 =over 4
+
+
+=item Version 2.107   (2001/03/27)
+
+Fixed serious bug where tainted data with quoted-printable encoding
+was causing infinite loops.  The "fix" untaints the data in question,
+which is not optimal, but it's probably benign in this case.
+I<Thanks to Stefan Sautter for tracking this nasty little beast down.>
+
+    "Doctor, O doctor:
+       it's painful when I do *this* --" 
+    "Simple: don't *do* that." 
+
+Fixed bugs where a non-local C<$_> was being modified... again!  
+Will I never learn?
+I<Thanks to Maarten Koskamp for reporting this.>
+
+    Dollar-underscore
+       can poison distant waters;
+   'local' must it be.
+
+Fixed buglet in C<add()> where all value references were being treated
+as arrayrefs, instead of as possibly-self-stringifying object refs.
+Now you can send in an object ref as the 2nd argument.
+I<Thanks to dLux for the bug report.>
+
+    That ref is a string?
+       Operator overload
+    has ruined my day.
+
+Added "Approved" as an acceptable header field for C<new()>, as per RFC1036.
+I<Thanks to Thomax for the suggestion regarding MIME-tools.>
+
+Small improvements to docs to make different uses of attach() 
+and various arguments clearer.
+I<Thanks to Sven Rassman and Roland Walter for the suggestions.>
+
 
 =item Version 2.106   (2000/11/21)
 

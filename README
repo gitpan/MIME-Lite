@@ -34,7 +34,8 @@ SYNOPSIS
                      );  
         $msg->attach(Type     =>'image/gif',
                      Path     =>'aaa000123.gif',
-                     Filename =>'logo.gif'
+                     Filename =>'logo.gif',
+                     Disposition => 'attachment'
                      );
 
     Output a message:
@@ -92,6 +93,16 @@ MORE EXAMPLES
                      Path     =>'aaa000123.gif',
                      Filename =>'logo.gif'
                      );
+
+  Attach a pre-prepared part (allows fine-tuning):
+
+        $part = MIME::Lite->new(
+                     Type     =>'text/html',
+                     Data     =>'<H1>Hello</H1>',
+                     );
+        $part->attr('content-type.charset' => 'UTF8');
+        $part->add('X-Comment' => 'A message for you');
+        $msg->attach($part);
 
   Send an HTML document... with images included!
 
@@ -250,12 +261,15 @@ PUBLIC INTERFACE
         If any arguments are given, they are passed into `build()';
         otherwise, just the empty object is created.
 
-    attach [OBJECT|PARAMHASH]
+    attach PART
+    attach PARAMHASH...
         *Instance method.* Add a new part to this message, and return the
         new part.
 
-        You can attach a MIME::Lite OBJECT, or have it create one by
-        specifying a PARAMHASH that will be automatically given to `new()'.
+        If you supply a single PART argument, it will be regarded as a
+        MIME::Lite object to be attached. Otherwise, this method assumes
+        that you are giving in the pairs of a PARAMHASH which will be sent
+        into `new()' to create the new part.
 
         One of the possibly-quite-useful hacks thrown into this is the
         "attach-to-singlepart" hack: if you attempt to attach a part (let's
@@ -292,12 +306,12 @@ PUBLIC INTERFACE
             standard list of header fields (you don't need to worry about
             case):
 
-                Bcc           Encrypted     Received      Sender         
-                Cc            From          References    Subject 
-                Comments      Keywords      Reply-To      To 
-                Content-*     Message-ID    Resent-*      X-*
-                Date          MIME-Version  Return-Path   
-                              Organization
+                Approved      Encrypted     Received      Sender         
+                Bcc           From          References    Subject 
+                Cc            Keywords      Reply-To      To 
+                Comments      Message-ID    Resent-*      X-*
+                Content-*     MIME-Version  Return-Path   
+                Date                        Organization
 
             To give experienced users some veto power, these fields will be
             set *after* the ones I set... so be careful: *don't set any MIME
@@ -354,9 +368,10 @@ PUBLIC INTERFACE
     Filename
             *Optional.* The name of the attachment. You can use this to
             supply a recommended filename for the end-user who is saving the
-            attachment to disk, if the one in the Path is inadequate, or if
-            you're using the Data argument. You should *not* put path
-            information in here (e.g., no "/" or "\" or ":" characters).
+            attachment to disk. You only need this if the filename at the
+            end of the "Path" is inadequate, or if you're using "Data"
+            instead of "Path". You should *not* put path information in here
+            (e.g., no "/" or "\" or ":" characters should be used).
 
     Id      *Optional.* Same as setting "content-id".
 
@@ -972,6 +987,19 @@ WARNINGS
     files with "." alone on a line; my well-meaning tinkering could
     seriously harm them.
 
+  Infinite loops may mean tainted data!
+
+    Stefan Sautter noticed a bug in 2.106 where a m//gc match was failing
+    due to tainted data, leading to an infinite loop inside MIME::Lite.
+
+    I am attempting to correct for this, but be advised that my fix will
+    silently untaint the data (given the context in which the problem
+    occurs, this should be benign: I've labelled the source code with
+    UNTAINT comments for the curious).
+
+    So: don't depend on taint-checking to save you from outputting tainted
+    data in a message.
+
 A MIME PRIMER
   Content types
 
@@ -1042,9 +1070,42 @@ A MIME PRIMER
         8-bit alphabet).
 
 VERSION
-    $Id: Lite.pm,v 2.106 2000/11/21 08:16:32 eryq Exp $
+    $Id: Lite.pm,v 2.107 2001/03/28 05:22:46 eryq Exp $
 
 CHANGE LOG
+    Version 2.107   (2001/03/27)
+        Fixed serious bug where tainted data with quoted-printable encoding
+        was causing infinite loops. The "fix" untaints the data in question,
+        which is not optimal, but it's probably benign in this case. *Thanks
+        to Stefan Sautter for tracking this nasty little beast down.*
+
+            "Doctor, O doctor:
+               it's painful when I do *this* --" 
+            "Simple: don't *do* that." 
+
+        Fixed bugs where a non-local `$_' was being modified... again! Will
+        I never learn? *Thanks to Maarten Koskamp for reporting this.*
+
+            Dollar-underscore
+               can poison distant waters;
+           'local' must it be.
+
+        Fixed buglet in `add()' where all value references were being
+        treated as arrayrefs, instead of as possibly-self-stringifying
+        object refs. Now you can send in an object ref as the 2nd argument.
+        *Thanks to dLux for the bug report.*
+
+            That ref is a string?
+               Operator overload
+            has ruined my day.
+
+        Added "Approved" as an acceptable header field for `new()', as per
+        RFC1036. *Thanks to Thomax for the suggestion regarding MIME-tools.*
+
+        Small improvements to docs to make different uses of attach() and
+        various arguments clearer. *Thanks to Sven Rassman and Roland Walter
+        for the suggestions.*
+
     Version 2.106   (2000/11/21)
         Added Alpha version of scrub() to make it easy for people to
         suppress the printing of unwanted MIME attributes (like Content-

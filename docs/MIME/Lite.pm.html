@@ -12,6 +12,7 @@
 <LI> <A HREF="#MORE_EXAMPLES">MORE EXAMPLES</A>
 <UL>
 <LI> <A HREF="#Attach_a_GIF_to_a_text_message">Attach a GIF to a text message</A>
+<LI> <A HREF="#Attach_a_pre-prepared_part_allows_fine-tuning">Attach a pre-prepared part (allows fine-tuning):</A>
 <LI> <A HREF="#Send_an_HTML_document_with_images_included">Send an HTML document... with images included!</A>
 <LI> <A HREF="#Output_a_message_to_a_filehandle">Output a message to a filehandle</A>
 <LI> <A HREF="#Get_a_message_as_a_string">Get a message as a string</A>
@@ -44,6 +45,7 @@
 <LI> <A HREF="#Encoding_of_data_delayed_until_print">Encoding of data delayed until print()</A>
 <LI> <A HREF="#MIME_attributes_are_separate_from_header_fields">MIME attributes are separate from header fields!</A>
 <LI> <A HREF="#Beware_of_lines_consisting_of_a_single_dot">Beware of lines consisting of a single dot</A>
+<LI> <A HREF="#Infinite_loops_may_mean_tainted_data">Infinite loops may mean tainted data!</A>
 </UL>
 <LI> <A HREF="#A_MIME_PRIMER">A MIME PRIMER</A>
 <UL>
@@ -105,7 +107,8 @@ Create a single-part message:
 		 );  
     $msg-&gt;attach(Type     =&gt;'image/gif',
                  Path     =&gt;'aaa000123.gif',
-                 Filename =&gt;'logo.gif'
+                 Filename =&gt;'logo.gif',
+		 Disposition =&gt; 'attachment'
 		 );
 </PRE></FONT>
 
@@ -152,7 +155,7 @@ a readable filehandle (e.g., &quot;&lt;filename&quot; or &quot;somecommand|&quot
 this module will do that for you.  It handles the 5 standard MIME encodings.
 
 
-<P>If you need more sophisticated behavior, please get the MIME-tools
+<P>If you need more sophisticated behavior, please get the MIME-tools 
 package instead.  I will be more likely to add stuff to that toolkit
 over this one.
 
@@ -186,6 +189,20 @@ over this one.
                  Path     =&gt;'aaa000123.gif',
                  Filename =&gt;'logo.gif'
                  );
+</PRE></FONT>
+
+
+<P><HR>
+<A NAME="Attach_a_pre-prepared_part_allows_fine-tuning"><H3><A HREF="#__TOP__"><IMG SRC="icons/h2bullet.gif" ALT="Top" BORDER="0"></A> Attach a pre-prepared part (allows fine-tuning):</H3></A>
+
+<FONT SIZE=3 FACE="courier"><PRE>
+    $part = MIME::Lite-&gt;new(
+                 Type     =&gt;'text/html',
+                 Data     =&gt;'&lt;H1&gt;Hello&lt;/H1&gt;',
+                 );
+    $part-&gt;attr('content-type.charset' =&gt; 'UTF8');
+    $part-&gt;add('X-Comment' =&gt; 'A message for you');
+    $msg-&gt;attach($part);
 </PRE></FONT>
 
 
@@ -423,14 +440,18 @@ Create a new message object.
 <P>If any arguments are given, they are passed into <CODE>build()</CODE>; otherwise,
 just the empty object is created.
 
-<P><DT><B><A NAME="item:attach">attach [OBJECT|PARAMHASH]</A></B></DT>
+<P><DT><B><A NAME="item:attach">attach PART</A></B></DT>
+<DD>
+<P><DT><B><A NAME="item:attach">attach PARAMHASH...</A></B></DT>
 <DD>
 <I>Instance method.</I>
 Add a new part to this message, and return the new part.
 
 
-<P>You can attach a MIME::Lite OBJECT, or have it create one by specifying
-a PARAMHASH that will be automatically given to <CODE>new()</CODE>.
+<P>If you supply a single PART argument, it will be regarded
+as a MIME::Lite object to be attached.  Otherwise, this
+method assumes that you are giving in the pairs of a PARAMHASH
+which will be sent into <CODE>new()</CODE> to create the new part.
 
 
 <P>One of the possibly-quite-useful hacks thrown into this is the 
@@ -479,12 +500,12 @@ Any field you want placed in the message header, taken from the
 standard list of header fields (you don't need to worry about case):
 
 <FONT SIZE=3 FACE="courier"><PRE>
-    Bcc           Encrypted     Received      Sender         
-    Cc            From          References    Subject 
-    Comments	  Keywords      Reply-To      To 
-    Content-*	  Message-ID    Resent-*      X-*
-    Date          MIME-Version  Return-Path   
-                  Organization
+    Approved      Encrypted     Received      Sender         
+    Bcc           From          References    Subject 
+    Cc            Keywords      Reply-To      To 
+    Comments      Message-ID    Resent-*      X-*
+    Content-*     MIME-Version  Return-Path   
+    Date                        Organization
 </PRE></FONT>
 
 <P>To give experienced users some veto power, these fields will be set 
@@ -524,7 +545,7 @@ The default is <CODE>&quot;inline&quot;</CODE>.
 <I>Optional.</I>
 The content transfer encoding that should be used to encode your data:
 
-<P><TABLE CELLPADDING=4 CELLSPACING=0 BORDER=1 ALIGN=CENTER BGCOLOR=#EEEEEE><TR><TH BGCOLOR=#AA0055 ALIGN=LEFT><FONT SIZE=2 COLOR=#FFFFFF FACE="sans-serif">Use encoding:&nbsp;</FONT></TH BGCOLOR=#AA0055><TH BGCOLOR=#AA0055 ALIGN=LEFT><FONT SIZE=2 COLOR=#FFFFFF FACE="sans-serif">If your message contains:&nbsp;</FONT></TH BGCOLOR=#AA0055></TR><TR><TD ALIGN=LEFT><FONT SIZE=2 COLOR=#000000 FACE="sans-serif">7bit</FONT></TD><TD ALIGN=LEFT><FONT SIZE=2 COLOR=#000000 FACE="sans-serif">Only 7-bit text, all lines &lt;1000 characters</FONT></TD></TR><TR><TD ALIGN=LEFT><FONT SIZE=2 COLOR=#000000 FACE="sans-serif">8bit</FONT></TD><TD ALIGN=LEFT><FONT SIZE=2 COLOR=#000000 FACE="sans-serif">8-bit text, all lines &lt;1000 characters</FONT></TD></TR><TR><TD ALIGN=LEFT><FONT SIZE=2 COLOR=#000000 FACE="sans-serif">quoted-printable</FONT></TD><TD ALIGN=LEFT><FONT SIZE=2 COLOR=#000000 FACE="sans-serif">8-bit text or long lines (more reliable than &quot;8bit&quot;)</FONT></TD></TR><TR><TD ALIGN=LEFT><FONT SIZE=2 COLOR=#000000 FACE="sans-serif">base64</FONT></TD><TD ALIGN=LEFT><FONT SIZE=2 COLOR=#000000 FACE="sans-serif">Largely non-textual data: a GIF, a tar file, etc.</FONT></TD></TR></UL></TABLE>
+<P><TABLE CELLPADDING=4 CELLSPACING=0 BORDER=1 ALIGN=CENTER BGCOLOR=#EEEEEE><TR><TH BGCOLOR=#AA0055 ALIGN=LEFT><FONT SIZE=2 COLOR=#FFFFFF FACE="sans-serif">Use encoding:&nbsp;</FONT></TH BGCOLOR=#AA0055><TH BGCOLOR=#AA0055 ALIGN=LEFT><FONT SIZE=2 COLOR=#FFFFFF FACE="sans-serif">If your message contains:&nbsp;</FONT></TH BGCOLOR=#AA0055></TR><TR><TD ALIGN=LEFT><FONT SIZE=2 COLOR=#000000 FACE="sans-serif">7bit</FONT></TD><TD ALIGN=LEFT><FONT SIZE=2 COLOR=#000000 FACE="sans-serif">Only 7-bit text, all lines &lt;1000 characters</FONT></TD></TR><TR><TD ALIGN=LEFT><FONT SIZE=2 COLOR=#000000 FACE="sans-serif">8bit</FONT></TD><TD ALIGN=LEFT><FONT SIZE=2 COLOR=#000000 FACE="sans-serif">8-bit text, all lines &lt;1000 characters</FONT></TD></TR><TR><TD ALIGN=LEFT><FONT SIZE=2 COLOR=#000000 FACE="sans-serif">quoted-printable</FONT></TD><TD ALIGN=LEFT><FONT SIZE=2 COLOR=#000000 FACE="sans-serif">8-bit text or long lines (more reliable than &quot;8bit&quot;)</FONT></TD></TR><TR><TD ALIGN=LEFT><FONT SIZE=2 COLOR=#000000 FACE="sans-serif">base64</FONT></TD><TD ALIGN=LEFT><FONT SIZE=2 COLOR=#000000 FACE="sans-serif">Largely non-textual data: a GIF, a tar file, etc.</FONT></TD></TR></TABLE>
 <P>The default is taken from the Type; generally it is &quot;binary&quot; (no
 encoding) for text/*, message/*, and multipart/*, and &quot;base64&quot; for
 everything else.  A value of <CODE>&quot;binary&quot;</CODE> is generally <I>not</I> suitable
@@ -548,9 +569,10 @@ See &quot;ReadNow&quot; also.
 <I>Optional.</I>
 The name of the attachment.  You can use this to supply a 
 recommended filename for the end-user who is saving the attachment 
-to disk, if the one in the Path is inadequate, or if you're using 
-the Data argument.  You should <I>not</I> put path information in here
-(e.g., no &quot;/&quot; or &quot;\&quot; or &quot;:&quot; characters).
+to disk.  You only need this if the filename at the end of the 
+&quot;Path&quot; is inadequate, or if you're using &quot;Data&quot; instead of &quot;Path&quot;.
+You should <I>not</I> put path information in here (e.g., no &quot;/&quot; 
+or &quot;\&quot; or &quot;:&quot; characters should be used).
 
 <P><DT><B><A NAME="item:Id">Id</A></B></DT>
 <DD>
@@ -1440,6 +1462,26 @@ my well-meaning tinkering could seriously harm them.
 
 
 <P><HR>
+<A NAME="Infinite_loops_may_mean_tainted_data"><H3><A HREF="#__TOP__"><IMG SRC="icons/h2bullet.gif" ALT="Top" BORDER="0"></A> Infinite loops may mean tainted data!</H3></A>
+
+
+<P>Stefan Sautter noticed a bug in 2.106 where a m//gc match was
+failing due to tainted data, leading to an infinite loop inside
+MIME::Lite.  
+
+
+<P>I am attempting to correct for this, but be advised that my fix will
+silently untaint the data (given the context in which the problem
+occurs, this should be benign: I've labelled the source code with
+UNTAINT comments for the curious).
+
+
+<P>So: don't depend on taint-checking to save you from outputting
+tainted data in a message.
+
+
+
+<P><HR>
 <A NAME="A_MIME_PRIMER"><H2><A HREF="#__TOP__"><IMG SRC="icons/h1bullet.gif" ALT="Top" BORDER="0"></A> A MIME PRIMER</H2></A>
 
 
@@ -1552,7 +1594,7 @@ non-ASCII characters (e.g., Latin-1, Latin-2, or any other 8-bit alphabet).
 <A NAME="VERSION"><H2><A HREF="#__TOP__"><IMG SRC="icons/h1bullet.gif" ALT="Top" BORDER="0"></A> VERSION</H2></A>
 
 
-<P>$Id: Lite.pm,v 2.106 2000/11/21 08:16:32 eryq Exp $
+<P>$Id: Lite.pm,v 2.107 2001/03/28 05:22:46 eryq Exp $
 
 
 
@@ -1562,6 +1604,48 @@ non-ASCII characters (e.g., Latin-1, Latin-2, or any other 8-bit alphabet).
 
 
 <DL>
+<P><DT><B><A NAME="item:Version">Version 2.107   (2001/03/27)</A></B></DT>
+<DD>
+Fixed serious bug where tainted data with quoted-printable encoding
+was causing infinite loops.  The &quot;fix&quot; untaints the data in question,
+which is not optimal, but it's probably benign in this case.
+<I>Thanks to Stefan Sautter for tracking this nasty little beast down.</I>
+
+<FONT SIZE=3 FACE="courier"><PRE>
+    &quot;Doctor, O doctor:
+       it's painful when I do *this* --&quot; 
+    &quot;Simple: don't *do* that.&quot; 
+</PRE></FONT>
+
+<P>Fixed bugs where a non-local <CODE>$_</CODE> was being modified... again!  
+Will I never learn?
+<I>Thanks to Maarten Koskamp for reporting this.</I>
+
+<FONT SIZE=3 FACE="courier"><PRE>
+    Dollar-underscore
+       can poison distant waters;
+   'local' must it be.
+</PRE></FONT>
+
+<P>Fixed buglet in <CODE>add()</CODE> where all value references were being treated
+as arrayrefs, instead of as possibly-self-stringifying object refs.
+Now you can send in an object ref as the 2nd argument.
+<I>Thanks to dLux for the bug report.</I>
+
+<FONT SIZE=3 FACE="courier"><PRE>
+    That ref is a string?
+       Operator overload
+    has ruined my day.
+</PRE></FONT>
+
+<P>Added &quot;Approved&quot; as an acceptable header field for <CODE>new()</CODE>, as per RFC1036.
+<I>Thanks to Thomax for the suggestion regarding MIME-tools.</I>
+
+
+<P>Small improvements to docs to make different uses of attach() 
+and various arguments clearer.
+<I>Thanks to Sven Rassman and Roland Walter for the suggestions.</I>
+
 <P><DT><B><A NAME="item:Version">Version 2.106   (2000/11/21)</A></B></DT>
 <DD>
 Added Alpha version of scrub() to make it easy for people to suppress
@@ -1817,7 +1901,7 @@ See the COPYING file in the distribution for details.
 <P>For some reason, the US FDA says that this is now required by law
 on any products that bear the name &quot;Lite&quot;...
 
-<P><TABLE CELLPADDING=4 CELLSPACING=0 BORDER=1 ALIGN=CENTER BGCOLOR=#EEEEEE><TR><TH BGCOLOR=#AA0055 ALIGN=LEFT><FONT SIZE=2 COLOR=#FFFFFF FACE="sans-serif">MIME::Lite&nbsp;</FONT></TH BGCOLOR=#AA0055><TH BGCOLOR=#AA0055 ALIGN=LEFT><FONT SIZE=2 COLOR=#FFFFFF FACE="sans-serif">&nbsp;</FONT></TH BGCOLOR=#AA0055></TR><TR><TD ALIGN=LEFT><FONT SIZE=2 COLOR=#000000 FACE="sans-serif">Serving size:</FONT></TD><TD ALIGN=LEFT><FONT SIZE=2 COLOR=#000000 FACE="sans-serif">1 module</FONT></TD></TR><TR><TD ALIGN=LEFT><FONT SIZE=2 COLOR=#000000 FACE="sans-serif">Servings per container:</FONT></TD><TD ALIGN=LEFT><FONT SIZE=2 COLOR=#000000 FACE="sans-serif">1</FONT></TD></TR><TR><TD ALIGN=LEFT><FONT SIZE=2 COLOR=#000000 FACE="sans-serif">Calories:</FONT></TD><TD ALIGN=LEFT><FONT SIZE=2 COLOR=#000000 FACE="sans-serif">0</FONT></TD></TR><TR><TD ALIGN=LEFT><FONT SIZE=2 COLOR=#000000 FACE="sans-serif">Fat:</FONT></TD><TD ALIGN=LEFT><FONT SIZE=2 COLOR=#000000 FACE="sans-serif">0g</FONT></TD></TR><TR><TD ALIGN=LEFT><FONT SIZE=2 COLOR=#000000 FACE="sans-serif">Saturated Fat:</FONT></TD><TD ALIGN=LEFT><FONT SIZE=2 COLOR=#000000 FACE="sans-serif">0g</FONT></TD></TR></UL></TABLE>
+<P><TABLE CELLPADDING=4 CELLSPACING=0 BORDER=1 ALIGN=CENTER BGCOLOR=#EEEEEE><TR><TH BGCOLOR=#AA0055 ALIGN=LEFT><FONT SIZE=2 COLOR=#FFFFFF FACE="sans-serif">MIME::Lite&nbsp;</FONT></TH BGCOLOR=#AA0055><TH BGCOLOR=#AA0055 ALIGN=LEFT><FONT SIZE=2 COLOR=#FFFFFF FACE="sans-serif">&nbsp;</FONT></TH BGCOLOR=#AA0055></TR><TR><TD ALIGN=LEFT><FONT SIZE=2 COLOR=#000000 FACE="sans-serif">Serving size:</FONT></TD><TD ALIGN=LEFT><FONT SIZE=2 COLOR=#000000 FACE="sans-serif">1 module</FONT></TD></TR><TR><TD ALIGN=LEFT><FONT SIZE=2 COLOR=#000000 FACE="sans-serif">Servings per container:</FONT></TD><TD ALIGN=LEFT><FONT SIZE=2 COLOR=#000000 FACE="sans-serif">1</FONT></TD></TR><TR><TD ALIGN=LEFT><FONT SIZE=2 COLOR=#000000 FACE="sans-serif">Calories:</FONT></TD><TD ALIGN=LEFT><FONT SIZE=2 COLOR=#000000 FACE="sans-serif">0</FONT></TD></TR><TR><TD ALIGN=LEFT><FONT SIZE=2 COLOR=#000000 FACE="sans-serif">Fat:</FONT></TD><TD ALIGN=LEFT><FONT SIZE=2 COLOR=#000000 FACE="sans-serif">0g</FONT></TD></TR><TR><TD ALIGN=LEFT><FONT SIZE=2 COLOR=#000000 FACE="sans-serif">Saturated Fat:</FONT></TD><TD ALIGN=LEFT><FONT SIZE=2 COLOR=#000000 FACE="sans-serif">0g</FONT></TD></TR></TABLE>
 <P>Warning: for consumption by hardware only!  May produce 
 indigestion in humans if taken internally.
 
@@ -1835,7 +1919,7 @@ President, ZeeGee Software Inc. (<I><FILE><A HREF="http://www.zeegee.com">http:/
 
 <P><HR>
 <ADDRESS><FONT SIZE=-1>
-Generated Tue Nov 21 03:17:56 2000 by cvu_pod2html
+Generated Wed Mar 28 01:02:14 2001 by cvu_pod2html
 </FONT></ADDRESS>
 </FONT></BODY>
 </HTML>
