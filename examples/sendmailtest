@@ -1,0 +1,25 @@
+#!/usr/bin/perl -T
+use lib "lib";
+use MIME::Lite;
+
+sub untaint {
+    my $str = shift;
+    $str =~ /(\S+)$/;
+    return $1;
+}
+
+$msg = new MIME::Lite 
+    To   => untaint($ARGV[0] || die "missing 'to'"),
+    From => '"Zoggy" <zoggy@capricorn.net>',
+    Subject => "Whoa.",
+    Data    => "Hold the phone!\n"
+    ;
+
+my @old = MIME::Lite->send('sendmail');
+print "Old send() was: ", join(' ', @old), "\n";
+
+#$msg->print;
+$msg->send || die "mail not sent\n";
+
+
+

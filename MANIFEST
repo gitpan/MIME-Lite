@@ -20,6 +20,7 @@ examples/giftest
 examples/hacktest
 examples/htmltest
 examples/mime_postcard
+examples/sendmailtest
 examples/signtest
 examples/smtptest
 lib/MIME/Lite.pm
@@ -31,3 +32,5 @@ t/head.t
 t/verify.t
 testin/README
 testin/hello
+
+

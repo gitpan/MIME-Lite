@@ -46,16 +46,16 @@ Create a multipart message (i.e., one with attachments):
 
 Output a message:
 
-    # Format as a string:
+    ### Format as a string:
     $str = $msg->as_string;
     
-    # Print to a filehandle (say, a "sendmail" stream):
+    ### Print to a filehandle (say, a "sendmail" stream):
     $msg->print(\*SENDMAIL);
 
 
 Send a message:
 
-    # Send in the "best" way (the default is to use "sendmail"):
+    ### Send in the "best" way (the default is to use "sendmail"):
     $msg->send;
       
 
@@ -165,6 +165,59 @@ This will create a multipart message exactly as above, but using the
 
 =head1 PUBLIC INTERFACE
 
+=head2 Global configuration
+
+To alter the way the entire module behaves, you have the following
+methods/options:
+
+=over 4
+
+=item MIME::Lite->quiet()
+
+This L<classmethod|/quiet> can be used to suppress/unsuppress 
+all warnings coming from this module.
+
+=item MIME::Lite->send()
+
+When used as a L<classmethod|/send>, this can be used to specify 
+a different default mechanism for sending message.  
+The initial default is:
+
+    MIME::Lite->send("sendmail", "/usr/lib/sendmail -t -oi -oem");
+
+However, you should consider the similar but smarter and taint-safe variant:
+
+    MIME::Lite->send("sendmail");
+
+Or, for non-Unix users:
+
+    MIME::Lite->send("smtp");
+
+
+=item $MIME::Lite::PARANOID
+
+If true, we won't attempt to use MIME::Base64/MIME::QuotedPrint, even
+if they're available.
+Default is B<false>.
+
+=item $MIME::Lite::AUTO_ENCODE
+
+If true, automatically choose the encoding from the content type.
+Default is B<true>.
+
+=item $MIME::Lite::AUTO_CC
+
+If true, automatically send to the Cc/Bcc addresses for send_by_smtp().
+Default is B<true>.
+
+=item $MIME::Lite::AUTO_VERIFY
+
+If true, check paths to attachments right before printing, raising an exception
+if any path is unreadable.
+Default is B<true>.
+
+=back
+
 =cut
 
 
@@ -172,8 +225,15 @@ use Carp;
 use FileHandle;
 
 use strict;
-use vars qw($VERSION $QUIET $PARANOID $VANILLA
-            $AUTO_ENCODE $AUTO_CC $AUTO_VERIFY);
+use vars qw(
+            $AUTO_CC 
+            $AUTO_ENCODE
+            $AUTO_VERIFY            
+            $PARANOID 
+            $QUIET
+            $VANILLA
+            $VERSION 
+            );
 
 
 
@@ -183,7 +243,7 @@ use vars qw($VERSION $QUIET $PARANOID $VANILLA
 # GLOBALS, EXTERNAL/CONFIGURATION...
 
 ### The package version, both in 1.23 style *and* usable by MakeMaker:
-$VERSION = substr q$Revision: 1.140 $, 10;
+$VERSION = substr q$Revision: 1.144 $, 10;
 
 ### Don't warn me about dangerous activities:
 $QUIET = undef;
@@ -256,7 +316,7 @@ my $PHRASE = $QSTR;
 
 sub fold {
     my $str = shift;
-    $str =~ s/^\s*|\s*$//g;    # trim
+    $str =~ s/^\s*|\s*$//g;    ### trim
     $str =~ s/\n/\n /g;      
     $str;
 }
@@ -333,23 +393,23 @@ sub encode_base64 {
     my $res = "";
     my $eol = "\n";
 
-    pos($_[0]) = 0;        # thanks, Andreas!
+    pos($_[0]) = 0;        ### thanks, Andreas!
     while ($_[0] =~ /(.{1,45})/gs) {
 	$res .= substr(pack('u', $1), 1);
 	chop($res);
     }
     $res =~ tr|` -_|AA-Za-z0-9+/|;
 
-    # Fix padding at the end:
+    ### Fix padding at the end:
     my $padding = (3 - length($_[0]) % 3) % 3;
     $res =~ s/.{$padding}$/'=' x $padding/e if $padding;
 
-    # Break encoded string into lines of no more than 76 characters each:
+    ### Break encoded string into lines of no more than 76 characters each:
     $res =~ s/(.{1,76})/$1$eol/g if (length $eol);
     return $res;
-} # sub
-  } # q
-} #if
+} ### sub
+  } ### q
+} ### if
 
 #------------------------------
 #
@@ -371,20 +431,20 @@ else {
 sub encode_qp {
     my $res = shift;
     local($_);
-    $res =~ s/([^ \t\n!-<>-~])/sprintf("=%02X", ord($1))/eg;  # rule #2,#3
+    $res =~ s/([^ \t\n!-<>-~])/sprintf("=%02X", ord($1))/eg;  ### rule #2,#3
     $res =~ s/([ \t]+)$/
       join('', map { sprintf("=%02X", ord($_)) }
 	           split('', $1)
-      )/egm;                        # rule #3 (encode whitespace at eol)
+      )/egm;                        ### rule #3 (encode whitespace at eol)
 
-    # rule #5 (lines shorter than 76 chars, but can't break =XX escapes:
+    ### rule #5 (lines shorter than 76 chars, but can't break =XX escapes:
     my $brokenlines = "";
-    $brokenlines .= "$1=\n" while $res =~ s/^(.{70}([^=]{2})?)//; # 70 was 74
+    $brokenlines .= "$1=\n" while $res =~ s/^(.{70}([^=]{2})?)//; ### 70 was 74
     $brokenlines =~ s/=\n$// unless length $res; 
     "$brokenlines$res";
-} # sub
-  } # q
-} #if
+} ### sub
+  } ### q
+} ### if
 
 #------------------------------
 #
@@ -438,15 +498,15 @@ just the empty object is created.
 sub new {
     my $class = shift;
 
-    # Create basic object:
+    ### Create basic object:
     my $self = {
 	Attrs => {},
-	Header => [],    # message header
-	Parts => [],     # array of parts
+	Header => [],    ### message header
+	Parts => [],     ### array of parts
     };    
     bless $self, $class;
 
-    # Build, if needed:
+    ### Build, if needed:
     return (@_ ? $self->build(@_) : $self);
 }
 
@@ -496,33 +556,33 @@ that a user agent like Netscape allows you to do.
 sub attach {
     my $self = shift;
 
-    # Create new part, if necessary:
+    ### Create new part, if necessary:
     my $part1 = ((@_ == 1) ? shift : ref($self)->new(Top=>0, @_));
 
-    # Do the "attach-to-singlepart" hack:
+    ### Do the "attach-to-singlepart" hack:
     if ($self->attr('content-type') !~ m{^multipart/}i) {
 
-	# Create part zero:
+	### Create part zero:
 	my $part0 = ref($self)->new;
 
-	# Cut MIME stuff from self, and paste into part zero: 
+	### Cut MIME stuff from self, and paste into part zero: 
 	foreach (qw(Attrs Data Path FH)) {
 	    $part0->{$_} = $self->{$_}; delete($self->{$_});
 	}
-	$part0->top_level(0);    # clear top-level attributes
+	$part0->top_level(0);    ### clear top-level attributes
 
-	# Make self a top-level multipart:
-	$self->{Attrs} ||= {};   # reset       
+	### Make self a top-level multipart:
+	$self->{Attrs} ||= {};   ### reset       
 	$self->attr('content-type'              => 'multipart/mixed');
 	$self->attr('content-type.boundary'     => gen_boundary());
 	$self->attr('content-transfer-encoding' => '7bit');
-	$self->top_level(1);     # activate top-level attributes
+	$self->top_level(1);     ### activate top-level attributes
 
-	# Add part 0:
+	### Add part 0:
 	push @{$self->{Parts}}, $part0;
     }
 
-    # Add the new part:
+    ### Add the new part:
     push @{$self->{Parts}}, $part1;
     $part1;
 }
@@ -613,6 +673,7 @@ The name of the attachment.  You can use this to supply a filename
 if the one in the Path is inadequate, or if you're using the Data argument.
 
 =item Id
+
 I<Optional.>
 Same as setting "content-id".
 
@@ -661,35 +722,34 @@ A picture being worth 1000 words (which
 is of course 2000 bytes, so it's probably more of an "icon" than a "picture",
 but I digress...), here are some examples:
 
-    $msg = build MIME::Lite 
+    $msg = MIME::Lite->build( 
                From     => 'yelling@inter.com',
                To       => 'stocking@fish.net',
                Subject  => "Hi there!",
                Type     => 'TEXT',
                Encoding => '7bit',
-               Data     => "Just a quick note to say hi!";
+               Data     => "Just a quick note to say hi!");
  
-    $msg = build MIME::Lite 
+    $msg = MIME::Lite->build(
                From     => 'dorothy@emerald-city.oz',
                To       => 'gesundheit@edu.edu.edu',
                Subject  => "A gif for U"
                Type     => 'image/gif',
-               Path     => "/home/httpd/logo.gif";
+               Path     => "/home/httpd/logo.gif");
  
-    $msg = build MIME::Lite 
+    $msg = MIME::Lite->build( 
                From     => 'laughing@all.of.us',
                To       => 'scarlett@fiddle.dee.de',
                Subject  => "A gzipp'ed tar file",
                Type     => 'x-gzip',
                Path     => "gzip < /usr/inc/somefile.tar |",
                ReadNow  => 1,
-               Filename => "somefile.tgz";
+               Filename => "somefile.tgz");
 
 To show you what's really going on, that last example could also 
 have been written:
 
     $msg = new MIME::Lite;
-    
     $msg->build(Type     => 'x-gzip',
                 Path     => "gzip < /usr/inc/somefile.tar |",
                 ReadNow  => 1,
@@ -706,28 +766,28 @@ sub build {
     my @params = @_;
     my $key;
 
-    # Miko's note: reorganized to check for exactly one of Data, Path, or FH
+    ### Miko's note: reorganized to check for exactly one of Data, Path, or FH
     (defined($params{Data})+defined($params{Path})+defined($params{FH}) <= 1)
 	or croak "supply exactly zero or one of (Data|Path|FH).\n";
 
-    # Create new instance, if necessary:
+    ### Create new instance, if necessary:
     ref($self) or $self = $self->new;
 
 
     ### CONTENT-TYPE....
     ###
 
-    # Get content-type:
+    ### Get content-type:
     my $type = ($params{Type} || 'TEXT');
     ($type eq 'TEXT')   and $type = 'text/plain';
     ($type eq 'BINARY') and $type = 'application/octet-stream';
     $type = lc($type);
     $self->attr('content-type' => $type);
    
-    # Get some basic attributes from the content type:
+    ### Get some basic attributes from the content type:
     my $is_multipart = ($type =~ m{^(multipart)/}i);
 
-    # Add in the multipart boundary:
+    ### Add in the multipart boundary:
     if ($is_multipart) {
 	my $boundary = gen_boundary();
 	$self->attr('content-type.boundary' => $boundary);
@@ -743,21 +803,21 @@ sub build {
     ###    Note that we must do this *after* we get the content type, 
     ###    in case read_now() is invoked, since it needs the binmode().
 
-    # Get data, as...
-    # ...either literal data:
+    ### Get data, as...
+    ### ...either literal data:
     if (defined($params{Data})) {
 	$self->data($params{Data});
     }
-    # ...or a path to data:
+    ### ...or a path to data:
     elsif (defined($params{Path})) {
-	$self->path($params{Path});       # also sets filename
+	$self->path($params{Path});       ### also sets filename
 	$self->read_now if $params{ReadNow};
     }
-    # ...or a filehandle to data:
-    # Miko's note: this part works much like the path routine just above,
+    ### ...or a filehandle to data:
+    ### Miko's note: this part works much like the path routine just above,
     elsif (defined($params{FH})) {
 	$self->fh($params{FH});
-	$self->read_now if $params{ReadNow};  # implement later
+	$self->read_now if $params{ReadNow};  ### implement later
     }
     
 
@@ -772,13 +832,13 @@ sub build {
     ### CONTENT-TRANSFER-ENCODING...
     ###
 
-    # Get it:
+    ### Get it:
     my $enc = ($params{Encoding} ||  
 	       ($AUTO_ENCODE and $self->suggest_encoding($type)) ||
 	       'binary');      
     $self->attr('content-transfer-encoding' => lc($enc));
 	
-    # Sanity check:
+    ### Sanity check:
     if ($type =~ m{^(multipart|message)/}) {
 	($enc =~ m{^(7bit|8bit|binary)\Z}) or 
 	    croak "illegal MIME: can't have encoding $enc with type $type!";
@@ -793,42 +853,42 @@ sub build {
     ### CONTENT-LENGTH...
     ###
     my $length;
-    if (exists($params{Length})) {   # given by caller:
+    if (exists($params{Length})) {   ### given by caller:
 	$self->attr('content-length' => $params{Length});
     }
-    else {                           # compute it ourselves
+    else {                           ### compute it ourselves
 	$self->get_length;
     }
 
     
-    # Init the top-level fields:
+    ### Init the top-level fields:
     $self->top_level(defined($params{Top}) ? $params{Top} : 1);
 
-    # Set message headers:
+    ### Set message headers:
     my @paramz = @params;
     my $field;
     while (@paramz) {
 	my ($tag, $value) = (shift(@paramz), shift(@paramz));
 
-	# Get tag, if a tag:
-	if ($tag =~ /^-(.*)/) {      # old style, backwards-compatibility
+	### Get tag, if a tag:
+	if ($tag =~ /^-(.*)/) {      ### old style, backwards-compatibility
 	    $field = lc($1);
 	}
-	elsif ($tag =~ /^(.*):$/) {  # new style
+	elsif ($tag =~ /^(.*):$/) {  ### new style
 	    $field = lc($1);
 	}
-	elsif (known_field($field = lc($tag))) {   # known field
-	    # no-op
+	elsif (known_field($field = lc($tag))) {   ### known field
+	    ### no-op
 	}
-	else {                       # not a field:
+	else {                       ### not a field:
 	    next;
 	}
 	
-	# Add it:
+	### Add it:
 	$self->add($field, $value);
     }
 
-    # Done!
+    ### Done!
     $self;
 }
 
@@ -897,16 +957,16 @@ sub add {
     my $tag = lc(shift);
     my $value = shift;
 
-    # If a dangerous option, warn them:
+    ### If a dangerous option, warn them:
     carp "Explicitly setting a MIME header field ($tag) is dangerous:\n".
 	 "use the attr() method instead.\n"
 	if (is_mime_field($tag) && !$QUIET);
 
-    # Get array of clean values:
+    ### Get array of clean values:
     my @vals = ref($value) ? @{$value} : ($value);
     map { s/\n/\n /g } @vals;
 
-    # Add them:
+    ### Add them:
     foreach (@vals) {
 	push @{$self->{Header}}, [$tag, $_];
     }
@@ -936,8 +996,8 @@ subfield to be deleted.
 
 Supplying no VALUE argument just returns the attribute's value:
 
-    $type = $msg->attr("content-type");        # returns "text/html"
-    $name = $msg->attr("content-type.name");   # returns "homepage.html"
+    $type = $msg->attr("content-type");        ### returns "text/html"
+    $name = $msg->attr("content-type.name");   ### returns "homepage.html"
 
 =cut
 
@@ -945,21 +1005,21 @@ sub attr {
     my ($self, $attr, $value) = @_;
     $attr = lc($attr);
 
-    # Break attribute name up:
+    ### Break attribute name up:
     my ($tag, $subtag) = split /\./, $attr;
     defined($subtag) or $subtag = '';
 
-    # Set or get?
-    if (@_ > 2) {   # set:
-	$self->{Attrs}{$tag} ||= {};            # force hash
-	delete $self->{Attrs}{$tag}{$subtag};   # delete first
-	if (defined($value)) {                  # set...
-	    $value =~ s/[\r\n]//g;                   # make clean
+    ### Set or get?
+    if (@_ > 2) {   ### set:
+	$self->{Attrs}{$tag} ||= {};            ### force hash
+	delete $self->{Attrs}{$tag}{$subtag};   ### delete first
+	if (defined($value)) {                  ### set...
+	    $value =~ s/[\r\n]//g;                   ### make clean
 	    $self->{Attrs}{$tag}{$subtag} = $value;
 	}
     }
 	
-    # Return current value:
+    ### Return current value:
     $self->{Attrs}{$tag}{$subtag};
 }
 
@@ -980,7 +1040,7 @@ sub delete {
     my $self = shift;
     my $tag = lc(shift);
 
-    # Delete from the header:
+    ### Delete from the header:
     my $hdr = [];
     my $field;
     foreach $field (@{$self->{Header}}) {
@@ -1014,38 +1074,38 @@ sub fields {
     my $self = shift;
     my @fields;
     
-    # Get a lookup-hash of all *explicitly-given* fields:
+    ### Get a lookup-hash of all *explicitly-given* fields:
     my %explicit = map { $_->[0] => 1 } @{$self->{Header}};
     
-    # Start with any MIME attributes not given explicitly:
+    ### Start with any MIME attributes not given explicitly:
     my $tag;
     foreach $tag (sort keys %{$self->{Attrs}}) {	
 
-	# Skip if explicit:
+	### Skip if explicit:
 	next if ($explicit{$tag});         
 
-	# Skip if no subtags:
+	### Skip if no subtags:
 	my @subtags = keys %{$self->{Attrs}{$tag}}; 
 	@subtags or next;
 
-	# Create string:
+	### Create string:
 	my $value;
-	defined($value = $self->{Attrs}{$tag}{''}) or next; # need default tag!
+	defined($value = $self->{Attrs}{$tag}{''}) or next;  ### need default 
 	foreach (sort @subtags) {
 	    next if ($_ eq '');
 	    $value .= qq{; $_="$self->{Attrs}{$tag}{$_}"};
 	}
 	
-	# Add to running fields;
+	### Add to running fields;
 	push @fields, [$tag, $value];
     }
     
-    # Add remaining fields (note that we duplicate the array for safety):
+    ### Add remaining fields (note that we duplicate the array for safety):
     foreach (@{$self->{Header}}) {
 	push @fields, [@{$_}];
     }
 
-    # Done!
+    ### Done!
     return \@fields;
 }
 
@@ -1140,14 +1200,14 @@ sub get_length {
     my $is_multipart = ($self->attr('content-type') =~ m{^multipart/}i);
     my $enc = lc($self->attr('content-transfer-encoding') || 'binary');
     my $length;
-    if (!$is_multipart && ($enc eq "binary")){  # might figure it out cheap:
-	if    (defined($self->{Data})) {               # it's in core
+    if (!$is_multipart && ($enc eq "binary")){  ### might figure it out cheap:
+	if    (defined($self->{Data})) {               ### it's in core
 	    $length = length($self->{Data});
 	}
-	elsif (defined($self->{FH})) {                 # it's in a filehandle
-	    # no-op: it's expensive, so don't bother
+	elsif (defined($self->{FH})) {                 ### it's in a filehandle
+	    ### no-op: it's expensive, so don't bother
 	}
-	elsif (defined($self->{Path})) {               # it's a simple file!
+	elsif (defined($self->{Path})) {               ### it's a simple file!
 	    $length = (-s $self->{Path})   if (-e $self->{Path});
 	}
     }
@@ -1215,7 +1275,7 @@ The new current value is returned.
 
 sub binmode {
     my $self = shift;
-    $self->{Binmode} = shift if (@_);       # argument? set override
+    $self->{Binmode} = shift if (@_);       ### argument? set override
     return (defined($self->{Binmode}) 
 	    ? $self->{Binmode}
 	    : ($self->attr("content-type") !~ m{^(text|message)/}i));
@@ -1260,18 +1320,18 @@ sub path {
     my $self = shift;
     if (@_) {
 
-	# Set the path, and invalidate the content length:
+	### Set the path, and invalidate the content length:
 	$self->{Path} = shift;
 
-	# Re-set filename, extracting it from path if possible:
+	### Re-set filename, extracting it from path if possible:
 	my $filename;
-	if ($self->{Path} and ($self->{Path} !~ /\|$/)) {  # non-shell path:
+	if ($self->{Path} and ($self->{Path} !~ /\|$/)) {  ### non-shell path:
 	    ($filename = $self->{Path}) =~ s/^<//;    
 	    ($filename) = ($filename =~ m{([^\/]+)\Z});
 	}
 	$self->filename($filename);
 
-	# Reset the length:
+	### Reset the length:
 	$self->get_length;
     }
     $self->{Path};
@@ -1340,17 +1400,17 @@ sub read_now {
     my $self = shift;
     local $/ = undef;
     
-    if    ($self->{FH}) {       # data from a filehandle:
+    if    ($self->{FH}) {       ### data from a filehandle:
 	my $chunk;
 	$self->{Data} = '';
 	CORE::binmode($self->{FH}) if $self->binmode;
 	while (read($self->{FH}, $chunk, 1024)) {$self->{Data} .= $chunk}
     }
-    elsif ($self->{Path}) {     # data from a path:
+    elsif ($self->{Path}) {     ### data from a path:
 	open SLURP, $self->{Path} or croak "open $self->{Path}: $!";
 	CORE::binmode(SLURP) if $self->binmode;
-	$self->{Data} = <SLURP>;        # sssssssssssssslurp...
-	close SLURP;                    # ...aaaaaaaaahhh!
+	$self->{Data} = <SLURP>;        ### sssssssssssssslurp...
+	close SLURP;                    ### ...aaaaaaaaahhh!
     }
 }
 
@@ -1386,26 +1446,26 @@ sub sign {
     my $self = shift;
     my %params = @_;
 
-    # Default:
+    ### Default:
     @_ or $params{Path} = "$ENV{HOME}/.signature";
 
-    # Force message in-core:
+    ### Force message in-core:
     defined($self->{Data}) or $self->read_now;
 
-    # Load signature:
+    ### Load signature:
     my $sig;
-    if (!defined($sig = $params{Data})) {      # not given explicitly:
+    if (!defined($sig = $params{Data})) {      ### not given explicitly:
 	local $/ = undef;
 	open SIG, $params{Path} or croak "open sig $params{Path}: $!";
-	$sig = <SIG>;                  # sssssssssssssslurp...
-	close SIG;                     # ...aaaaaaaaahhh!
+	$sig = <SIG>;                  ### sssssssssssssslurp...
+	close SIG;                     ### ...aaaaaaaaahhh!
     }    
     $sig = join('',@$sig) if (ref($sig) and (ref($sig) eq 'ARRAY'));
 
-    # Append, following Internet conventions:
+    ### Append, following Internet conventions:
     $self->{Data} .= "\n-- \n$sig";
 
-    # Re-compute length:
+    ### Re-compute length:
     $self->get_length;
     1;
 }
@@ -1440,7 +1500,7 @@ sub suggest_encoding {
     my ($self, $ctype) = @_;
 
     my ($type) = split '/', lc($ctype);
-    if (($type eq 'text') || ($type eq 'message')) {    # scan message body
+    if (($type eq 'text') || ($type eq 'message')) {    ### scan message body
 	return 'binary';
     }
     else {
@@ -1463,14 +1523,14 @@ Raises exception if any path is not readable.
 sub verify_data {
     my $self = shift;
 
-    # Verify self:
+    ### Verify self:
     my $path = $self->{Path};
-    if ($path and ($path !~ /\|$/)) {  # non-shell path:
+    if ($path and ($path !~ /\|$/)) {  ### non-shell path:
 	$path =~ s/^<//;    
 	(-r $path) or die "$path: not readable\n";
     }
 
-    # Verify parts:
+    ### Verify parts:
     foreach my $part (@{$self->{Parts}}) { $part->verify_data }
     1;
 }
@@ -1505,26 +1565,26 @@ any object that responds to a print() message.
 sub print {
     my ($self, $out) = @_;
 
-    # Coerce into a printable output handle:
+    ### Coerce into a printable output handle:
     $out = wrap MIME::Lite::IO_Handle $out;
 
-    # Output the head and its terminating blank line:
+    ### Output the head and its terminating blank line:
     $self->print_header($out);
     $out->print("\n");
 
-    # Output either the body or the parts.
-    #   Notice that we key off of the content-type!  We expect fewer 
-    #   accidents that way, since the syntax will always match the MIME type.
+    ### Output either the body or the parts.
+    ###   Notice that we key off of the content-type!  We expect fewer 
+    ###   accidents that way, since the syntax will always match the MIME type.
     if ($self->attr('content-type') !~ m{^multipart/}i) {	
-	$self->print_body($out);  # Single part
+	$self->print_body($out);  ### Single part
     }
-    else {                        # Multipart...
+    else {                        ### Multipart...
 	my $boundary = $self->attr('content-type.boundary');
 
-	# Preamble:
+	### Preamble:
 	$out->print("This is a multi-part message in MIME format.\n");
 	
-	# Parts:
+	### Parts:
 	my $part;
 	foreach $part (@{$self->{Parts}}) {
 	    $out->print("\n--$boundary\n");
@@ -1555,17 +1615,17 @@ encountered.
 sub print_body {
     my ($self, $out) = @_;
 
-    # Coerce into a printable output handle:
+    ### Coerce into a printable output handle:
     $out = wrap MIME::Lite::IO_Handle $out;
 
-    # Get content-transfer-encoding:
+    ### Get content-transfer-encoding:
     my $encoding = uc($self->attr('content-transfer-encoding'));
 
-    # Notice that we don't just attempt to slurp the data in from a file:
-    # by processing files piecemeal, we still enable ourselves to prepare
-    # very large MIME messages...
+    ### Notice that we don't just attempt to slurp the data in from a file:
+    ### by processing files piecemeal, we still enable ourselves to prepare
+    ### very large MIME messages...
 
-    # Is the data in-core?  If so, blit it out...
+    ### Is the data in-core?  If so, blit it out...
     if (defined($self->{Data})) {
       DATA: 
 	{ $_ = $encoding;
@@ -1584,7 +1644,7 @@ sub print_body {
 	  };
 	  /^QUOTED-PRINTABLE$/ and do {
 	      while ($self->{Data}=~ m{^(.*[\r\n]*)}mg) {
-		  $out->print(encode_qp($1));   # have to do it line by line...
+		  $out->print(encode_qp($1)); ### have to do it line by line...
 	      }
 	      last DATA;	 
 	  };
@@ -1596,15 +1656,15 @@ sub print_body {
         }
     }
 
-    # Else, is the data in a file?  If so, output piecemeal...
-    #    Miko's note: this routine pretty much works the same with a path 
-    #    or a filehandle. the only difference in behaviour is that it does 
-    #    not attempt to open anything if it already has a filehandle
+    ### Else, is the data in a file?  If so, output piecemeal...
+    ###    Miko's note: this routine pretty much works the same with a path 
+    ###    or a filehandle. the only difference in behaviour is that it does 
+    ###    not attempt to open anything if it already has a filehandle
     elsif (defined($self->{Path}) || defined($self->{FH})) {
-	no strict 'refs';          # in case FH is not an object
+	no strict 'refs';          ### in case FH is not an object
 	my $DATA;
 	
-	# Open file if necessary:
+	### Open file if necessary:
 	if (defined($self->{Path})) {
 	    $DATA = new FileHandle || croak "can't get new filehandle!";
 	    $DATA->open("$self->{Path}") or croak "open $self->{Path}: $!";
@@ -1614,7 +1674,7 @@ sub print_body {
 	}
 	CORE::binmode($DATA) if $self->binmode;
 		
-	# Encode piece by piece:
+	### Encode piece by piece:
       PATH: 
 	{   $_ = $encoding;
 	    
@@ -1641,7 +1701,7 @@ sub print_body {
 	    croak "unsupported encoding: `$_'";
 	}
 	
-	# Close file:
+	### Close file:
 	close $DATA if defined($self->{Path});
     }
     
@@ -1667,10 +1727,10 @@ any object that responds to a print() message.
 sub print_header {
     my ($self, $out) = @_;
 
-    # Coerce into a printable output handle:
+    ### Coerce into a printable output handle:
     $out = wrap MIME::Lite::IO_Handle $out;
 
-    # Output the header:
+    ### Output the header:
     $out->print($self->header_as_string);
     1;
 }
@@ -1691,7 +1751,7 @@ sub as_string {
     $self->print($io);
     $str;
 }
-*stringify = \&as_string;    # backwards compatibility
+*stringify = \&as_string;    ### backwards compatibility
 
 #------------------------------
 
@@ -1713,7 +1773,7 @@ sub body_as_string {
     $self->print_body($io);
     $str;
 }
-*stringify_body = \&body_as_string;    # backwards compatibility
+*stringify_body = \&body_as_string;    ### backwards compatibility
 
 #------------------------------
 
@@ -1729,13 +1789,13 @@ sub header_as_string {
     my $str = '';
     foreach (@{$self->fields}) {
 	my ($tag, $value) = @$_;
-	$tag =~ s/\b([a-z])/uc($1)/ge;   # make pretty
-	$tag =~ s/^mime-/MIME-/ig;       # even prettier
+	$tag =~ s/\b([a-z])/uc($1)/ge;   ### make pretty
+	$tag =~ s/^mime-/MIME-/ig;       ### even prettier
 	$str .= "$tag: $value\n";
     }
     $str;
 }
-*stringify_header = \&header_as_string;    # backwards compatibility
+*stringify_header = \&header_as_string;    ### backwards compatibility
 
 =back
 
@@ -1771,22 +1831,23 @@ on success, false/exception on error:
     $msg->send || die "you DON'T have mail!";
 
 I<As a class method> (with a HOW argument and optional HOWARGS), sets up 
-how the instance method will work for all objects until further notice.
+how the instance method will work for all objects until further notice
 It treats HOW as a facility name, with optional HOWARGS handled by
-the facility.   There are three facilities:
+the facility (and returns the previous HOW and HOWARGS as an array).
+There are three facilities:
 
 =over 4
 
-=item "sendmail", SENDMAILCMD
+=item "sendmail", ARGS...
 
 Send a message by piping it into the "sendmail" command.
-Uses the C<send_by_sendmail()> method, giving it the SENDMAILCMD.
+Uses the L</send_by_sendmail> method, giving it the ARGS.
 This usage implements (and deprecates) the C<sendmail()> method.
- 
+
 =item "smtp", [HOSTNAME]
 
 Send a message by SMTP, using optional HOSTNAME as SMTP-sending host.
-Uses the C<send_by_smtp()> method.
+Uses the L</send_by_smtp> method.
 
 =item "sub", \&SUBREF, ARGS...
 
@@ -1815,16 +1876,17 @@ All of your $msg-E<gt>send invocations will work as expected.
 sub send {
     my $self = shift;
 
-    if (ref($self)) {              # instance method:
+    if (ref($self)) {              ### instance method:
 	my $method = "send_by_$Sender";
 	my @args   = @{$SenderArgs{$Sender} || []};
-	$self->verify_data if $AUTO_VERIFY;       # prevents missing parts!
+	$self->verify_data if $AUTO_VERIFY;       ### prevents missing parts!
 	return $self->$method(@args);
     }
-    else {                         # class method:
+    else {                         ### class method:
+	my @old = ($Sender, @{$SenderArgs{$Sender}});
 	$Sender = shift;
-	$SenderArgs{$Sender} = [@_];    # remaining args
-	return 1;
+	$SenderArgs{$Sender} = [@_];    ### remaining args
+	return @old;
     }
 }
 
@@ -1832,34 +1894,110 @@ sub send {
 
 =item send_by_sendmail SENDMAILCMD
 
+=item send_by_sendmail PARAM=>VALUE, ...
+
 I<Instance method.>
-Send message via the external "sendmail" program, SENDMAILCMD.
+Send message via an external "sendmail" program
+(this will probably only work out-of-the-box on Unix systems).
+
 Returns true on success, false or exception on error.
 
-I<Note:> this facility will probably only work on Unix systems.
-The SENDMAILCMD for this facility must get all its message-specific 
-information from the standard input.
+You can specify the program and all its arguments by giving a single
+string, SENDMAILCMD.  Nothing fancy is done; the message is simply
+piped in.
+
+However, if your needs are a little more advanced, you can specify 
+zero or more of the following PARAM/VALUE pairs; a Unix-style, 
+taint-safe "sendmail" command will be constructed for you:
+
+=over 4
+
+=item Sendmail
+
+Full path to the program to use.  
+Default is "/usr/lib/sendmail".
+
+=item BaseArgs
+
+Ref to the basic array of arguments we start with.  
+Default is C<["-t", "-oi", "-oem"]>.
+
+=item SetSender
+
+Unless this is I<explicitly> given as false, we attempt to automatically
+set the C<-f> argument to the first address that can be extracted from 
+the "From:" field of the message (if there is one). 
+
+I<What is the -f, and why do we use it?>
+Suppose we did I<not> use C<-f>, and you gave an explicit "From:" 
+field in your message: in this case, the sendmail "envelope" would 
+indicate the I<real> user your process was running under, as a way 
+of preventing mail forgery.  Using the C<-f> switch causes the sender 
+to be set in the envelope as well.
+
+I<So when would I NOT want to use it?>
+If sendmail doesn't regard you as a "trusted" user, it will permit
+the C<-f> but also add an "X-Authentication-Warning" header to the message
+to indicate a forged envelope.  To avoid this, you can either 
+(1) have SetSender be false, or 
+(2) make yourself a trusted user by adding a C<T> configuration 
+    command to your I<sendmail.cf> file 
+    (e.g.: C<Teryq> if the script is running as user "eryq").
+
+=back
 
 =cut
 
 sub send_by_sendmail {
-    my ($self, $sendmailcmd) = @_;
+    my $self = shift;
 
-    # Do it:
-    my $pid;
-    open SENDMAIL, "|$sendmailcmd" or croak "open |$sendmailcmd: $!";
-    $self->print(\*SENDMAIL);
-    close SENDMAIL;
-    return (($? >> 8) ? undef : 1);
+    if (@_ == 1) {                    ### Use the given command...
+	my $sendmailcmd = shift @_;
+
+	### Do it:
+	open SENDMAIL, "|$sendmailcmd" or croak "open |$sendmailcmd: $!";
+	$self->print(\*SENDMAIL);
+	close SENDMAIL;
+	return (($? >> 8) ? undef : 1);
+    }
+    else {                            ### Build the command...
+	my %p = @_;
+	$p{Sendmail} ||= "/usr/lib/sendmail";   
+	
+	### Start with the command and basic args:
+	my @cmd = ($p{Sendmail}, @{$p{BaseArgs} || ['-t', '-oi', '-oem']});
+
+	### Add the -f argument, if desired:
+	unless (exists($p{SetSender}) and !$p{SetSender}) {
+	    my $from = ($self->get('From'))[0];
+	    if ($from) {
+		my ($from_addr) = extract_addrs($from);
+		push @cmd, "-f$from_addr"       if $from_addr;
+	    }
+	}
+
+	### Open the command in a taint-safe fashion:
+	my $pid = open SENDMAIL, "|-"; 
+	defined($pid) or die "open of pipe failed: $!\n";
+	if (!$pid) {    ### child
+	    exec(@cmd) or die "can't exec $p{Sendmail}: $!\n";
+	    ### NOTREACHED
+	}
+	else {          ### parent
+	    $self->print(\*SENDMAIL);
+	    close SENDMAIL || die "error closing $p{Sendmail}: $! (exit $?)\n";
+	    return 1;
+	}
+    }
 }
 
 #------------------------------
 
-=item send_by_smtp [ARGS...]
+=item send_by_smtp ARGS...
 
 I<Instance method.>
 Send message via SMTP, using Net::SMTP.  
-The ARGS are sent into Net::SMTP::new(): usually, these are
+The optional ARGS are sent into Net::SMTP::new(): usually, these are
 
     MAILHOST, OPTION=>VALUE, ...
 
@@ -1870,25 +2008,25 @@ Returns true on success, false or exception on error.
 
 =cut
 
-# Provided by Andrew McRae. Version 0.2  anm  09Sep97
-# Copyright 1997 Optimation New Zealand Ltd.
-# May be modified/redistributed under the same terms as Perl.
+### Provided by Andrew McRae. Version 0.2  anm  09Sep97
+### Copyright 1997 Optimation New Zealand Ltd.
+### May be modified/redistributed under the same terms as Perl.
 #
 sub send_by_smtp {
     my ($self, @args) = @_;
 
-    # We need the "From:" and "To:" headers to pass to the SMTP mailer:
+    ### We need the "From:" and "To:" headers to pass to the SMTP mailer:
     my $hdr = $self->fields();   
     my $from = $self->get('From');
 
-    # Get the destinations as a simple array of addresses:
+    ### Get the destinations as a simple array of addresses:
     my @to   = extract_addrs($self->get('To'));
     if ($AUTO_CC) {
 	push @to, extract_addrs($self->get('Cc')), 
 	          extract_addrs($self->get('Bcc'));
     }
 		
-    # Create SMTP client:
+    ### Create SMTP client:
     require Net::SMTP;
     my $smtp = MIME::Lite::SMTP->new(@args)
         or croak "Failed to connect to mail server: $!";
@@ -1899,7 +2037,7 @@ sub send_by_smtp {
     $smtp->data()
         or croak "SMTP DATA command failed: $!";
 
-    # MIME::Lite can print() to anything with a print() method:
+    ### MIME::Lite can print() to anything with a print() method:
     $self->print($smtp);
     $smtp->dataend();
     $smtp->quit;
@@ -1955,7 +2093,7 @@ sub sendmail {
 I<Class method.>  
 Suppress/unsuppress all warnings coming from this module.
 
-    quiet MIME::Lite 1;       # I know what I'm doing
+    MIME::Lite->quiet(1);       ### I know what I'm doing
 
 I recommend that you include that comment as well.  And while
 you type it, say it out loud: if it doesn't feel right, then maybe
@@ -1997,24 +2135,24 @@ package MIME::Lite::IO_Handle;
 
 #============================================================
 
-# Wrap a non-object filehandle inside a blessed, printable interface:
-# Does nothing if the given $fh is already a blessed object.
+### Wrap a non-object filehandle inside a blessed, printable interface:
+### Does nothing if the given $fh is already a blessed object.
 sub wrap {
     my ($class, $fh) = @_;
     no strict 'refs';
 
-    # Get default, if necessary:
-    $fh or $fh = select;        # no filehandle means selected one
-    ref($fh) or $fh = \*$fh;    # scalar becomes a globref
+    ### Get default, if necessary:
+    $fh or $fh = select;        ### no filehandle means selected one
+    ref($fh) or $fh = \*$fh;    ### scalar becomes a globref
     
-    # Stop right away if already a printable object:
+    ### Stop right away if already a printable object:
     return $fh if (ref($fh) and (ref($fh) ne 'GLOB'));
 
-    # Get and return a printable interface:
-    bless \$fh, $class;         # wrap it in a printable interface
+    ### Get and return a printable interface:
+    bless \$fh, $class;         ### wrap it in a printable interface
 }
 
-# Print:
+### Print:
 sub print {
     my $self = shift;
     print {$$self} @_;
@@ -2027,14 +2165,14 @@ package MIME::Lite::IO_Scalar;
 
 #============================================================
 
-# Wrap a scalar inside a blessed, printable interface:
+### Wrap a scalar inside a blessed, printable interface:
 sub wrap {
     my ($class, $scalarref) = @_;
     defined($scalarref) or $scalarref = \"";
     bless $scalarref, $class;
 }
 
-# Print:
+### Print:
 sub print {
     my $self = shift;
     $$self .= join('', @_);
@@ -2048,6 +2186,7 @@ __END__
 #============================================================
 
 =head1 NOTES
+
 
 =head2 Limitations
 
@@ -2084,8 +2223,12 @@ your use of MIME::Lite with a healthy diet and exercise.
 =head2 Cheap and easy mailing
 
 I thought putting in a default "sendmail" invocation wasn't too bad an 
-idea, since a lot of Perlers are on UNIX systems.  The default arguments
-to sendmail (which you can change) are:
+idea, since a lot of Perlers are on UNIX systems. 
+The out-of-the-box configuration is:
+
+     MIME::Lite->send('sendmail', "/usr/lib/sendmail -t -oi -oem");
+
+By the way, these arguments to sendmail are:
 
      -t      Scan message for To:, Cc:, Bcc:, etc.
               
@@ -2096,12 +2239,30 @@ to sendmail (which you can change) are:
              appropriate address, given in the header).
              When mail returns, circle is complete.  Jai guru deva -oem.
 
-If you're not on a Unix system, or if you'd just rather send mail
-some other way, check out the C<send()> method.  There's built in
-support for SMTP delivery, or you can slip in your own hooks. 
+Note that these are the same arguments you get if you configure to use
+the smarter, taint-safe mailing:
+
+     MIME::Lite->send('sendmail');
+
+If you get "X-Authentication-Warning" headers from this, you can forgo
+diddling with the envelope by instead specifying:
+
+     MIME::Lite->send('sendmail', SetSender=>0);
+
+And, if you're not on a Unix system, or if you'd just rather send mail
+some other way, there's always:
+
+     MIME::Lite->send('smtp', "smtp.myisp.net");
+
+Or you can set up your own subroutine to call.
+In any case, check out the L</send> method. 
 
 
-=head2 Under the hood
+
+=head1 WARNINGS
+
+
+=head2 Lazy formatting of headers
 
 This class treats a MIME header in the most abstract sense,
 as being a collection of high-level attributes.  The actual
@@ -2109,10 +2270,28 @@ RFC-822-style header fields are not constructed until it's time
 to actually print the darn thing.
 
 
+=head2 Lazy encoding of data
 
-=head1 WARNINGS
+When you specify message bodies (in L</build> or L</attach>) -- 
+whether by B<FH>, B<Data>, or B<Path> -- be warned that we don't 
+attempt to open files, read filehandles, or encode the data until 
+L</print> is invoked.  
 
-=head2 MIME- and non-MIME header fields
+In the past, this created some confusion for users of sendmail
+who gave the wrong path to an attachment body, since enough of 
+the print() would succeed to get the initial part of the message out.  
+Nowadays, $AUTO_VERIFY is used to spot-check the Paths given before
+the mail facility is employed.  A whisker slower, but tons safer.
+
+Note that if you give a message body via FH, and try to print() 
+a message twice, the second print() will not do the right thing 
+unless you  explicitly rewind the filehandle.
+
+You can get past these difficulties by using the B<ReadNow> option,
+provided that you have enough memory to handle your messages.
+
+
+=head2 MIME attributes are separate from header fields!
 
 B<Important:> the MIME attributes are stored and manipulated separately 
 from the message header fields; when it comes time to print the 
@@ -2131,6 +2310,7 @@ you need.  And, like any escape hatch, it's got an alarm on it:
 MIME::Lite will warn you if you attempt to C<set()> or C<replace()>
 any MIME header field.  Use C<attr()> instead.
 
+
 =head2 Lines consisting of a single dot
 
 Julian Haight noted that MIME::Lite allows you to compose messages
@@ -2145,6 +2325,7 @@ My perspective: I don't want to magically diddle with a user's
 message unless absolutely positively necessary.  
 Some users may want to send files with "." alone on a line;
 my well-meaning tinkering could seriously harm them.
+
 
 
 =head1 A MIME PRIMER
@@ -2246,9 +2427,22 @@ non-ASCII characters (e.g., Latin-1, Latin-2, or any other 8-bit alphabet).
 =head1 CHANGE LOG
 
 B<Current version:>
-$Id: Lite.pm,v 1.140 2000/04/27 06:31:54 eryq Exp $
+$Id: Lite.pm,v 1.144 2000/05/02 23:42:52 eryq Exp $
 
 =over 4
+
+=item Version 1.142
+
+Added new, taint-safe invocation of "sendmail", one which also
+sets up the C<-f> option.  Unfortunately, I couldn't make this automatic:
+the change could have broken a lot of code out there which used 
+send_by_sendmail() with unusual "sendmail" variants.  
+So you'll have to configure "send" to use the new mechanism:
+
+    MIME::Lite->send('sendmail');       ### no args!
+
+I<Thanks to Jeremy Howard for suggesting these features.>
+
 
 =item Version 1.140
 

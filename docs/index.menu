@@ -22,6 +22,9 @@ HREF htmltest.html
 ITEM mime_postcard
 HREF mime_postcard.html
 
+ITEM sendmailtest
+HREF sendmailtest.html
+
 ITEM signtest
 HREF signtest.html
 

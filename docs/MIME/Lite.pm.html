@@ -19,6 +19,7 @@
 </UL>
 <LI> <A HREF="#PUBLIC_INTERFACE">PUBLIC INTERFACE</A>
 <UL>
+<LI> <A HREF="#Global_configuration">Global configuration</A>
 <LI> <A HREF="#Construction">Construction</A>
 <LI> <A HREF="#Setting_getting_headers_and_attributes">Setting/getting headers and attributes</A>
 <LI> <A HREF="#Setting_getting_message_data">Setting/getting message data</A>
@@ -30,11 +31,12 @@
 <UL>
 <LI> <A HREF="#Limitations">Limitations</A>
 <LI> <A HREF="#Cheap_and_easy_mailing">Cheap and easy mailing</A>
-<LI> <A HREF="#Under_the_hood">Under the hood</A>
 </UL>
 <LI> <A HREF="#WARNINGS">WARNINGS</A>
 <UL>
-<LI> <A HREF="#MIME-_and_non-MIME_header_fields">MIME- and non-MIME header fields</A>
+<LI> <A HREF="#Lazy_formatting_of_headers">Lazy formatting of headers</A>
+<LI> <A HREF="#Lazy_encoding_of_data">Lazy encoding of data</A>
+<LI> <A HREF="#MIME_attributes_are_separate_from_header_fields">MIME attributes are separate from header fields!</A>
 <LI> <A HREF="#Lines_consisting_of_a_single_dot">Lines consisting of a single dot</A>
 </UL>
 <LI> <A HREF="#A_MIME_PRIMER">A MIME PRIMER</A>
@@ -103,17 +105,17 @@ Create a single-part message:
 <P>Output a message:
 
 <PRE>
-    # Format as a string:
+    ### Format as a string:
     $str = $msg-&gt;as_string;
     
-    # Print to a filehandle (say, a &quot;sendmail&quot; stream):
+    ### Print to a filehandle (say, a &quot;sendmail&quot; stream):
     $msg-&gt;print(\*SENDMAIL);
 </PRE>
 
 <P>Send a message:
 
 <PRE>
-    # Send in the &quot;best&quot; way (the default is to use &quot;sendmail&quot;):
+    ### Send in the &quot;best&quot; way (the default is to use &quot;sendmail&quot;):
     $msg-&gt;send;
       
 </PRE>
@@ -249,6 +251,68 @@ over this one.
 
 <P><HR>
 <A NAME="PUBLIC_INTERFACE"><H2><A HREF="#__TOP__"><IMG SRC="icons/h1bullet.gif" ALT="Top" BORDER="0"></A> PUBLIC INTERFACE</H2></A>
+
+
+
+<P><HR>
+<A NAME="Global_configuration"><H3><A HREF="#__TOP__"><IMG SRC="icons/h2bullet.gif" ALT="Top" BORDER="0"></A> Global configuration</H3></A>
+
+
+<P>To alter the way the entire module behaves, you have the following
+methods/options:
+
+
+
+<DL>
+<P><DT><B><A NAME="item:MIME_Lite-_quiet">MIME::Lite-&gt;quiet()</A></B></DT>
+<DD>
+This <A HREF="#item:quiet">classmethod</A> can be used to suppress/unsuppress 
+all warnings coming from this module.
+
+<P><DT><B><A NAME="item:MIME_Lite-_send">MIME::Lite-&gt;send()</A></B></DT>
+<DD>
+When used as a <A HREF="#item:send">classmethod</A>, this can be used to specify 
+a different default mechanism for sending message.  
+The initial default is:
+
+<PRE>
+    MIME::Lite-&gt;send(&quot;sendmail&quot;, &quot;/usr/lib/sendmail -t -oi -oem&quot;);
+</PRE>
+
+<P>However, you should consider the similar but smarter and taint-safe variant:
+
+<PRE>
+    MIME::Lite-&gt;send(&quot;sendmail&quot;);
+</PRE>
+
+<P>Or, for non-Unix users:
+
+<PRE>
+    MIME::Lite-&gt;send(&quot;smtp&quot;);
+</PRE>
+<P><DT><B><A NAME="item:MIME_Lite_PARANOID">$MIME::Lite::PARANOID</A></B></DT>
+<DD>
+If true, we won't attempt to use MIME::Base64/MIME::QuotedPrint, even
+if they're available.
+Default is <B>false</B>.
+
+<P><DT><B><A NAME="item:MIME_Lite_AUTO_ENCODE">$MIME::Lite::AUTO_ENCODE</A></B></DT>
+<DD>
+If true, automatically choose the encoding from the content type.
+Default is <B>true</B>.
+
+<P><DT><B><A NAME="item:MIME_Lite_AUTO_CC">$MIME::Lite::AUTO_CC</A></B></DT>
+<DD>
+If true, automatically send to the Cc/Bcc addresses for send_by_smtp().
+Default is <B>true</B>.
+
+<P><DT><B><A NAME="item:MIME_Lite_AUTO_VERIFY">$MIME::Lite::AUTO_VERIFY</A></B></DT>
+<DD>
+If true, check paths to attachments right before printing, raising an exception
+if any path is unreadable.
+Default is <B>true</B>.
+
+</DL>
 
 
 
@@ -397,8 +461,8 @@ See &quot;ReadNow&quot; also.
 The name of the attachment.  You can use this to supply a filename
 if the one in the Path is inadequate, or if you're using the Data argument.
 
-
-<P>=item Id
+<P><DT><B><A NAME="item:Id">Id</A></B></DT>
+<DD>
 <I>Optional.</I>
 Same as setting &quot;content-id&quot;.
 
@@ -451,29 +515,29 @@ is of course 2000 bytes, so it's probably more of an &quot;icon&quot; than a &qu
 but I digress...), here are some examples:
 
 <PRE>
-    $msg = build MIME::Lite 
+    $msg = MIME::Lite-&gt;build( 
                From     =&gt; 'yelling@inter.com',
                To       =&gt; 'stocking@fish.net',
                Subject  =&gt; &quot;Hi there!&quot;,
                Type     =&gt; 'TEXT',
                Encoding =&gt; '7bit',
-               Data     =&gt; &quot;Just a quick note to say hi!&quot;;
+               Data     =&gt; &quot;Just a quick note to say hi!&quot;);
  
-    $msg = build MIME::Lite 
+    $msg = MIME::Lite-&gt;build(
                From     =&gt; 'dorothy@emerald-city.oz',
                To       =&gt; 'gesundheit@edu.edu.edu',
                Subject  =&gt; &quot;A gif for U&quot;
                Type     =&gt; 'image/gif',
-               Path     =&gt; &quot;/home/httpd/logo.gif&quot;;
+               Path     =&gt; &quot;/home/httpd/logo.gif&quot;);
  
-    $msg = build MIME::Lite 
+    $msg = MIME::Lite-&gt;build( 
                From     =&gt; 'laughing@all.of.us',
                To       =&gt; 'scarlett@fiddle.dee.de',
                Subject  =&gt; &quot;A gzipp'ed tar file&quot;,
                Type     =&gt; 'x-gzip',
                Path     =&gt; &quot;gzip &lt; /usr/inc/somefile.tar |&quot;,
                ReadNow  =&gt; 1,
-               Filename =&gt; &quot;somefile.tgz&quot;;
+               Filename =&gt; &quot;somefile.tgz&quot;);
 </PRE>
 
 <P>To show you what's really going on, that last example could also 
@@ -481,7 +545,6 @@ have been written:
 
 <PRE>
     $msg = new MIME::Lite;
-    
     $msg-&gt;build(Type     =&gt; 'x-gzip',
                 Path     =&gt; &quot;gzip &lt; /usr/inc/somefile.tar |&quot;,
                 ReadNow  =&gt; 1,
@@ -556,8 +619,8 @@ subfield to be deleted.
 <P>Supplying no VALUE argument just returns the attribute's value:
 
 <PRE>
-    $type = $msg-&gt;attr(&quot;content-type&quot;);        # returns &quot;text/html&quot;
-    $name = $msg-&gt;attr(&quot;content-type.name&quot;);   # returns &quot;homepage.html&quot;
+    $type = $msg-&gt;attr(&quot;content-type&quot;);        ### returns &quot;text/html&quot;
+    $name = $msg-&gt;attr(&quot;content-type.name&quot;);   ### returns &quot;homepage.html&quot;
 </PRE>
 <P><DT><B><A NAME="item:delete">delete TAG</A></B></DT>
 <DD>
@@ -873,24 +936,24 @@ on success, false/exception on error:
 </PRE>
 
 <P><I>As a class method</I> (with a HOW argument and optional HOWARGS), sets up 
-how the instance method will work for all objects until further notice.
+how the instance method will work for all objects until further notice
 It treats HOW as a facility name, with optional HOWARGS handled by
-the facility.   There are three facilities:
+the facility (and returns the previous HOW and HOWARGS as an array).
+There are three facilities:
 
 
 
 <DL>
-<P><DT><B><A NAME="item:sendmail_SENDMAILCMD">&quot;sendmail&quot;, SENDMAILCMD</A></B></DT>
+<P><DT><B><A NAME="item:sendmail_ARGS">&quot;sendmail&quot;, ARGS...</A></B></DT>
 <DD>
 Send a message by piping it into the &quot;sendmail&quot; command.
-Uses the <CODE>send_by_sendmail()</CODE> method, giving it the SENDMAILCMD.
+Uses the <A HREF="#item:send_by_sendmail">send_by_sendmail</A> method, giving it the ARGS.
 This usage implements (and deprecates) the <CODE>sendmail()</CODE> method.
- 
-=item &quot;smtp&quot;, [HOSTNAME]
 
-
-<P>Send a message by SMTP, using optional HOSTNAME as SMTP-sending host.
-Uses the <CODE>send_by_smtp()</CODE> method.
+<P><DT><B><A NAME="item:smtp_HOSTNAME">&quot;smtp&quot;, [HOSTNAME]</A></B></DT>
+<DD>
+Send a message by SMTP, using optional HOSTNAME as SMTP-sending host.
+Uses the <A HREF="#item:send_by_smtp">send_by_smtp</A> method.
 
 <P><DT><B><A NAME="item:sub_SUBREF_ARGS">&quot;sub&quot;, \&amp;SUBREF, ARGS...</A></B></DT>
 <DD>
@@ -921,20 +984,69 @@ All of your $msg-&gt;send invocations will work as expected.
 
 <P><DT><B><A NAME="item:send_by_sendmail">send_by_sendmail SENDMAILCMD</A></B></DT>
 <DD>
+<P><DT><B><A NAME="item:send_by_sendmail">send_by_sendmail PARAM=&gt;VALUE, ...</A></B></DT>
+<DD>
 <I>Instance method.</I>
-Send message via the external &quot;sendmail&quot; program, SENDMAILCMD.
-Returns true on success, false or exception on error.
+Send message via an external &quot;sendmail&quot; program
+(this will probably only work out-of-the-box on Unix systems).
 
 
-<P><I>Note:</I> this facility will probably only work on Unix systems.
-The SENDMAILCMD for this facility must get all its message-specific 
-information from the standard input.
+<P>Returns true on success, false or exception on error.
 
-<P><DT><B><A NAME="item:send_by_smtp">send_by_smtp [ARGS...]</A></B></DT>
+
+<P>You can specify the program and all its arguments by giving a single
+string, SENDMAILCMD.  Nothing fancy is done; the message is simply
+piped in.
+
+
+<P>However, if your needs are a little more advanced, you can specify 
+zero or more of the following PARAM/VALUE pairs; a Unix-style, 
+taint-safe &quot;sendmail&quot; command will be constructed for you:
+
+
+
+<DL>
+<P><DT><B><A NAME="item:Sendmail">Sendmail</A></B></DT>
+<DD>
+Full path to the program to use.  
+Default is &quot;/usr/lib/sendmail&quot;.
+
+<P><DT><B><A NAME="item:BaseArgs">BaseArgs</A></B></DT>
+<DD>
+Ref to the basic array of arguments we start with.  
+Default is <CODE>[&quot;-t&quot;, &quot;-oi&quot;, &quot;-oem&quot;]</CODE>.
+
+<P><DT><B><A NAME="item:SetSender">SetSender</A></B></DT>
+<DD>
+Unless this is <I>explicitly</I> given as false, we attempt to automatically
+set the <CODE>-f</CODE> argument to the first address that can be extracted from 
+the &quot;From:&quot; field of the message (if there is one). 
+
+
+<P><I>What is the -f, and why do we use it?</I>
+Suppose we did <I>not</I> use <CODE>-f</CODE>, and you gave an explicit &quot;From:&quot; 
+field in your message: in this case, the sendmail &quot;envelope&quot; would 
+indicate the <I>real</I> user your process was running under, as a way 
+of preventing mail forgery.  Using the <CODE>-f</CODE> switch causes the sender 
+to be set in the envelope as well.
+
+
+<P><I>So when would I NOT want to use it?</I>
+If sendmail doesn't regard you as a &quot;trusted&quot; user, it will permit
+the <CODE>-f</CODE> but also add an &quot;X-Authentication-Warning&quot; header to the message
+to indicate a forged envelope.  To avoid this, you can either 
+(1) have SetSender be false, or 
+(2) make yourself a trusted user by adding a <CODE>T</CODE> configuration 
+    command to your <I>sendmail.cf</I> file 
+    (e.g.: <CODE>Teryq</CODE> if the script is running as user &quot;eryq&quot;).
+
+</DL>
+
+<P><DT><B><A NAME="item:send_by_smtp">send_by_smtp ARGS...</A></B></DT>
 <DD>
 <I>Instance method.</I>
 Send message via SMTP, using Net::SMTP.  
-The ARGS are sent into Net::SMTP::new(): usually, these are
+The optional ARGS are sent into Net::SMTP::new(): usually, these are
 
 <PRE>
     MAILHOST, OPTION=&gt;VALUE, ...
@@ -968,7 +1080,7 @@ Declare the sender to be &quot;sendmail&quot;, and set up the &quot;sendmail&quo
 Suppress/unsuppress all warnings coming from this module.
 
 <PRE>
-    quiet MIME::Lite 1;       # I know what I'm doing
+    MIME::Lite-&gt;quiet(1);       ### I know what I'm doing
 </PRE>
 
 <P>I recommend that you include that comment as well.  And while
@@ -1021,8 +1133,14 @@ your use of MIME::Lite with a healthy diet and exercise.
 
 
 <P>I thought putting in a default &quot;sendmail&quot; invocation wasn't too bad an 
-idea, since a lot of Perlers are on UNIX systems.  The default arguments
-to sendmail (which you can change) are:
+idea, since a lot of Perlers are on UNIX systems. 
+The out-of-the-box configuration is:
+
+<PRE>
+     MIME::Lite-&gt;send('sendmail', &quot;/usr/lib/sendmail -t -oi -oem&quot;);
+</PRE>
+
+<P>By the way, these arguments to sendmail are:
 
 <PRE>
      -t      Scan message for To:, Cc:, Bcc:, etc.
@@ -1035,14 +1153,39 @@ to sendmail (which you can change) are:
              When mail returns, circle is complete.  Jai guru deva -oem.
 </PRE>
 
-<P>If you're not on a Unix system, or if you'd just rather send mail
-some other way, check out the <CODE>send()</CODE> method.  There's built in
-support for SMTP delivery, or you can slip in your own hooks. 
+<P>Note that these are the same arguments you get if you configure to use
+the smarter, taint-safe mailing:
+
+<PRE>
+     MIME::Lite-&gt;send('sendmail');
+</PRE>
+
+<P>If you get &quot;X-Authentication-Warning&quot; headers from this, you can forgo
+diddling with the envelope by instead specifying:
+
+<PRE>
+     MIME::Lite-&gt;send('sendmail', SetSender=&gt;0);
+</PRE>
+
+<P>And, if you're not on a Unix system, or if you'd just rather send mail
+some other way, there's always:
+
+<PRE>
+     MIME::Lite-&gt;send('smtp', &quot;smtp.myisp.net&quot;);
+</PRE>
+
+<P>Or you can set up your own subroutine to call.
+In any case, check out the <A HREF="#item:send">send</A> method. 
 
 
 
 <P><HR>
-<A NAME="Under_the_hood"><H3><A HREF="#__TOP__"><IMG SRC="icons/h2bullet.gif" ALT="Top" BORDER="0"></A> Under the hood</H3></A>
+<A NAME="WARNINGS"><H2><A HREF="#__TOP__"><IMG SRC="icons/h1bullet.gif" ALT="Top" BORDER="0"></A> WARNINGS</H2></A>
+
+
+
+<P><HR>
+<A NAME="Lazy_formatting_of_headers"><H3><A HREF="#__TOP__"><IMG SRC="icons/h2bullet.gif" ALT="Top" BORDER="0"></A> Lazy formatting of headers</H3></A>
 
 
 <P>This class treats a MIME header in the most abstract sense,
@@ -1053,12 +1196,34 @@ to actually print the darn thing.
 
 
 <P><HR>
-<A NAME="WARNINGS"><H2><A HREF="#__TOP__"><IMG SRC="icons/h1bullet.gif" ALT="Top" BORDER="0"></A> WARNINGS</H2></A>
+<A NAME="Lazy_encoding_of_data"><H3><A HREF="#__TOP__"><IMG SRC="icons/h2bullet.gif" ALT="Top" BORDER="0"></A> Lazy encoding of data</H3></A>
+
+
+<P>When you specify message bodies (in <A HREF="#item:build">build</A> or <A HREF="#item:attach">attach</A>) -- 
+whether by <B>FH</B>, <B>Data</B>, or <B>Path</B> -- be warned that we don't 
+attempt to open files, read filehandles, or encode the data until 
+<A HREF="#item:print">print</A> is invoked.  
+
+
+<P>In the past, this created some confusion for users of sendmail
+who gave the wrong path to an attachment body, since enough of 
+the print() would succeed to get the initial part of the message out.  
+Nowadays, $AUTO_VERIFY is used to spot-check the Paths given before
+the mail facility is employed.  A whisker slower, but tons safer.
+
+
+<P>Note that if you give a message body via FH, and try to print() 
+a message twice, the second print() will not do the right thing 
+unless you  explicitly rewind the filehandle.
+
+
+<P>You can get past these difficulties by using the <B>ReadNow</B> option,
+provided that you have enough memory to handle your messages.
 
 
 
 <P><HR>
-<A NAME="MIME-_and_non-MIME_header_fields"><H3><A HREF="#__TOP__"><IMG SRC="icons/h2bullet.gif" ALT="Top" BORDER="0"></A> MIME- and non-MIME header fields</H3></A>
+<A NAME="MIME_attributes_are_separate_from_header_fields"><H3><A HREF="#__TOP__"><IMG SRC="icons/h2bullet.gif" ALT="Top" BORDER="0"></A> MIME attributes are separate from header fields!</H3></A>
 
 
 <P><B>Important:</B> the MIME attributes are stored and manipulated separately 
@@ -1218,11 +1383,25 @@ non-ASCII characters (e.g., Latin-1, Latin-2, or any other 8-bit alphabet).
 
 
 <P><B>Current version:</B>
-$Id: Lite.pm,v 1.140 2000/04/27 06:31:54 eryq Exp $
+$Id: Lite.pm,v 1.144 2000/05/02 23:42:52 eryq Exp $
 
 
 
 <DL>
+<P><DT><B><A NAME="item:Version">Version 1.142</A></B></DT>
+<DD>
+Added new, taint-safe invocation of &quot;sendmail&quot;, one which also
+sets up the <CODE>-f</CODE> option.  Unfortunately, I couldn't make this automatic:
+the change could have broken a lot of code out there which used 
+send_by_sendmail() with unusual &quot;sendmail&quot; variants.  
+So you'll have to configure &quot;send&quot; to use the new mechanism:
+
+<PRE>
+    MIME::Lite-&gt;send('sendmail');       ### no args!
+</PRE>
+
+<P><I>Thanks to Jeremy Howard for suggesting these features.</I>
+
 <P><DT><B><A NAME="item:Version">Version 1.140</A></B></DT>
 <DD>
 Fixed bug in support for &quot;To&quot;, &quot;Cc&quot;, and &quot;Bcc&quot; in send_by_smtp():
@@ -1383,7 +1562,7 @@ President, ZeeGee Software Inc. (<I><FILE><A HREF="http://www.zeegee.com">http:/
 
 <P><HR>
 <ADDRESS><FONT SIZE=-1>
-Generated Thu Apr 27 02:32:37 2000 by cvu_pod2html
+Generated Tue May  2 19:45:15 2000 by cvu_pod2html
 </FONT></ADDRESS>
 </BODY>
 </HTML>
