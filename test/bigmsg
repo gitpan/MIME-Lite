@@ -27,10 +27,10 @@ EOF
 
 # Create a new multipart message:
 $msg = new MIME::Lite
-	-From    =>'me@myhost.com',
-        -To      =>'you@yourhost.com',
-        -Cc      =>'some@other.com, some@more.com',
-        -Subject =>'The Magnificent Five (encodings, that is)',
+	From    =>'me@myhost.com',
+        To      =>'you@yourhost.com',
+        Cc      =>'some@other.com, some@more.com',
+        Subject =>'The Magnificent Five (encodings, that is)',
         Type     =>'multipart/mixed';
 
 # Add parts (each "attach" has same arguments as "new"):
@@ -58,6 +58,8 @@ EOF
 print $msg->stringify, "\n";
 
 1;
+
+
 
 
 

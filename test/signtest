@@ -1,16 +1,23 @@
 use MIME::Lite;
 
+quiet MIME::Lite 1;
+
+
 # Create a new multipart message:
 $msg = new MIME::Lite 
-    -To       => 'eryq@enteract.com',
-    -Subject  => 'GIF test',
-     Type     => 'TEXT',		       
-     Data     => "Just a short note.";
+     To       => 'eryq@enteract.com',
+     Subject  => 'GIF test',
+     Type     => 'TEXT',
+     'Content-Length' => 23,      
+     Path     => "ls -l $ENV{HOME} |";
 
 # Sign it:
 $msg->sign;
 
 # Output:
 $msg->print(\*STDOUT);
-
+#print "\n-------------------------------------------------\n";
+#print $msg->stringify;
+#print "\n-------------------------------------------------\n";
+#print $msg->as_string;
 

@@ -30,6 +30,7 @@
 </LI><LI><A HREF="#settinggetting_message_data">Setting/getting message data</A>
 </LI><LI><A HREF="#output">Output</A>
 </LI><LI><A HREF="#sending">Sending</A>
+</LI><LI><A HREF="#miscellaneous">Miscellaneous</A>
 </LI></UL>
 <LI><A HREF="#notes">NOTES</A>
 </LI><UL>
@@ -37,7 +38,8 @@
 </LI><LI><A HREF="#cheap_and_easy_mailing">Cheap and easy mailing</A>
 </LI><LI><A HREF="#under_the_hood">Under the hood</A>
 </LI></UL>
-<LI><A HREF="#a_mime_primer">A MIME PRIMER</A>
+<LI><A HREF="#warnings">WARNINGS</A>
+</LI><LI><A HREF="#a_mime_primer">A MIME PRIMER</A>
 </LI><UL>
 <LI><A HREF="#content_types">Content types</A>
 </LI><LI><A HREF="#content_transfer_encodings">Content transfer encodings</A>
@@ -89,12 +91,13 @@ Create a single-part message:
 <P>
 <PRE>    # Create a new single-part message, to send a GIF file:
     &#36;msg = new MIME::Lite 
-               -From    =&gt;'me@myhost.com',
-               -To      =&gt;'you@yourhost.com',
-                Cc      =&gt;'some@other.com, some@more.com',
-                Subject =&gt;'Helloooooo, nurse!',    
-                Type    =&gt;'image/gif',
-                Path    =&gt;'hellonurse.gif';</PRE>
+                From     =&gt;'me@myhost.com',
+                To       =&gt;'you@yourhost.com',
+                Cc       =&gt;'some@other.com, some@more.com',
+                Subject  =&gt;'Helloooooo, nurse!',
+                Type     =&gt;'image/gif',
+                Encoding =&gt;'base64',
+                Path     =&gt;'hellonurse.gif';</PRE>
 
 
 
@@ -105,10 +108,10 @@ Create a multipart message (i.e., one with attachments):
 <P>
 <PRE>    # Create a new multipart message:
     &#36;msg = new MIME::Lite 
-               -From    =&gt;'me@myhost.com',
-               -To      =&gt;'you@yourhost.com',
-               -Cc      =&gt;'some@other.com, some@more.com',
-               -Subject =&gt;'A message with 2 parts...',
+                From    =&gt;'me@myhost.com',
+                To      =&gt;'you@yourhost.com',
+                Cc      =&gt;'some@other.com, some@more.com',
+                Subject =&gt;'A message with 2 parts...',
                 Type    =&gt;'multipart/mixed';</PRE>
 
 
@@ -131,12 +134,12 @@ Output a message:
 
 <P>
 <PRE>    # As a string...
-    &#36;str = &#36;msg-&gt;stringify;</PRE>
+    &#36;str = &#36;msg-&gt;as_string;</PRE>
 
 
 
 <P>
-<PRE>    # To a filehandle (say, a &quot;sendmail&quot; stream...)    
+<PRE>    # To a filehandle (say, a &quot;sendmail&quot; stream)...
     &#36;msg-&gt;print(\*SENDMAIL);</PRE>
 
 
@@ -169,6 +172,11 @@ a readable filehandle (e.g., &quot;&lt;filename&quot; or &quot;somecommand|&quot
 
 
 <P>
+You don't need to worry about encoding your message data:
+this module will do that for you.  It handles the 5 standard MIME encodings.
+
+
+<P>
 If you need more sophisticated behavior, please get the MIME-tools
 package instead.  I will be more likely to add stuff to that toolkit
 over this one.
@@ -190,8 +198,8 @@ Create a multipart message exactly as above, but using the
 <P>
 <PRE>    # Create a new multipart message:
     &#36;msg = new MIME::Lite 
-               -From    =&gt;'me@myhost.com',
-               -To      =&gt;'you@yourhost.com',
+                From    =&gt;'me@myhost.com',
+                To      =&gt;'you@yourhost.com',
                 Cc      =&gt;'some@other.com, some@more.com',
                 Subject =&gt;'A message with 2 parts...',
                 Type    =&gt;'TEXT',
@@ -235,20 +243,20 @@ Get a message as a string:
 
 
 <P>
-<PRE>    # Get it as a string:
-    &#36;str = &#36;msg-&gt;stringify;</PRE>
+<PRE>    # Get entire message as a string:
+    &#36;str = &#36;msg-&gt;as_string;</PRE>
 
 
 
 <P>
 <PRE>    # Get just the header:
-    &#36;str = &#36;msg-&gt;stringify_header;</PRE>
+    &#36;str = &#36;msg-&gt;header_as_string;</PRE>
 
 
 
 <P>
 <PRE>    # Get just the encoded body:
-    &#36;str = &#36;msg-&gt;stringify_body;</PRE>
+    &#36;str = &#36;msg-&gt;body_as_string;</PRE>
 
 
 
@@ -308,10 +316,10 @@ call it &quot;part 1&quot;) to a message that <I>isn't</I> a multipart message
 
 <UL>
 
-<P><LI>A new part (call it &quot;part zero&quot;) is made.
+<P><LI>A new part (call it &quot;part 0&quot;) is made.
 
 
-<P><LI>The MIME attributes and data (but <I>not</I> the headers)
+<P><LI>The MIME attributes and data (but <I>not</I> the other headers)
 are cut from the &quot;self&quot; message, and pasted into &quot;part 0&quot;.
 
 
@@ -325,8 +333,8 @@ are cut from the &quot;self&quot; message, and pasted into &quot;part 0&quot;.
 
 <P>
 One of the nice side-effects is that you can create a text message
-and then add zero or more attachments to it; it will be output much
-as a user agent like Netscape would output the message.
+and then add zero or more attachments to it, much in the same way
+that a user agent like Netscape allows you to do.
 
 
 <P><DT><B><A NAME="build">build [PARAMHASH]</A></B><DD>
@@ -336,11 +344,33 @@ Create (or initiallize) a MIME message object.
 PARAMHASH can contain the following keys:
 
 <DL>
-<P><DT><B><A NAME="fieldname">-FIELDNAME</A></B><DD>
+<P><DT><B><A NAME="fieldname">(fieldname)</A></B><DD>
 
-Any field you want placed in the message header.  These fields will be set
-<I>after</I> the ones I set, so be careful: don't set any MIME fields like 
-<CODE>Content-type</CODE> unless you know what you're doing!
+Any field you want placed in the message header, taken from the
+standard list of header fields (you don't need to worry about case):
+
+
+<P>
+<PRE>    Bcc           Encrypted     Received      Sender         
+    Cc            From          References    Subject 
+    Comments	  Keywords      Reply-To      To 
+    Content-*	  Message-ID    Resent-*      X-*
+    Date          MIME-Version  Return-Path   
+                  Organization</PRE>
+
+
+
+<P>
+To give experienced users some veto power, these fields will be set 
+<I>after</I> the ones I set... so be careful: <I>don't set any MIME fields</I>
+(like <CODE>Content-type</CODE>) unless you know what you're doing!
+
+
+<P>
+To specify a fieldname that's <I>not</I> in the above list, even one that's
+identical to an option below, just give it with a trailing <CODE>&quot;:&quot;</CODE>,
+like <CODE>&quot;My-field:&quot;</CODE>.  When in doubt, that <I>always</I> signals a mail 
+field (and it sort of looks like one too).
 
 
 <P><DT><B><A NAME="data">Data</A></B><DD>
@@ -361,9 +391,27 @@ The default is <CODE>&quot;inline&quot;</CODE>.
 <P><DT><B><A NAME="encoding">Encoding</A></B><DD>
 
 <I>Optional.</I>
-The content transfer encoding.  <B>You are advised to put this in explicitly</B>
-if you know it, especially if your mail is 7-bit clean.
-The default is <CODE>&quot;binary&quot;</CODE>.
+The content transfer encoding that should be used to encode your data.  
+The default is <CODE>&quot;binary&quot;</CODE>, which means &quot;no encoding&quot;: this is generally
+<I>not</I> suitable for sending anything but ASCII text files with short
+lines, so consider using one of the following values instead:
+
+
+<P>
+<PRE>   Use encoding:     If your message contains:
+   ------------------------------------------------------------
+   7bit              Only 7-bit text, all lines &lt;1000 characters
+   8bit              8-bit text, all lines &lt;1000 characters
+   quoted-printable  8-bit text or long lines (MUCH more reliable than &quot;8bit&quot;)
+   base64            Largely binary data: a GIF, a tar file, etc.</PRE>
+
+
+
+<P>
+Be sure to pick an appropriate encoding.  In the case of &quot;7bit&quot;/&quot;8bit&quot;,
+long lines are automatically chopped to legal length; in the case of &quot;7bit&quot;, 
+all 8-bit characters are automatically removed.  
+There's also <A HREF="#a_mime_primer">&quot;A MIME PRIMER&quot;</A> in this document with more info.
 
 
 <P><DT><B><A NAME="filename">Filename</A></B><DD>
@@ -431,9 +479,9 @@ but I digress...), here are some examples:
 
 <P>
 <PRE>    &#36;msg = build MIME::Lite 
-              -From     =&gt; 'yelling@inter.com',
-              -To       =&gt; 'stocking@fish.net',
-              -Subject  =&gt; &quot;Hi there!&quot;,
+               From     =&gt; 'yelling@inter.com',
+               To       =&gt; 'stocking@fish.net',
+               Subject  =&gt; &quot;Hi there!&quot;,
                Type     =&gt; 'TEXT',
                Encoding =&gt; '7bit',
                Data     =&gt; &quot;Just a quick note to say hi!&quot;;</PRE>
@@ -442,9 +490,9 @@ but I digress...), here are some examples:
 
 <P>
 <PRE>    &#36;msg = build MIME::Lite 
-              -From     =&gt; 'dorothy@emerald-city.oz',
-              -To       =&gt; 'gesundheit@edu.edu.edu',
-              -Subject  =&gt; &quot;A gif for U&quot;
+               From     =&gt; 'dorothy@emerald-city.oz',
+               To       =&gt; 'gesundheit@edu.edu.edu',
+               Subject  =&gt; &quot;A gif for U&quot;
                Type     =&gt; 'image/gif',
                Path     =&gt; &quot;/home/httpd/logo.gif&quot;;</PRE>
 
@@ -452,9 +500,9 @@ but I digress...), here are some examples:
 
 <P>
 <PRE>    &#36;msg = build MIME::Lite 
-              -From     =&gt; 'laughing@all.of.us',
-              -To       =&gt; 'scarlett@fiddle.dee.de',
-              -Subject  =&gt; &quot;A gzipp'ed tar file&quot;,
+               From     =&gt; 'laughing@all.of.us',
+               To       =&gt; 'scarlett@fiddle.dee.de',
+               Subject  =&gt; &quot;A gzipp'ed tar file&quot;,
                Type     =&gt; 'x-gzip',
                Path     =&gt; &quot;gzip &lt; /usr/inc/somefile.tar |&quot;,
                ReadNow  =&gt; 1,
@@ -504,7 +552,9 @@ will be made &quot;safe&quot; (returns will be given a trailing space).
 
 
 <P>
-Normally, you will use this to add non-MIME tags:
+<B>Beware:</B> any MIME fields you &quot;add&quot; will override any MIME
+attributes I have when it comes time to output those fields.
+Normally, you will use this method to add <I>non-MIME</I> fields:
 
 
 <P>
@@ -663,7 +713,12 @@ it's not in the MIME RFCs, it's an HTTP thing), this seems pretty fair.
 
 Delete all occurences of fields named TAG, and add a new
 field with the given VALUE.  TAG is converted to all-lowercase.
-Normally, you will use this to set non-MIME tags:
+
+
+<P>
+<B>Beware:</B> any MIME fields you &quot;replace&quot; will override any MIME
+attributes I have when it comes time to output those fields.
+Normally, you will use this method to set <I>non-MIME</I> fields:
 
 
 <P>
@@ -831,23 +886,25 @@ All OUTHANDLE has to be is a filehandle (possibly a glob ref), or
 any object that responds to a print() message.
 
 
-<P><DT><B><A NAME="stringify">stringify</A></B><DD>
+<P><DT><B><A NAME="as_string">as_string</A></B><DD>
 
 <I>Instance method.</I> 
-Return the entire message as a string.
+Return the entire message as a string, with a header and an encoded body.
 
 
-<P><DT><B><A NAME="stringify_body">stringify_body</A></B><DD>
+<P><DT><B><A NAME="body_as_string">body_as_string</A></B><DD>
 
 <I>Instance method.</I> 
 Return the encoded body as a string.
 
 
 <P>
-<I>Note:</I> uses <A HREF="#print_body">print_body()</A> internally to print to a scalar.
+<I>Note:</I> actually prepares the body by &quot;printing&quot; to a scalar.
+Proof that you can hand the <CODE>print*()</CODE> methods any blessed object 
+that responds to a <CODE>print()</CODE> message.
 
 
-<P><DT><B><A NAME="stringify_header">stringify_header</A></B><DD>
+<P><DT><B><A NAME="header_as_string">header_as_string</A></B><DD>
 
 <I>Instance method.</I> 
 Return the header as a string.
@@ -893,6 +950,32 @@ path-to-command-plus-arguments:
 
 <P>
 What you see above is the default.
+
+</DL>
+
+<P><HR>
+<A NAME="miscellaneous">
+<H2><FONT COLOR=#600020>
+<A HREF="#__top"><IMG SRC="h2bullet.gif" ALT="" BORDER="0"></A>
+Miscellaneous</FONT></H2>
+</A>
+
+<DL>
+<P><DT><B><A NAME="quiet">quiet ONOFF</A></B><DD>
+
+<I>Class method.</I>  
+Suppress/unsuppress all warnings coming from this module.
+
+
+<P>
+<PRE>    quiet MIME::Lite 1;       # I know what I'm doing</PRE>
+
+
+
+<P>
+I recommend that you include that comment as well.  And while
+you type it, say it out loud: if it doesn't feel right, then maybe
+you should reconsider the whole line.  <CODE>;-)</CODE>
 
 </DL>
 
@@ -986,6 +1069,40 @@ to actually print the darn thing.
 
 
 <P><HR>
+<A NAME="warnings">
+<H1><FONT COLOR=#600020>
+<A HREF="#__top"><IMG SRC="h1bullet.gif" ALT="" BORDER="0"></A>
+WARNINGS</FONT></H1>
+</A>
+
+
+<P>
+<B>Important:</B> the MIME attributes are stored and manipulated separately 
+from the message header fields; when it comes time to print the 
+header out, <I>any explicitly-given header fields override the ones that
+would be created from the MIME attributes.</I>  That means that this:
+
+
+<P>
+<PRE>    ### DANGER ### DANGER ### DANGER ### DANGER ### DANGER ###
+    &#36;msg-&gt;add(&quot;Content-type&quot;, &quot;text/html; charset=US-ASCII&quot;);</PRE>
+
+
+
+<P>
+will set the exact <CODE>&quot;Content-type&quot;</CODE> field in the header I write, 
+<I>regardless of what the actual MIME attributes are.</I>
+
+
+<P>
+<I>This feature is for experienced users only,</I> as an escape hatch in case
+the code that normally formats MIME header fields isn't doing what 
+you need.  And, like any escape hatch, it's got an alarm on it:
+MIME::Lite will warn you if you attempt to <CODE>set()</CODE> or <CODE>replace()</CODE>
+any MIME header field.  Use <CODE>attr()</CODE> instead.
+
+
+<P><HR>
 <A NAME="a_mime_primer">
 <H1><FONT COLOR=#600020>
 <A HREF="#__top"><IMG SRC="h1bullet.gif" ALT="" BORDER="0"></A>
@@ -1076,26 +1193,27 @@ A more-comprehensive listing may be found in RFC-2045.
 <DL>
 <P><DT><B><A NAME="7bit">7bit</A></B><DD>
 
-Basically, no encoding is done.  However, this label guarantees that no
+Basically, no <I>real</I> encoding is done.  However, this label guarantees that no
 8-bit characters are present, and that lines do not exceed 1000 characters 
 in length.
 
 
 <P><DT><B><A NAME="8bit">8bit</A></B><DD>
 
-Basically, no encoding is done.  The message might contain 8-bit characters,
-but this label guarantees that lines do not exceed 1000 characters in length.
+Basically, no <I>real</I> encoding is done.  The message might contain 8-bit 
+characters, but this encoding guarantees that lines do not exceed 1000 
+characters in length.
 
 
 <P><DT><B><A NAME="binary">binary</A></B><DD>
 
-Basically, no encoding is done.  Message might contain 8-bit characters,
+No encoding is done at all.  Message might contain 8-bit characters,
 and lines might be longer than 1000 characters long.
 
 
 <P>
 The most liberal, and the least likely to get through mail gateways.  
-Use sparingly.
+Use sparingly, or (better yet) not at all.
 
 
 <P><DT><B><A NAME="base64">base64</A></B><DD>
@@ -1118,7 +1236,30 @@ non-ASCII characters (e.g., Latin-1, Latin-2, or any other 8-bit alphabet).
 CHANGE LOG</FONT></H1>
 </A>
 
+
+<P>
+<B>Current version:</B>
+&#36;Id: Lite.pm,v 1.119 1997/03/20 04:29:35 eryq Exp &#36;
+
 <DL>
+<P><DT><B><A NAME="version">Version 1.116</A></B><DD>
+
+Small bug in our private copy of encode_base64() was patched.
+<I>Thanks to Andreas Koenig for pointing this out.</I>
+
+
+<P>
+New, prettier way of specifying mail message headers in <CODE>build()</CODE>.
+
+
+<P>
+New quiet method to turn off warnings.
+
+
+<P>
+Changed &quot;stringify&quot; methods to more-standard &quot;as_string&quot; methods.
+
+
 <P><DT><B><A NAME="version">Version 1.112</A></B><DD>
 
 Added <A HREF="#read_now">read_now()</A>, and <A HREF="#binmode">binmode()</A> method for our non-Unix-using brethren: 
@@ -1208,7 +1349,7 @@ Created: 11 December 1996.  Ho ho ho.
 
 <P><HR>
 <SMALL>
-		Last updated: Thu Mar  6 17:56:31 1997 <BR>
+		Last updated: Wed Mar 19 22:30:00 1997 <BR>
 		Generated by pod2coolhtml 1.101.  Want a copy?  Just email
 		<A HREF="mailto:eryq@enteract.com">eryq@enteract.com</A>.
 		(Yes, it's free.)

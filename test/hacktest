@@ -13,9 +13,9 @@ EOF
 
 # Create a new multipart message:
 my $msg = new MIME::Lite
-    -From    =>'me@myhost.com',
-    -To      =>'you@yourhost.com',
-    -Subject =>'Test the "attach to singlepart" hack',
+    From    =>'me@myhost.com',
+    To      =>'you@yourhost.com',
+    Subject =>'Test the "attach to singlepart" hack',
     Type    =>'TEXT',
     Data    =>"This is an ordinary text message... can we attach to it?\n";  
 
@@ -30,4 +30,5 @@ attach $msg
 $msg->print;
 
 __END__
+
 

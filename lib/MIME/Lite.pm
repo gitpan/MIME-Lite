@@ -19,22 +19,23 @@ Create a single-part message:
 
     # Create a new single-part message, to send a GIF file:
     $msg = new MIME::Lite 
-               -From    =>'me@myhost.com',
-               -To      =>'you@yourhost.com',
-                Cc      =>'some@other.com, some@more.com',
-                Subject =>'Helloooooo, nurse!',    
-                Type    =>'image/gif',
-                Path    =>'hellonurse.gif';
+                From     =>'me@myhost.com',
+                To       =>'you@yourhost.com',
+                Cc       =>'some@other.com, some@more.com',
+                Subject  =>'Helloooooo, nurse!',
+                Type     =>'image/gif',
+                Encoding =>'base64',
+                Path     =>'hellonurse.gif';
     
 
 Create a multipart message (i.e., one with attachments):
 
     # Create a new multipart message:
     $msg = new MIME::Lite 
-               -From    =>'me@myhost.com',
-               -To      =>'you@yourhost.com',
-               -Cc      =>'some@other.com, some@more.com',
-               -Subject =>'A message with 2 parts...',
+                From    =>'me@myhost.com',
+                To      =>'you@yourhost.com',
+                Cc      =>'some@other.com, some@more.com',
+                Subject =>'A message with 2 parts...',
                 Type    =>'multipart/mixed';
     
     # Add parts (each "attach" has same arguments as "new"):
@@ -50,9 +51,9 @@ Create a multipart message (i.e., one with attachments):
 Output a message:
 
     # As a string...
-    $str = $msg->stringify;
+    $str = $msg->as_string;
     
-    # To a filehandle (say, a "sendmail" stream...)    
+    # To a filehandle (say, a "sendmail" stream)...
     $msg->print(\*SENDMAIL);
 
 
@@ -72,6 +73,9 @@ You can specify each message part as either the literal data itself (in
 a scalar or array), or as a string which can be given to open() to get
 a readable filehandle (e.g., "<filename" or "somecommand|").
 
+You don't need to worry about encoding your message data:
+this module will do that for you.  It handles the 5 standard MIME encodings.
+
 If you need more sophisticated behavior, please get the MIME-tools
 package instead.  I will be more likely to add stuff to that toolkit
 over this one.
@@ -84,8 +88,8 @@ Create a multipart message exactly as above, but using the
 
     # Create a new multipart message:
     $msg = new MIME::Lite 
-               -From    =>'me@myhost.com',
-               -To      =>'you@yourhost.com',
+                From    =>'me@myhost.com',
+                To      =>'you@yourhost.com',
                 Cc      =>'some@other.com, some@more.com',
                 Subject =>'A message with 2 parts...',
                 Type    =>'TEXT',
@@ -112,21 +116,20 @@ Output a message to a filehandle:
 
 Get a message as a string:
 
-    # Get it as a string:
-    $str = $msg->stringify;
+    # Get entire message as a string:
+    $str = $msg->as_string;
      
     # Get just the header:
-    $str = $msg->stringify_header;
+    $str = $msg->header_as_string;
      
     # Get just the encoded body:
-    $str = $msg->stringify_body;
+    $str = $msg->body_as_string;
 
 
 # Send a message (Unix systems only!):
 
     # Send it!
     $msg->send;
-
 
 
 =head1 PUBLIC INTERFACE
@@ -138,17 +141,22 @@ use Carp;
 use FileHandle;
 
 use strict;
-use vars qw($VERSION);
+use vars qw($VERSION $QUIET);
 
 
-#------------------------------
+
+#==============================
+#==============================
 #
-# Globals...
-#
-#------------------------------
+# GLOBALS...
+
 
 # The package version, both in 1.23 style *and* usable by MakeMaker:
-$VERSION = substr q$Revision: 1.112 $, 10;
+$VERSION = substr q$Revision: 1.119 $, 10;
+
+# Don't warn me about dangerous activities:
+$QUIET = undef;
+
 
 # Boundary counter:
 my $BCount = 0;
@@ -156,8 +164,23 @@ my $BCount = 0;
 # Our sendmail command:
 my $SENDMAIL = "/usr/lib/sendmail -t -oi -oem";
 
+# Known Mail/MIME fields... these, plus some general forms like 
+# "x-*", are recognized by build():
+my %KnownField = map {$_=>1} 
+qw(
+   bcc         cc          comments      date          encrypted 
+   from        keywords    message-id    mime-version  organization
+   received    references  reply-to      return-path   sender        
+   subject     to
+   );
 
-#------------------------------------------------------------
+
+#==============================
+#==============================
+#
+# PRIVATE UTILITY FUNCTIONS...
+
+#------------------------------------------------------------ 
 #
 # fold STRING
 #
@@ -166,7 +189,7 @@ my $SENDMAIL = "/usr/lib/sendmail -t -oi -oem";
 
 sub fold {
     my $str = shift;
-    $str =~ s/^\s*|\s*$//g;   # trim
+    $str =~ s/^\s*|\s*$//g;    # trim
     $str =~ s/\n/\n /g;      
     $str;
 }
@@ -181,28 +204,47 @@ sub gen_boundary {
     return ("_----------=_".int(time).$$.$BCount++);
 }
 
-
-
-
-
-#------------------------------
+#------------------------------------------------------------
 #
-# ENCODING...
+# known_field FIELDNAME
 #
-#------------------------------
+# Is this a recognized Mail/MIME field?
+
+sub known_field {
+    my $field = lc(shift);
+    $KnownField{$field} or ($field =~ m{^(content|resent|x)-.});
+}
+
+#------------------------------------------------------------
+#
+# is_mime_field FIELDNAME
+#
+# Is this a field I manage?
+
+sub is_mime_field {
+    $_[0] =~ /^(mime\-|content\-)/i;
+}
+
+
+
+#==============================
+#==============================
+#
+# PRIVATE ENCODING FUNCTIONS...
 
 #------------------------------------------------------------
 #
 # encode_base64 STRING
 #
 # Encode the given string using BASE64.
-# Stolen from MIME::Base64 by Gisle Aas.
+# Stolen from MIME::Base64 by Gisle Aas, with a correction by Andreas Koenig.
 
 sub encode_base64
 {
     my $res = "";
     my $eol = "\n";
 
+    pos($_[0]) = 0;        # thanks, Andreas!
     while ($_[0] =~ /(.{1,45})/gs) {
 	$res .= substr(pack('u', $1), 1);
 	chop($res);
@@ -223,7 +265,7 @@ sub encode_base64
 # encode_qp STRING
 #
 # Encode the given string, LINE BY LINE, using QUOTED-PRINTABLE.
-# Stolen from MIME::Base64 by Gisle Aas, with a slight bug fix: we
+# Stolen from MIME::QuotedPrint by Gisle Aas, with a slight bug fix: we
 # break lines earlier.  Notice that this seems not to work unless
 # encoding line by line.
 
@@ -276,13 +318,10 @@ sub encode_7bit {
 
 
 
-
-
-#------------------------------
+#==============================
+#==============================
 #
 # PRIVATE UTILITY METHODS...
-#
-#------------------------------
 
 #------------------------------------------------------------
 #
@@ -295,10 +334,6 @@ sub _slurp_data {
     
 
 }
-
-
-
-
 
 
 
@@ -359,11 +394,11 @@ call it "part 1") to a message that I<isn't> a multipart message
 
 =item *
 
-A new part (call it "part zero") is made.
+A new part (call it "part 0") is made.
 
 =item *
 
-The MIME attributes and data (but I<not> the headers)
+The MIME attributes and data (but I<not> the other headers)
 are cut from the "self" message, and pasted into "part 0".
 
 =item *
@@ -377,8 +412,8 @@ The new "part 0" is added to the "self", and I<then> "part 1" is added.
 =back
 
 One of the nice side-effects is that you can create a text message
-and then add zero or more attachments to it; it will be output much
-as a user agent like Netscape would output the message.
+and then add zero or more attachments to it, much in the same way
+that a user agent like Netscape allows you to do.
 
 =cut
 
@@ -426,11 +461,26 @@ PARAMHASH can contain the following keys:
 
 =over 4
 
-=item -FIELDNAME
+=item (fieldname)
 
-Any field you want placed in the message header.  These fields will be set
-I<after> the ones I set, so be careful: don't set any MIME fields like 
-C<Content-type> unless you know what you're doing!
+Any field you want placed in the message header, taken from the
+standard list of header fields (you don't need to worry about case):
+
+    Bcc           Encrypted     Received      Sender         
+    Cc            From          References    Subject 
+    Comments	  Keywords      Reply-To      To 
+    Content-*	  Message-ID    Resent-*      X-*
+    Date          MIME-Version  Return-Path   
+                  Organization
+
+To give experienced users some veto power, these fields will be set 
+I<after> the ones I set... so be careful: I<don't set any MIME fields>
+(like C<Content-type>) unless you know what you're doing!
+
+To specify a fieldname that's I<not> in the above list, even one that's
+identical to an option below, just give it with a trailing C<":">,
+like C<"My-field:">.  When in doubt, that I<always> signals a mail 
+field (and it sort of looks like one too).
 
 =item Data
 
@@ -448,9 +498,22 @@ The default is C<"inline">.
 =item Encoding
 
 I<Optional.>
-The content transfer encoding.  B<You are advised to put this in explicitly>
-if you know it, especially if your mail is 7-bit clean.
-The default is C<"binary">.
+The content transfer encoding that should be used to encode your data.  
+The default is C<"binary">, which means "no encoding": this is generally
+I<not> suitable for sending anything but ASCII text files with short
+lines, so consider using one of the following values instead:
+
+   Use encoding:     If your message contains:
+   ------------------------------------------------------------
+   7bit              Only 7-bit text, all lines <1000 characters
+   8bit              8-bit text, all lines <1000 characters
+   quoted-printable  8-bit text or long lines (MUCH more reliable than "8bit")
+   base64            Largely binary data: a GIF, a tar file, etc.
+
+Be sure to pick an appropriate encoding.  In the case of "7bit"/"8bit",
+long lines are automatically chopped to legal length; in the case of "7bit", 
+all 8-bit characters are automatically removed.  
+There's also L<"A MIME PRIMER"> in this document with more info.
 
 =item Filename
 
@@ -504,24 +567,24 @@ is of course 2000 bytes, so it's probably more of an "icon" than a "picture",
 but I digress...), here are some examples:
 
     $msg = build MIME::Lite 
-              -From     => 'yelling@inter.com',
-              -To       => 'stocking@fish.net',
-              -Subject  => "Hi there!",
+               From     => 'yelling@inter.com',
+               To       => 'stocking@fish.net',
+               Subject  => "Hi there!",
                Type     => 'TEXT',
                Encoding => '7bit',
                Data     => "Just a quick note to say hi!";
  
     $msg = build MIME::Lite 
-              -From     => 'dorothy@emerald-city.oz',
-              -To       => 'gesundheit@edu.edu.edu',
-              -Subject  => "A gif for U"
+               From     => 'dorothy@emerald-city.oz',
+               To       => 'gesundheit@edu.edu.edu',
+               Subject  => "A gif for U"
                Type     => 'image/gif',
                Path     => "/home/httpd/logo.gif";
  
     $msg = build MIME::Lite 
-              -From     => 'laughing@all.of.us',
-              -To       => 'scarlett@fiddle.dee.de',
-              -Subject  => "A gzipp'ed tar file",
+               From     => 'laughing@all.of.us',
+               To       => 'scarlett@fiddle.dee.de',
+               Subject  => "A gzipp'ed tar file",
                Type     => 'x-gzip',
                Path     => "gzip < /usr/inc/somefile.tar |",
                ReadNow  => 1,
@@ -629,12 +692,28 @@ sub build {
     # Init the top-level fields:
     $self->top_level(defined($params{Top}) ? $params{Top} : 1);
 
-    # Set '-' headers:
+    # Set message headers:
     my @paramz = @params;
+    my $field;
     while (@paramz) {
-	my ($tag, $value) = (lc(shift(@paramz)), shift(@paramz));
-	($tag =~ /^\-/) or next;     # skip if not a '-' param
-	$self->add($', $value);
+	my ($tag, $value) = (shift(@paramz), shift(@paramz));
+
+	# Get tag, if a tag:
+	if ($tag =~ /^\-/) {       # old style, backwards-compatibility
+	    $field = lc($');
+	}
+	elsif ($tag =~ /:$/) {     # new style
+	    $field = lc($`);
+	}
+	elsif (known_field($field = lc($tag))) {   # known field
+	    # no-op
+	}
+	else {                     # not a field:
+	    next;
+	}
+	
+	# Add it:
+	$self->add($field, $value);
     }
 
     # Done!
@@ -682,7 +761,9 @@ Add field TAG with the given VALUE to the end of the header.
 The TAG will be converted to all-lowercase, and the VALUE 
 will be made "safe" (returns will be given a trailing space).
 
-Normally, you will use this to add non-MIME tags:
+B<Beware:> any MIME fields you "add" will override any MIME
+attributes I have when it comes time to output those fields.
+Normally, you will use this method to add I<non-MIME> fields:
 
     $msg->add("Subject" => "Hi there!");
 
@@ -701,6 +782,11 @@ sub add {
     my $self = shift;
     my $tag = lc(shift);
     my $value = shift;
+
+    # If a dangerous option, warn them:
+    carp "Explicitly setting a MIME header field ($tag) is dangerous:\n".
+	 "use the attr() method instead.\n"
+	if (is_mime_field($tag) && !$QUIET);
 
     # Get array of clean values:
     my @vals = ref($value) ? @{$value} : ($value);
@@ -920,7 +1006,10 @@ sub get_length {
 
 Delete all occurences of fields named TAG, and add a new
 field with the given VALUE.  TAG is converted to all-lowercase.
-Normally, you will use this to set non-MIME tags:
+
+B<Beware:> any MIME fields you "replace" will override any MIME
+attributes I have when it comes time to output those fields.
+Normally, you will use this method to set I<non-MIME> fields:
 
     $msg->replace("Subject" => "Hi there!");
 
@@ -1301,56 +1390,60 @@ sub print_header {
     $out = wrap MIME::Lite::IO_Handle $out;
 
     # Output the header:
-    $out->print($self->stringify_header);
+    $out->print($self->header_as_string);
     1;
 }
 
 #------------------------------------------------------------
 
-=item stringify
+=item as_string
 
 I<Instance method.> 
-Return the entire message as a string.
+Return the entire message as a string, with a header and an encoded body.
 
 =cut
 
-sub stringify {
+sub as_string {
     my $self = shift;
     my $str = "";
     my $io = (wrap MIME::Lite::IO_Scalar \$str);
     $self->print($io);
     $str;
 }
+*stringify = \&as_string;    # backwards compatibility
 
 #------------------------------------------------------------
 
-=item stringify_body
+=item body_as_string
 
 I<Instance method.> 
 Return the encoded body as a string.
 
-I<Note:> uses L<print_body()> internally to print to a scalar.
+I<Note:> actually prepares the body by "printing" to a scalar.
+Proof that you can hand the C<print*()> methods any blessed object 
+that responds to a C<print()> message.
 
 =cut
 
-sub stringify_body {
+sub body_as_string {
     my $self = shift;
     my $str = "";
     my $io = (wrap MIME::Lite::IO_Scalar \$str);
     $self->print_body($io);
     $str;
 }
+*stringify_body = \&body_as_string;    # backwards compatibility
 
 #------------------------------------------------------------
 
-=item stringify_header
+=item header_as_string
 
 I<Instance method.> 
 Return the header as a string.
 
 =cut
 
-sub stringify_header {
+sub header_as_string {
     my $self = shift;
     my $str = '';
     foreach (@{$self->fields}) {
@@ -1361,6 +1454,7 @@ sub stringify_header {
     }
     $str;
 }
+*stringify_header = \&header_as_string;    # backwards compatibility
 
 =back
 
@@ -1426,6 +1520,43 @@ sub sendmail {
 =back
 
 =cut
+
+
+
+#==============================
+#==============================
+
+=head2 Miscellaneous
+
+=over 4
+
+=cut
+
+#------------------------------------------------------------
+
+=item quiet ONOFF
+
+I<Class method.>  
+Suppress/unsuppress all warnings coming from this module.
+
+    quiet MIME::Lite 1;       # I know what I'm doing
+
+I recommend that you include that comment as well.  And while
+you type it, say it out loud: if it doesn't feel right, then maybe
+you should reconsider the whole line.  C<;-)>
+
+=cut
+
+sub quiet {
+    my $class = shift;
+    $QUIET = shift if @_;
+    $QUIET;
+}
+
+=back
+
+=cut
+
 
 
 
@@ -1543,6 +1674,27 @@ to actually print the darn thing.
 
 
 
+=head1 WARNINGS
+
+B<Important:> the MIME attributes are stored and manipulated separately 
+from the message header fields; when it comes time to print the 
+header out, I<any explicitly-given header fields override the ones that
+would be created from the MIME attributes.>  That means that this:
+
+    ### DANGER ### DANGER ### DANGER ### DANGER ### DANGER ###
+    $msg->add("Content-type", "text/html; charset=US-ASCII");
+
+will set the exact C<"Content-type"> field in the header I write, 
+I<regardless of what the actual MIME attributes are.>
+
+I<This feature is for experienced users only,> as an escape hatch in case
+the code that normally formats MIME header fields isn't doing what 
+you need.  And, like any escape hatch, it's got an alarm on it:
+MIME::Lite will warn you if you attempt to C<set()> or C<replace()>
+any MIME header field.  Use C<attr()> instead.
+
+
+
 =head1 A MIME PRIMER
 
 =head2 Content types
@@ -1607,22 +1759,23 @@ A more-comprehensive listing may be found in RFC-2045.
 
 =item 7bit
 
-Basically, no encoding is done.  However, this label guarantees that no
+Basically, no I<real> encoding is done.  However, this label guarantees that no
 8-bit characters are present, and that lines do not exceed 1000 characters 
 in length.
 
 =item 8bit
 
-Basically, no encoding is done.  The message might contain 8-bit characters,
-but this label guarantees that lines do not exceed 1000 characters in length.
+Basically, no I<real> encoding is done.  The message might contain 8-bit 
+characters, but this encoding guarantees that lines do not exceed 1000 
+characters in length.
 
 =item binary
 
-Basically, no encoding is done.  Message might contain 8-bit characters,
+No encoding is done at all.  Message might contain 8-bit characters,
 and lines might be longer than 1000 characters long.
 
 The most liberal, and the least likely to get through mail gateways.  
-Use sparingly.
+Use sparingly, or (better yet) not at all.
 
 =item base64
 
@@ -1640,7 +1793,22 @@ non-ASCII characters (e.g., Latin-1, Latin-2, or any other 8-bit alphabet).
 
 =head1 CHANGE LOG
 
+B<Current version:>
+$Id: Lite.pm,v 1.119 1997/03/20 04:29:35 eryq Exp $
+
 =over 4
+
+=item Version 1.116
+
+Small bug in our private copy of encode_base64() was patched.
+I<Thanks to Andreas Koenig for pointing this out.>
+
+New, prettier way of specifying mail message headers in C<build()>.
+
+New quiet method to turn off warnings.
+
+Changed "stringify" methods to more-standard "as_string" methods.
+
 
 =item Version 1.112
 
@@ -1648,13 +1816,16 @@ Added L<read_now()>, and L<binmode()> method for our non-Unix-using brethren:
 file data is now read using binmode() if appropriate.
 I<Thanks to Xiangzhou Wang for pointing out this bug.>
 
+
 =item Version 1.110
 
 Fixed bug in opening the data filehandle.
 
+
 =item Version 1.102
 
 Initial release.
+
 
 =item Version 1.101
 

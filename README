@@ -14,22 +14,23 @@ SYNOPSIS
 
         # Create a new single-part message, to send a GIF file:
         $msg = new MIME::Lite 
-                   -From    =>'me@myhost.com',
-                   -To      =>'you@yourhost.com',
-                    Cc      =>'some@other.com, some@more.com',
-                    Subject =>'Helloooooo, nurse!',    
-                    Type    =>'image/gif',
-                    Path    =>'hellonurse.gif';
+                    From     =>'me@myhost.com',
+                    To       =>'you@yourhost.com',
+                    Cc       =>'some@other.com, some@more.com',
+                    Subject  =>'Helloooooo, nurse!',
+                    Type     =>'image/gif',
+                    Encoding =>'base64',
+                    Path     =>'hellonurse.gif';
 
 
     Create a multipart message (i.e., one with attachments):
 
         # Create a new multipart message:
         $msg = new MIME::Lite 
-                   -From    =>'me@myhost.com',
-                   -To      =>'you@yourhost.com',
-                   -Cc      =>'some@other.com, some@more.com',
-                   -Subject =>'A message with 2 parts...',
+                    From    =>'me@myhost.com',
+                    To      =>'you@yourhost.com',
+                    Cc      =>'some@other.com, some@more.com',
+                    Subject =>'A message with 2 parts...',
                     Type    =>'multipart/mixed';
 
         # Add parts (each "attach" has same arguments as "new"):
@@ -45,9 +46,9 @@ SYNOPSIS
     Output a message:
 
         # As a string...
-        $str = $msg->stringify;
+        $str = $msg->as_string;
 
-        # To a filehandle (say, a "sendmail" stream...)    
+        # To a filehandle (say, a "sendmail" stream)...
         $msg->print(\*SENDMAIL);
 
 
@@ -65,16 +66,24 @@ DESCRIPTION
     a scalar or array), or as a string which can be given to open() to get a
     readable filehandle (e.g., "<filename" or "somecommand|").
 
+    You don't need to worry about encoding your message data: this module
+    will do that for you. It handles the 5 standard MIME encodings.
+
     If you need more sophisticated behavior, please get the MIME-tools
     package instead. I will be more likely to add stuff to that toolkit over
     this one.
 
 CHANGES
-  Version 1.112
+  Version 1.116
 
-    Added the read_now() manpage, and the binmode() manpage method for our
-    non-Unix-using brethren: file data is now read using binmode() if
-    appropriate. *Thanks to Xiangzhou Wang for pointing out this bug.*
+    Small bug in our private copy of encode_base64() was patched. *Thanks to
+    Andreas Koenig for pointing this out.*
+
+    New, prettier way of specifying mail message headers in `build()'.
+
+    New quiet method to turn off warnings.
+
+    Changed "stringify" methods to more-standard "as_string" methods.
 
 AUTHOR
     Eryq, (who really should be wrapping holiday presents instead).
