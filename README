@@ -74,10 +74,10 @@ DESCRIPTION
     this one.
 
 CHANGES
-  Version 1.120
+  Version 1.121
 
-    Efficiency hack to speed up MIME::Lite::IO_Scalar. *Thanks to David
-    Aspinwall for the patch.*
+    Filename attribute is now no longer ignored by build(). *Thanks to Ian
+    Smith for finding and patching this bug.*
 
 AUTHOR
     Eryq, (who really should be wrapping holiday presents instead).

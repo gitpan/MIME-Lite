@@ -291,7 +291,7 @@ Create a new message object.
 
 
 <P>
-If any arguments are given, they are passed into <A HREF="#build">build()</A>; otherwise,
+If any arguments are given, they are passed into <CODE>build()</CODE>; otherwise,
 just the empty object is created.
 
 
@@ -303,7 +303,7 @@ Add a new part to this message, and return the new part.
 
 <P>
 You can attach a MIME::Lite OBJECT, or have it create one by specifying
-a PARAMHASH that will be automatically given to <A HREF="#new">new()</A>.
+a PARAMHASH that will be automatically given to <CODE>new()</CODE>.
 
 
 <P>
@@ -504,7 +504,7 @@ but I digress...), here are some examples:
                Type     =&gt; 'x-gzip',
                Path     =&gt; &quot;gzip &lt; /usr/inc/somefile.tar |&quot;,
                ReadNow  =&gt; 1,
-               File     =&gt; &quot;somefile.tgz&quot;;</PRE>
+               Filename =&gt; &quot;somefile.tgz&quot;;</PRE>
 
 
 
@@ -519,10 +519,10 @@ have been written:
 
 
 <P>
-<PRE>    &#36;msg-&gt;build(Type    =&gt; 'x-gzip',
-                Path    =&gt; &quot;gzip &lt; /usr/inc/somefile.tar |&quot;,
-                ReadNow =&gt; 1,
-                File    =&gt; &quot;somefile.tgz&quot;);</PRE>
+<PRE>    &#36;msg-&gt;build(Type     =&gt; 'x-gzip',
+                Path     =&gt; &quot;gzip &lt; /usr/inc/somefile.tar |&quot;,
+                ReadNow  =&gt; 1,
+                Filename =&gt; &quot;somefile.tgz&quot;);</PRE>
 
 
 
@@ -570,7 +570,7 @@ Giving VALUE an arrayref will cause all those values to be added:
 
 
 <P>
-<I>Note:</I> add() is probably going to be more efficient than <A HREF="#replace">replace()</A>,
+<I>Note:</I> add() is probably going to be more efficient than <CODE>replace()</CODE>,
 so you're better off using it for most applications.
 
 
@@ -746,8 +746,8 @@ Setting/getting message data</FONT></H2>
 <P><DT><B><A NAME="binmode">binmode [OVERRIDE]</A></B><DD>
 
 With no argument, returns whether or not it thinks that the data 
-(as given by the &quot;Path&quot; argument of <A HREF="#build">build()</A>) should be read using 
-binmode() (for example, when <A HREF="#read_now">read_now()</A> is invoked).
+(as given by the &quot;Path&quot; argument of <CODE>build()</CODE>) should be read using 
+binmode() (for example, when <CODE>read_now()</CODE> is invoked).
 
 
 <P>
@@ -787,8 +787,8 @@ looks like a simple path, and to nothing if not).
 <P><DT><B><A NAME="read_now">read_now [PATH]</A></B><DD>
 
 Force the path to be read into core immediately.  With optional
-argument, sets the <A HREF="#path">path()</A> first; otherwise, the current path
-(such as given during a <A HREF="#build">build()</A>) will be used.
+argument, sets the <CODE>path()</CODE> first; otherwise, the current path
+(such as given during a <CODE>build()</CODE>) will be used.
 
 
 <P>
@@ -799,7 +799,7 @@ Note that the in-core data will always be used if available.
 Be aware that everything is slurped into a giant scalar: you may not want 
 to use this if sending tar files!  The benefit of <I>not</I> reading in the data 
 is that very large files can be handled by this module if left on disk
-until the message is output via <A HREF="#print">print()</A> or <A HREF="#print_body">print_body()</A>.
+until the message is output via <CODE>print()</CODE> or <CODE>print_body()</CODE>.
 
 
 <P><DT><B><A NAME="sign">sign PARAMHASH</A></B><DD>
@@ -810,13 +810,13 @@ after which the signature is appended to it.
 <DL>
 <P><DT><B><A NAME="data">Data</A></B><DD>
 
-As in <A HREF="#build">build()</A>: the literal signature data.
+As in <CODE>build()</CODE>: the literal signature data.
 Can be either a scalar or a ref to an array of scalars.
 
 
 <P><DT><B><A NAME="path">Path</A></B><DD>
 
-As in <A HREF="#build">build()</A>: the path to the file.
+As in <CODE>build()</CODE>: the path to the file.
 
 </DL>
 
@@ -925,7 +925,7 @@ Sends the message.
 
 <P>
 Right now, this is done by piping it into the &quot;sendmail&quot; command
-as given by <A HREF="#sendmail">sendmail()</A>.  It probably will only work on Unix systems.
+as given by <CODE>sendmail()</CODE>.  It probably will only work on Unix systems.
 
 
 <P>
@@ -936,7 +936,7 @@ Returns false if sendmail <I>seems</I> to have failed, true otherwise.
 <P><DT><B><A NAME="sendmail">sendmail COMMAND...</A></B><DD>
 
 <I>Class method.</I>  
-Set up the &quot;sendmail&quot; command used by <A HREF="#send">send()</A>.
+Set up the &quot;sendmail&quot; command used by <CODE>send()</CODE>.
 You may supply it as either a single string, or an array of 
 path-to-command-plus-arguments:
 
@@ -1008,7 +1008,7 @@ separate module.
 
 <P><LI>A content-length field is only inserted if the encoding is binary,
 the message is a singlepart, and all the document data is available
-at <A HREF="#build">build()</A> time by virtue of residing in a simple path, or in-core.
+at <CODE>build()</CODE> time by virtue of residing in a simple path, or in-core.
 Since content-length is not a standard MIME field anyway (that's right, kids:
 it's not in the MIME RFCs, it's an HTTP thing), this seems pretty fair.
 
@@ -1117,7 +1117,7 @@ Content types</FONT></H2>
 
 
 <P>
-The &quot;Type&quot; parameter of <A HREF="#build">build()</A> is a <I>content type</I>. 
+The &quot;Type&quot; parameter of <CODE>build()</CODE> is a <I>content type</I>. 
 This is the actual type of data you are sending.  
 Generally this is a string of the form <CODE>&quot;majortype/minortype&quot;</CODE>.
 
@@ -1180,7 +1180,7 @@ Content transfer encodings</FONT></H2>
 
 
 <P>
-The &quot;Encoding&quot; parameter of <A HREF="#build">build()</A>.
+The &quot;Encoding&quot; parameter of <CODE>build()</CODE>.
 This is how the message body is packaged up for safe transit.
 
 
@@ -1237,9 +1237,15 @@ CHANGE LOG</FONT></H1>
 
 <P>
 <B>Current version:</B>
-&#36;Id: Lite.pm,v 1.120 1997/03/29 04:51:42 eryq Exp &#36;
+&#36;Id: Lite.pm,v 1.121 1997/04/08 14:55:06 eryq Exp &#36;
 
 <DL>
+<P><DT><B><A NAME="version">Version 1.121</A></B><DD>
+
+Filename attribute is now no longer ignored by build().
+<I>Thanks to Ian Smith for finding and patching this bug.</I>
+
+
 <P><DT><B><A NAME="version">Version 1.120</A></B><DD>
 
 Efficiency hack to speed up MIME::Lite::IO_Scalar.
@@ -1266,7 +1272,7 @@ Changed &quot;stringify&quot; methods to more-standard &quot;as_string&quot; met
 
 <P><DT><B><A NAME="version">Version 1.112</A></B><DD>
 
-Added <A HREF="#read_now">read_now()</A>, and <A HREF="#binmode">binmode()</A> method for our non-Unix-using brethren: 
+Added <CODE>read_now()</CODE>, and <CODE>binmode()</CODE> method for our non-Unix-using brethren: 
 file data is now read using binmode() if appropriate.
 <I>Thanks to Xiangzhou Wang for pointing out this bug.</I>
 
@@ -1353,7 +1359,7 @@ Created: 11 December 1996.  Ho ho ho.
 
 <P><HR>
 <SMALL>
-		Last updated: Fri Mar 28 22:53:06 1997 <BR>
+		Last updated: Tue Apr  8 09:56:30 1997 <BR>
 		Generated by pod2coolhtml 1.101.  Want a copy?  Just email
 		<A HREF="mailto:eryq@enteract.com">eryq@enteract.com</A>.
 		(Yes, it's free.)

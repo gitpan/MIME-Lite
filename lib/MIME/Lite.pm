@@ -152,7 +152,7 @@ use vars qw($VERSION $QUIET);
 
 
 # The package version, both in 1.23 style *and* usable by MakeMaker:
-$VERSION = substr q$Revision: 1.120 $, 10;
+$VERSION = substr q$Revision: 1.121 $, 10;
 
 # Don't warn me about dangerous activities:
 $QUIET = undef;
@@ -354,7 +354,7 @@ sub _slurp_data {
 I<Class method, constructor.>
 Create a new message object.  
 
-If any arguments are given, they are passed into L<build()>; otherwise,
+If any arguments are given, they are passed into C<build()>; otherwise,
 just the empty object is created.
 
 =cut
@@ -383,7 +383,7 @@ I<Instance method.>
 Add a new part to this message, and return the new part.
 
 You can attach a MIME::Lite OBJECT, or have it create one by specifying
-a PARAMHASH that will be automatically given to L<new()>.
+a PARAMHASH that will be automatically given to C<new()>.
 
 One of the possibly-quite-useful hacks thrown into this is the 
 "attach-to-singlepart" hack: if you attempt to attach a part (let's
@@ -588,17 +588,17 @@ but I digress...), here are some examples:
                Type     => 'x-gzip',
                Path     => "gzip < /usr/inc/somefile.tar |",
                ReadNow  => 1,
-               File     => "somefile.tgz";
+               Filename => "somefile.tgz";
 
 To show you what's really going on, that last example could also 
 have been written:
 
     $msg = new MIME::Lite;
     
-    $msg->build(Type    => 'x-gzip',
-                Path    => "gzip < /usr/inc/somefile.tar |",
-                ReadNow => 1,
-                File    => "somefile.tgz");
+    $msg->build(Type     => 'x-gzip',
+                Path     => "gzip < /usr/inc/somefile.tar |",
+                ReadNow  => 1,
+                Filename => "somefile.tgz");
     
     $msg->add(From    => "laughing@all.of.us");
     $msg->add(To      => "scarlett@fiddle.dee.de");
@@ -654,7 +654,15 @@ sub build {
 	$self->path($params{Path});       # also sets filename
 	$self->read_now if $params{ReadNow};
     }
+    
 
+    ### FILENAME... (added by Ian Smith <ian@safeway.dircon.co.uk> on 8/4/97)
+    ###    Need this to make sure the filename is added.  The Filename
+    ###    attribute is ignored, otherwise.
+    if (defined($params{Filename})) {
+	$self->filename($params{Filename});
+    }
+  
 
     ### CONTENT-TRANSFER-ENCODING...
     ###
@@ -771,7 +779,7 @@ Giving VALUE an arrayref will cause all those values to be added:
 
     $msg->add("Received" => ["here", "there", "everywhere"]
 
-I<Note:> add() is probably going to be more efficient than L<replace()>,
+I<Note:> add() is probably going to be more efficient than C<replace()>,
 so you're better off using it for most applications.
 
 I<Note:> the name comes from Mail::Header.
@@ -1046,8 +1054,8 @@ sub replace {
 =item binmode [OVERRIDE]
 
 With no argument, returns whether or not it thinks that the data 
-(as given by the "Path" argument of L<build()>) should be read using 
-binmode() (for example, when L<read_now()> is invoked).
+(as given by the "Path" argument of C<build()>) should be read using 
+binmode() (for example, when C<read_now()> is invoked).
 
 The default behavior is that any content type other than 
 C<text/*> or C<message/*> is binmode'd; this should in general work fine.
@@ -1127,15 +1135,15 @@ sub path {
 =item read_now [PATH]
 
 Force the path to be read into core immediately.  With optional
-argument, sets the L<path()> first; otherwise, the current path
-(such as given during a L<build()>) will be used.
+argument, sets the C<path()> first; otherwise, the current path
+(such as given during a C<build()>) will be used.
 
 Note that the in-core data will always be used if available.
 
 Be aware that everything is slurped into a giant scalar: you may not want 
 to use this if sending tar files!  The benefit of I<not> reading in the data 
 is that very large files can be handled by this module if left on disk
-until the message is output via L<print()> or L<print_body()>.
+until the message is output via C<print()> or C<print_body()>.
 
 =cut
 
@@ -1159,12 +1167,12 @@ after which the signature is appended to it.
 
 =item Data
 
-As in L<build()>: the literal signature data.
+As in C<build()>: the literal signature data.
 Can be either a scalar or a ref to an array of scalars.
 
 =item Path
 
-As in L<build()>: the path to the file.
+As in C<build()>: the path to the file.
 
 =back
 
@@ -1479,7 +1487,7 @@ I<Instance method.>
 Sends the message.
 
 Right now, this is done by piping it into the "sendmail" command
-as given by L<sendmail()>.  It probably will only work on Unix systems.
+as given by C<sendmail()>.  It probably will only work on Unix systems.
 
 Returns false if sendmail I<seems> to have failed, true otherwise.
 B<Fatal exception> raised if the open fails.
@@ -1502,7 +1510,7 @@ sub send {
 =item sendmail COMMAND...
 
 I<Class method.>  
-Set up the "sendmail" command used by L<send()>.
+Set up the "sendmail" command used by C<send()>.
 You may supply it as either a single string, or an array of 
 path-to-command-plus-arguments:
 
@@ -1638,7 +1646,7 @@ separate module.
 
 A content-length field is only inserted if the encoding is binary,
 the message is a singlepart, and all the document data is available
-at L<build()> time by virtue of residing in a simple path, or in-core.
+at C<build()> time by virtue of residing in a simple path, or in-core.
 Since content-length is not a standard MIME field anyway (that's right, kids:
 it's not in the MIME RFCs, it's an HTTP thing), this seems pretty fair.
 
@@ -1700,7 +1708,7 @@ any MIME header field.  Use C<attr()> instead.
 
 =head2 Content types
 
-The "Type" parameter of L<build()> is a I<content type>. 
+The "Type" parameter of C<build()> is a I<content type>. 
 This is the actual type of data you are sending.  
 Generally this is a string of the form C<"majortype/minortype">.
 
@@ -1750,7 +1758,7 @@ C<video/mpeg>...
 
 =head2 Content transfer encodings
 
-The "Encoding" parameter of L<build()>.
+The "Encoding" parameter of C<build()>.
 This is how the message body is packaged up for safe transit.
 
 Here are the 5 major MIME encodings.
@@ -1795,9 +1803,15 @@ non-ASCII characters (e.g., Latin-1, Latin-2, or any other 8-bit alphabet).
 =head1 CHANGE LOG
 
 B<Current version:>
-$Id: Lite.pm,v 1.120 1997/03/29 04:51:42 eryq Exp $
+$Id: Lite.pm,v 1.121 1997/04/08 14:55:06 eryq Exp $
 
 =over 4
+
+=item Version 1.121
+
+Filename attribute is now no longer ignored by build().
+I<Thanks to Ian Smith for finding and patching this bug.>
+
 
 =item Version 1.120
 
@@ -1819,7 +1833,7 @@ Changed "stringify" methods to more-standard "as_string" methods.
 
 =item Version 1.112
 
-Added L<read_now()>, and L<binmode()> method for our non-Unix-using brethren: 
+Added C<read_now()>, and C<binmode()> method for our non-Unix-using brethren: 
 file data is now read using binmode() if appropriate.
 I<Thanks to Xiangzhou Wang for pointing out this bug.>
 

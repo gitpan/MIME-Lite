@@ -1,3 +1,5 @@
+#!/usr/bin/perl
+use lib "lib";
 use MIME::Lite;
 
 # Create a new multipart message:
