@@ -144,6 +144,63 @@ MORE EXAMPLES
         ### Now this will do the right thing:
         $msg->send;         ### will now use Net::SMTP as shown above
 
+FAQ
+  How do I prevent "Content" headers from showing up in my mail reader?
+
+    Apparently, some people are using mail readers which display the MIME
+    headers like "Content-disposition", and they want MIME::Lite not to
+    generate them "because they look ugly".
+
+    Sigh.
+
+    Y'know, kids, those headers aren't just there for cosmetic purposes.
+    They help ensure that the message is *understood* correctly by mail
+    readers. But okay, you asked for it, you got it... here's how you can
+    suppress the standard MIME headers. Before you send the message, do
+    this:
+
+            $msg->scrub;
+
+    You can scrub() any part of a multipart message independently; just be
+    aware that it works recursively. Before you scrub, note the rules that I
+    follow:
+
+    Content-type
+        You can safely scrub the "content-type" attribute if, and only if,
+        the part is of type "text/plain" with charset "us-ascii".
+
+    Content-transfer-encoding
+        You can safely scrub the "content-transfer-encoding" attribute if,
+        and only if, the part uses "7bit", "8bit", or "binary" encoding. You
+        are far better off doing this if your lines are under 1000
+        characters. Generally, that means you *can* scrub it for plain text,
+        and you can *not* scrub this for images, etc.
+
+    Content-disposition
+        You can safely scrub the "content-disposition" attribute if you
+        trust the mail reader to do the right thing when it decides whether
+        to show an attachment inline or as a link. Be aware that scrubbing
+        both the content-disposition and the content-type means that there
+        is no way to "recommend" a filename for the attachment!
+
+        Note: there are reports of brain-dead MUAs out there that do the
+        wrong thing if you *provide* the content-disposition. If your
+        attachments keep showing up inline or vice-versa, try scrubbing this
+        attribute.
+
+    Content-length
+        You can always scrub "content-length" safely.
+
+  How do I give my attachment a [different] recommended filename?
+
+    By using the Filename option (which is different from Path!):
+
+            $msg->attach(Type => "image/gif",
+                         Path => "/here/is/the/real/file.GIF",
+                         Filename => "logo.gif");
+
+    You should *not* put path information in the Filename.
+
 PUBLIC INTERFACE
   Global configuration
 
@@ -220,8 +277,8 @@ PUBLIC INTERFACE
         that a user agent like Netscape allows you to do.
 
     build [PARAMHASH]
-        *Class/instance method, initiallizer.* Create (or initiallize) a
-        MIME message object. Normally, you'll use the following keys in
+        *Class/instance method, initializer.* Create (or initialize) a MIME
+        message object. Normally, you'll use the following keys in
         PARAMHASH:
 
            * Data, FH, or Path      (either one of these, or none if multipart)
@@ -296,8 +353,10 @@ PUBLIC INTERFACE
 
     Filename
             *Optional.* The name of the attachment. You can use this to
-            supply a filename if the one in the Path is inadequate, or if
-            you're using the Data argument.
+            supply a recommended filename for the end-user who is saving the
+            attachment to disk, if the one in the Path is inadequate, or if
+            you're using the Data argument. You should *not* put path
+            information in here (e.g., no "/" or "\" or ":" characters).
 
     Id      *Optional.* Same as setting "content-id".
 
@@ -381,12 +440,22 @@ PUBLIC INTERFACE
 
             $msg->add("Subject" => "Hi there!");
 
-        Giving VALUE an arrayref will cause all those values to be added:
+        Giving VALUE as an arrayref will cause all those values to be added.
+        This is only useful for special multiple-valued fields like
+        "Received":
 
             $msg->add("Received" => ["here", "there", "everywhere"]
 
+        Giving VALUE as the empty string adds an invisible placeholder to
+        the header, which can be used to suppress the output of the
+        "Content-*" fields or the special "MIME-Version" field. When
+        suppressing fields, you should use replace() instead of add():
+
+            $msg->replace("Content-disposition" => "");
+
         *Note:* add() is probably going to be more efficient than
-        `replace()', so you're better off using it for most applications.
+        `replace()', so you're better off using it for most applications if
+        you are certain that you don't need to delete() the field first.
 
         *Note:* the name comes from Mail::Header.
 
@@ -484,17 +553,37 @@ PUBLIC INTERFACE
         Delete all occurences of fields named TAG, and add a new field with
         the given VALUE. TAG is converted to all-lowercase.
 
-        Beware: any MIME fields you "replace" will override any MIME
-        attributes I have when it comes time to output those fields.
-        Normally, you will use this method to set *non-MIME* fields:
+        Beware the special MIME fields (MIME-version, Content-*): if you
+        "replace" a MIME field, the replacement text will override the
+        *actual* MIME attributes when it comes time to output that field. So
+        normally you use attr() to change MIME fields and add()/replace() to
+        change *non-MIME* fields:
 
             $msg->replace("Subject" => "Hi there!");
 
-        Giving VALUE as undefined will simply cause the contents of the
-        named field to be deleted. Giving VALUE as an arrayref will cause
-        all the values in the array to be added.
+        Giving VALUE as the *empty string* will effectively *prevent* that
+        field from being output. This is the correct way to suppress the
+        special MIME fields:
 
-        *Note:* the name comes from Mail::Header.
+            $msg->replace("Content-disposition" => "");
+
+        Giving VALUE as *undefined* will just cause all explicit values for
+        TAG to be deleted, without having any new values added.
+
+        *Note:* the name of this method comes from Mail::Header.
+
+    scrub
+        This is Alpha code. If you use it, please let me know how it goes.
+        Recursively goes through the "parts" tree of this message and tries
+        to find MIME attributes that can be removed. With an array argument,
+        removes exactly those attributes; e.g.:
+
+            $msg->scrub(['content-disposition', 'content-length']);
+
+        Is the same as recursively doing:
+
+            $msg->replace('Content-disposition' => '');
+            $msg->replace('Content-length'      => '');
 
   Setting/getting message data
 
@@ -621,7 +710,7 @@ PUBLIC INTERFACE
 
     send
     send HOW, HOWARGS...
-        *Class/instance method.* This is the principle method for sending
+        *Class/instance method.* This is the principal method for sending
         mail, and for configuring how mail will be sent.
 
         *As an instance method* (with no arguments), sends the message by
@@ -781,7 +870,7 @@ NOTES
                     
          -oem    On error, mail back the message (I assume to the
                  appropriate address, given in the header).
-                 When mail returns, circle is complete.  Jai guru deva -oem.
+                 When mail returns, circle is complete.  Jai Guru Deva -oem.
 
     Note that these are the same arguments you get if you configure to use
     the smarter, taint-safe mailing:
@@ -953,9 +1042,17 @@ A MIME PRIMER
         8-bit alphabet).
 
 VERSION
-    $Id: Lite.pm,v 2.105 2000/10/14 16:31:42 eryq Exp $
+    $Id: Lite.pm,v 2.106 2000/11/21 08:16:32 eryq Exp $
 
 CHANGE LOG
+    Version 2.106   (2000/11/21)
+        Added Alpha version of scrub() to make it easy for people to
+        suppress the printing of unwanted MIME attributes (like Content-
+        length). *Thanks to the many people who asked for this.*
+
+        Headers with empty-strings for their values are no longer printed.
+        This seems sensible, and helps us implement scrub().
+
     Version 2.105   (2000/10/14)
         The regression-test failure was identified, and it was my fault.
         Apparently some of the \-quoting in my "autoloaded" code was making
@@ -1013,7 +1110,7 @@ CHANGE LOG
         send_by_smtp, as a safety precaution against qmail's behavior.
         *Thanks to Tatsuhiko Miyagawa for identifying this problem.*
 
-        Improved efficieny of many stringifying operations by using string-
+        Improved efficiency of many stringifying operations by using string-
         arrays which are joined, instead of doing multiple appends to a
         scalar.
 

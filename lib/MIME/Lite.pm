@@ -163,6 +163,79 @@ This will create a multipart message exactly as above, but using the
 
 
 
+
+
+
+=head1 FAQ
+
+
+=head2 How do I prevent "Content" headers from showing up in my mail reader?
+
+Apparently, some people are using mail readers which display the MIME
+headers like "Content-disposition", and they want MIME::Lite not
+to generate them "because they look ugly".  
+
+Sigh.
+
+Y'know, kids, those headers aren't just there for cosmetic purposes.
+They help ensure that the message is I<understood> correctly by mail 
+readers.  But okay, you asked for it, you got it... 
+here's how you can suppress the standard MIME headers.  
+Before you send the message, do this:
+
+	$msg->scrub;
+
+You can scrub() any part of a multipart message independently;
+just be aware that it works recursively.  Before you scrub,
+note the rules that I follow:
+
+=over 4
+
+=item Content-type
+
+You can safely scrub the "content-type" attribute if, and only if, 
+the part is of type "text/plain" with charset "us-ascii". 
+
+=item Content-transfer-encoding
+
+You can safely scrub the "content-transfer-encoding" attribute 
+if, and only if, the part uses "7bit", "8bit", or "binary" encoding.
+You are far better off doing this if your lines are under 1000 
+characters.  Generally, that means you I<can> scrub it for plain
+text, and you can I<not> scrub this for images, etc.
+
+=item Content-disposition
+
+You can safely scrub the "content-disposition" attribute 
+if you trust the mail reader to do the right thing when it decides
+whether to show an attachment inline or as a link.  Be aware
+that scrubbing both the content-disposition and the content-type
+means that there is no way to "recommend" a filename for the attachment!
+
+B<Note:> there are reports of brain-dead MUAs out there that 
+do the wrong thing if you I<provide> the content-disposition.
+If your attachments keep showing up inline or vice-versa,
+try scrubbing this attribute.
+
+=item Content-length
+
+You can always scrub "content-length" safely.
+
+=back
+
+
+=head2 How do I give my attachment a [different] recommended filename?
+
+By using the Filename option (which is different from Path!):
+
+	$msg->attach(Type => "image/gif",
+	             Path => "/here/is/the/real/file.GIF",
+	             Filename => "logo.gif");
+
+You should I<not> put path information in the Filename.
+
+
+
 =head1 PUBLIC INTERFACE
 
 =head2 Global configuration
@@ -244,7 +317,7 @@ use vars qw(
 # GLOBALS, EXTERNAL/CONFIGURATION...
 
 ### The package version, both in 1.23 style *and* usable by MakeMaker:
-$VERSION = substr q$Revision: 2.105 $, 10;
+$VERSION = substr q$Revision: 2.106 $, 10;
 
 ### Don't warn me about dangerous activities:
 $QUIET = undef;
@@ -622,8 +695,8 @@ sub attach {
 
 =item build [PARAMHASH]
 
-I<Class/instance method, initiallizer.>
-Create (or initiallize) a MIME message object.  
+I<Class/instance method, initializer.>
+Create (or initialize) a MIME message object.  
 Normally, you'll use the following keys in PARAMHASH:
 
    * Data, FH, or Path      (either one of these, or none if multipart)
@@ -709,8 +782,11 @@ See "ReadNow" also.
 =item Filename
 
 I<Optional.>
-The name of the attachment.  You can use this to supply a filename
-if the one in the Path is inadequate, or if you're using the Data argument.
+The name of the attachment.  You can use this to supply a 
+recommended filename for the end-user who is saving the attachment 
+to disk, if the one in the Path is inadequate, or if you're using 
+the Data argument.  You should I<not> put path information in here
+(e.g., no "/" or "\" or ":" characters).
 
 =item Id
 
@@ -991,12 +1067,21 @@ Normally, you will use this method to add I<non-MIME> fields:
 
     $msg->add("Subject" => "Hi there!");
 
-Giving VALUE an arrayref will cause all those values to be added:
+Giving VALUE as an arrayref will cause all those values to be added.
+This is only useful for special multiple-valued fields like "Received":
 
     $msg->add("Received" => ["here", "there", "everywhere"]
 
+Giving VALUE as the empty string adds an invisible placeholder
+to the header, which can be used to suppress the output of 
+the "Content-*" fields or the special  "MIME-Version" field.
+When suppressing fields, you should use replace() instead of add():
+
+    $msg->replace("Content-disposition" => "");
+
 I<Note:> add() is probably going to be more efficient than C<replace()>,
-so you're better off using it for most applications.
+so you're better off using it for most applications if you are 
+certain that you don't need to delete() the field first.
 
 I<Note:> the name comes from Mail::Header.
 
@@ -1071,6 +1156,12 @@ sub attr {
 	
     ### Return current value:
     $self->{Attrs}{$tag}{$subtag};
+}
+
+sub _safe_attr {
+    my ($self, $attr) = @_;
+    my $v = $self->attr($attr);
+    defined($v) ? $v : '';
 }
 
 #------------------------------
@@ -1273,17 +1364,24 @@ sub get_length {
 Delete all occurences of fields named TAG, and add a new
 field with the given VALUE.  TAG is converted to all-lowercase.
 
-B<Beware:> any MIME fields you "replace" will override any MIME
-attributes I have when it comes time to output those fields.
-Normally, you will use this method to set I<non-MIME> fields:
+B<Beware> the special MIME fields (MIME-version, Content-*):
+if you "replace" a MIME field, the replacement text will override 
+the I<actual> MIME attributes when it comes time to output that field.
+So normally you use attr() to change MIME fields and add()/replace() to 
+change I<non-MIME> fields:
 
     $msg->replace("Subject" => "Hi there!");
 
-Giving VALUE as undefined will simply cause the contents of the named
-field to be deleted.  Giving VALUE as an arrayref will cause all the values
-in the array to be added.
+Giving VALUE as the I<empty string> will effectively I<prevent> that
+field from being output.  This is the correct way to suppress
+the special MIME fields:    
 
-I<Note:> the name comes from Mail::Header.
+    $msg->replace("Content-disposition" => "");
+
+Giving VALUE as I<undefined> will just cause all explicit values
+for TAG to be deleted, without having any new values added.
+
+I<Note:> the name of this method  comes from Mail::Header.
 
 =cut
 
@@ -1291,6 +1389,67 @@ sub replace {
     my ($self, $tag, $value) = @_;
     $self->delete($tag);
     $self->add($tag, $value) if defined($value);
+}
+
+
+#------------------------------
+
+=item scrub
+
+B<This is Alpha code.  If you use it, please let me know how it goes.>
+Recursively goes through the "parts" tree of this message and tries 
+to find MIME attributes that can be removed. 
+With an array argument, removes exactly those attributes; e.g.:
+
+    $msg->scrub(['content-disposition', 'content-length']);
+
+Is the same as recursively doing:
+
+    $msg->replace('Content-disposition' => '');
+    $msg->replace('Content-length'      => '');
+
+=cut
+
+sub scrub {
+    my ($self, @a) = @_;
+    my ($expl) = @a;
+    local $QUIET = 1;
+
+    ### Scrub me:
+    if (!@a) {         ### guess
+
+	### Scrub length always:
+	$self->replace('content-length', '');
+
+	### Scrub disposition if no filename, or if content-type has same info:
+	if (!$self->_safe_attr('content-disposition.filename') ||
+	    $self->_safe_attr('content-type.name')) {
+	    $self->replace('content-disposition', '');
+	}
+
+	### Scrub encoding if effectively unencoded:
+	if ($self->_safe_attr('content-transfer-encoding') =~
+	    /^(7bit|8bit|binary)$/i) {
+	    $self->replace('content-transfer-encoding', '');
+	}
+
+	### Scrub charset if US-ASCII:
+	if ($self->_safe_attr('content-type.charset') =~ /^(us-ascii)/i) {
+	    $self->attr('content-type.charset' => undef);
+	}
+
+	### TBD: this is not really right for message/digest:
+	if ((keys %{$self->{Attrs}{'content-type'}} == 1) and
+	    ($self->_safe_attr('content-type') eq 'text/plain')) {
+	    $self->replace('content-type', '');
+	}
+    }
+    elsif ($expl and (ref($expl) eq 'ARRAY')) {
+	foreach (@{$expl}) { $self->replace($_, ''); }
+    }
+
+    ### Scrub my kids:
+    foreach (@{$self->{Parts}}) { $_->scrub(@a); }
 }
 
 =back
@@ -1778,7 +1937,7 @@ sub print_simple_body {
     elsif (defined($self->{Path}) || defined($self->{FH})) {
 	no strict 'refs';          ### in case FH is not an object
 	my $DATA;
-	
+
 	### Open file if necessary:
 	if (defined($self->{Path})) {
 	    $DATA = new FileHandle || croak "can't get new filehandle\n";
@@ -1902,7 +2061,8 @@ sub fields_as_string {
     my ($self, $fields) = @_;
     my @lines;
     foreach (@$fields) {
-	my ($tag, $value) = @$_;
+	my ($tag, $value) = @$_; 
+	next if ($value eq '');          ### skip empties
 	$tag =~ s/\b([a-z])/uc($1)/ge;   ### make pretty
 	$tag =~ s/^mime-/MIME-/ig;       ### even prettier
 	push @lines, "$tag: $value\n";
@@ -1947,7 +2107,7 @@ sub header_as_string {
 =item send HOW, HOWARGS...
 
 I<Class/instance method.>  
-This is the principle method for sending mail, and for configuring
+This is the principal method for sending mail, and for configuring
 how mail will be sent.
 
 I<As an instance method> (with no arguments), sends the message by whatever 
@@ -2404,7 +2564,7 @@ By the way, these arguments to sendmail are:
                 
      -oem    On error, mail back the message (I assume to the
              appropriate address, given in the header).
-             When mail returns, circle is complete.  Jai guru deva -oem.
+             When mail returns, circle is complete.  Jai Guru Deva -oem.
 
 Note that these are the same arguments you get if you configure to use
 the smarter, taint-safe mailing:
@@ -2617,12 +2777,22 @@ non-ASCII characters (e.g., Latin-1, Latin-2, or any other 8-bit alphabet).
 
 =head1 VERSION
 
-$Id: Lite.pm,v 2.105 2000/10/14 16:31:42 eryq Exp $
+$Id: Lite.pm,v 2.106 2000/11/21 08:16:32 eryq Exp $
 
 
 =head1 CHANGE LOG
 
 =over 4
+
+=item Version 2.106   (2000/11/21)
+
+Added Alpha version of scrub() to make it easy for people to suppress
+the printing of unwanted MIME attributes (like Content-length).
+I<Thanks to the many people who asked for this.>
+
+Headers with empty-strings for their values are no longer
+printed.  This seems sensible, and helps us implement scrub().
+
 
 =item Version 2.105   (2000/10/14)
 
@@ -2687,7 +2857,7 @@ Now takes care not to include "Bcc:" in header when using send_by_smtp,
 as a safety precaution against qmail's behavior.
 I<Thanks to Tatsuhiko Miyagawa for identifying this problem.>
 
-Improved efficieny of many stringifying operations by using 
+Improved efficiency of many stringifying operations by using 
 string-arrays which are joined, instead of doing multiple appends 
 to a scalar.
 
