@@ -8,11 +8,11 @@ use ExtUtils::MakeMaker;
 # Write the Makefile:
 WriteMakefile(
 	      NAME         => 'MIME::Lite',
-	      VERSION_FROM => "./lib/MIME/Lite.pm",
+	      VERSION_FROM => "lib/MIME/Lite.pm",
 	      DISTNAME     => "MIME-Lite",
 	      EXE_FILES    => [@EXES],
 	      'dist'       => {
-		  PREOP    => "./MakefileZG.PL ; make -f MakefileZG",
+		  PREOP    => 'cvu_perl_preop',
 		  COMPRESS => 'gzip',
 		  SUFFIX   => 'gz',
 	      }

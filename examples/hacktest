@@ -1,0 +1,35 @@
+#!/usr/bin/perl
+use lib "lib";
+use MIME::Lite;
+
+print <<EOF;
+======================================================================
+
+Test the "attach to singlepart" hack...
+
+======================================================================
+
+EOF
+
+
+# Create a new multipart message:
+my $msg = new MIME::Lite
+    From    =>'me@myhost.com',
+    To      =>'you@yourhost.com',
+    Subject =>'Test the "attach to singlepart" hack',
+    Type    =>'TEXT',
+    Data    =>"This is an ordinary text message... can we attach to it?\n";  
+
+# Attach a part:
+attach $msg 
+    Type     =>'image/gif',
+    Encoding =>'base64',
+    Path     =>"./docs/MIME/mime-sm.gif",
+    Filename =>'mime-logo.gif';
+
+# Output!
+$msg->print;
+
+__END__
+
+

@@ -12,35 +12,36 @@ MIME::Lite - low-calorie MIME generator
    
 Create a single-part message:
 
-    # Create a new single-part message, to send a GIF file:
-    $msg = new MIME::Lite 
-                From     =>'me@myhost.com',
-                To       =>'you@yourhost.com',
-                Cc       =>'some@other.com, some@more.com',
-                Subject  =>'Helloooooo, nurse!',
-                Type     =>'image/gif',
-                Encoding =>'base64',
-                Path     =>'hellonurse.gif';
-    
+    ### Create a new single-part message, to send a GIF file:
+    $msg = MIME::Lite->new(
+                 From     =>'me@myhost.com',
+                 To       =>'you@yourhost.com',
+                 Cc       =>'some@other.com, some@more.com',
+                 Subject  =>'Helloooooo, nurse!',
+                 Type     =>'image/gif',
+                 Encoding =>'base64',
+                 Path     =>'hellonurse.gif'
+		 );
 
 Create a multipart message (i.e., one with attachments):
 
-    # Create a new multipart message:
-    $msg = new MIME::Lite 
-                From    =>'me@myhost.com',
-                To      =>'you@yourhost.com',
-                Cc      =>'some@other.com, some@more.com',
-                Subject =>'A message with 2 parts...',
-                Type    =>'multipart/mixed';
+    ### Create a new multipart message:
+    $msg = MIME::Lite->new( 
+                 From    =>'me@myhost.com',
+                 To      =>'you@yourhost.com',
+                 Cc      =>'some@other.com, some@more.com',
+                 Subject =>'A message with 2 parts...',
+                 Type    =>'multipart/mixed'
+		 );
     
-    # Add parts (each "attach" has same arguments as "new"):
-    attach $msg 
-                Type     =>'TEXT',   
-                Data     =>"Here's the GIF file you wanted";  
-    attach $msg 
-                Type     =>'image/gif',
-                Path     =>'aaa000123.gif',
-                Filename =>'logo.gif';
+    ### Add parts (each "attach" has same arguments as "new"):
+    $msg->attach(Type     =>'TEXT',   
+                 Data     =>"Here's the GIF file you wanted"
+		 );  
+    $msg->attach(Type     =>'image/gif',
+                 Path     =>'aaa000123.gif',
+                 Filename =>'logo.gif'
+		 );
 
 
 Output a message:
@@ -84,57 +85,81 @@ over this one.
 
 =head1 MORE EXAMPLES
 
-Create a multipart message exactly as above, but using the 
+=head2 Attach a GIF to a text message
+
+This will create a multipart message exactly as above, but using the 
 "attach to singlepart" hack:
 
-    # Create a new multipart message:
-    $msg = new MIME::Lite 
-                From    =>'me@myhost.com',
-                To      =>'you@yourhost.com',
-                Cc      =>'some@other.com, some@more.com',
-                Subject =>'A message with 2 parts...',
-                Type    =>'TEXT',
-                Data    =>"Here's the GIF file you wanted";  
+    ### Create a new multipart message:
+    $msg = MIME::Lite->new(
+                 From    =>'me@myhost.com',
+                 To      =>'you@yourhost.com',
+                 Cc      =>'some@other.com, some@more.com',
+                 Subject =>'A message with 2 parts...',
+                 Type    =>'TEXT',
+                 Data    =>"Here's the GIF file you wanted"
+                 );  
     
-    # Attach a part:
-    attach $msg Type     =>'image/gif',
-                Path     =>'aaa000123.gif',
-                Filename =>'logo.gif';
+    ### Attach a part:
+    $msg->attach(Type     =>'image/gif',
+                 Path     =>'aaa000123.gif',
+                 Filename =>'logo.gif'
+                 );
 
 
-Output a message to a filehandle:
+=head2 Send an HTML document... with images included!
 
-    # Write it to a filehandle:
+    $msg = MIME::Lite->new(
+                 To      =>'you@yourhost.com',
+                 Subject =>'HTML with in-line images!',
+                 Type    =>'multipart/related'
+                 );
+    $msg->attach(Type => 'text/html',
+                 Data => qq{ <body>
+                             Here's <i>my</i> image: 
+                             <img src="cid:myimage.gif"> 
+                             </body> }
+                 );
+    $msg->attach(Type => 'image/gif',
+                 Id   => 'myimage.gif',
+                 Path => '/path/to/somefile.gif',
+                 );
+    $msg->send();
+
+
+=head2 Output a message to a filehandle
+
+    ### Write it to a filehandle:
     $msg->print(\*STDOUT); 
      
-    # Write just the header:
+    ### Write just the header:
     $msg->print_header(\*STDOUT); 
      
-    # Write just the encoded body:
+    ### Write just the encoded body:
     $msg->print_body(\*STDOUT); 
 
 
-Get a message as a string:
+=head2 Get a message as a string
 
-    # Get entire message as a string:
+    ### Get entire message as a string:
     $str = $msg->as_string;
      
-    # Get just the header:
+    ### Get just the header:
     $str = $msg->header_as_string;
      
-    # Get just the encoded body:
+    ### Get just the encoded body:
     $str = $msg->body_as_string;
 
 
-Change how messages are sent:
+=head2 Change how messages are sent
 
-    # Do something like this in your 'main':
+    ### Do something like this in your 'main':
     if ($I_DONT_HAVE_SENDMAIL) {
        MIME::Lite->send('smtp', "smtp.myisp.net", Timeout=>60);
     }
      
-    # Now this will do the right thing:
-    $msg->send;         # will now use Net::SMTP as shown above
+    ### Now this will do the right thing:
+    $msg->send;         ### will now use Net::SMTP as shown above
 
 
 
@@ -147,7 +172,8 @@ use Carp;
 use FileHandle;
 
 use strict;
-use vars qw($VERSION $QUIET $PARANOID $VANILLA);
+use vars qw($VERSION $QUIET $PARANOID $VANILLA
+            $AUTO_ENCODE $AUTO_CC);
 
 
 
@@ -156,17 +182,23 @@ use vars qw($VERSION $QUIET $PARANOID $VANILLA);
 #
 # GLOBALS, EXTERNAL/CONFIGURATION...
 
-# The package version, both in 1.23 style *and* usable by MakeMaker:
-$VERSION = substr q$Revision: 1.135 $, 10;
+### The package version, both in 1.23 style *and* usable by MakeMaker:
+$VERSION = substr q$Revision: 1.137 $, 10;
 
-# Don't warn me about dangerous activities:
+### Don't warn me about dangerous activities:
 $QUIET = undef;
 
-# Set this true if you don't want to use MIME::Base64/MIME::QuotedPrint:
+### Set this true if you don't want to use MIME::Base64/MIME::QuotedPrint:
 $PARANOID = 0;
 
-# Unsupported (for tester use): don't qualify boundary with time/pid:
+### Unsupported (for tester use): don't qualify boundary with time/pid:
 $VANILLA = 0;
+
+### Automatically choose encoding from content type:
+$AUTO_ENCODE = 1;
+
+### Automatically interpret CC/BCC for SMTP:
+$AUTO_CC = 1;
 
 
 #==============================
@@ -174,7 +206,7 @@ $VANILLA = 0;
 #
 # GLOBALS, INTERNAL...
 
-# Our sending facilities:
+### Our sending facilities:
 my $Sender     = "sendmail";
 my %SenderArgs = (
     "sendmail" => ["/usr/lib/sendmail -t -oi -oem"],
@@ -182,11 +214,11 @@ my %SenderArgs = (
     "sub"      => [],
 );
 
-# Boundary counter:
+### Boundary counter:
 my $BCount = 0;
 
-# Known Mail/MIME fields... these, plus some general forms like 
-# "x-*", are recognized by build():
+### Known Mail/MIME fields... these, plus some general forms like 
+### "x-*", are recognized by build():
 my %KnownField = map {$_=>1} 
 qw(
    bcc         cc          comments      date          encrypted 
@@ -195,7 +227,7 @@ qw(
    subject     to
    );
 
-# What external packages do we use for encoding?
+### What external packages do we use for encoding?
 my @Uses;
 
 
@@ -310,6 +342,7 @@ else {
     eval q{
 sub encode_qp {
     my $res = shift;
+    local($_);
     $res =~ s/([^ \t\n!-<>-~])/sprintf("=%02X", ord($1))/eg;  # rule #2,#3
     $res =~ s/([ \t]+)$/
       join('', map { sprintf("=%02X", ord($_)) }
@@ -334,7 +367,7 @@ sub encode_qp {
 
 sub encode_8bit {
     my $str = shift;
-    $str =~ s/^.{990}/$&\n/mg;
+    $str =~ s/^(.{990})/$1\n/mg;
     $str;
 }
 
@@ -348,7 +381,7 @@ sub encode_8bit {
 sub encode_7bit {
     my $str = shift;
     $str =~ s/[\x80-\xFF]//eg; 
-    $str =~ s/^.{990}/$&\n/mg;
+    $str =~ s/^(.{990})/$1\n/mg;
     $str;
 }
 
@@ -519,23 +552,26 @@ The default is C<"inline">.
 =item Encoding
 
 I<Optional.>
-The content transfer encoding that should be used to encode your data.  
-The default is C<"binary">, which means "no encoding": this is generally
-I<not> suitable for sending anything but ASCII text files with short
-lines, so consider using one of the following values instead:
+The content transfer encoding that should be used to encode your data:
 
    Use encoding:     If your message contains:
    ------------------------------------------------------------
    7bit              Only 7-bit text, all lines <1000 characters
    8bit              8-bit text, all lines <1000 characters
    quoted-printable  8-bit text or long lines (MUCH more reliable than "8bit")
-   base64            Largely binary data: a GIF, a tar file, etc.
+   base64            Largely non-textual data: a GIF, a tar file, etc.
 
-Be sure to pick an appropriate encoding.  In the case of "7bit"/"8bit",
-long lines are automatically chopped to legal length; in the case of "7bit", 
-all 8-bit characters are automatically I<removed>.  This may not be
-what you want, so pick your encoding well!
-There's a L<"A MIME PRIMER"> in this document with more info.
+The default is taken from the Type; generally it is "binary" (no
+encoding) for text/*, message/*, and multipart/*, and "base64" for
+everything else.  A value of C<"binary"> is generally I<not> suitable
+for sending anything but ASCII text files with lines under 1000
+characters, so consider using one of the other values instead.
+
+In the case of "7bit"/"8bit", long lines are automatically chopped to
+legal length; in the case of "7bit", all 8-bit characters are
+automatically I<removed>.  This may not be what you want, so pick your
+encoding well!  There's a L<"A MIME PRIMER"> in this document with
+more info.
 
 =item FH
 
@@ -548,6 +584,10 @@ See "ReadNow" also.
 I<Optional.>
 The name of the attachment.  You can use this to supply a filename
 if the one in the Path is inadequate, or if you're using the Data argument.
+
+=item Id
+I<Optional.>
+Same as setting "content-id".
 
 =item Length
 
@@ -626,8 +666,7 @@ have been written:
     $msg->build(Type     => 'x-gzip',
                 Path     => "gzip < /usr/inc/somefile.tar |",
                 ReadNow  => 1,
-                Filename => "somefile.tgz");
-    
+                Filename => "somefile.tgz");    
     $msg->add(From    => "laughing@all.of.us");
     $msg->add(To      => "scarlett@fiddle.dee.de");
     $msg->add(Subject => "A gzipp'ed tar file");  
@@ -668,6 +707,11 @@ sub build {
     }
 
 
+    ### CONTENT-ID...
+    ###
+    $self->attr('content-id' => $params{Id}) if defined($params{Id});
+
+
     ### DATA OR PATH...
     ###    Note that we must do this *after* we get the content type, 
     ###    in case read_now() is invoked, since it needs the binmode().
@@ -702,7 +746,9 @@ sub build {
     ###
 
     # Get it:
-    my $enc = $params{Encoding} || 'binary';      # explicit value wins
+    my $enc = ($params{Encoding} ||  
+	       ($AUTO_ENCODE and $self->suggest_encoding($type)) ||
+	       'binary');      
     $self->attr('content-transfer-encoding' => lc($enc));
 	
     # Sanity check:
@@ -738,16 +784,16 @@ sub build {
 	my ($tag, $value) = (shift(@paramz), shift(@paramz));
 
 	# Get tag, if a tag:
-	if ($tag =~ /^\-/) {       # old style, backwards-compatibility
-	    $field = lc($');
+	if ($tag =~ /^-(.*)/) {      # old style, backwards-compatibility
+	    $field = lc($1);
 	}
-	elsif ($tag =~ /:$/) {     # new style
-	    $field = lc($`);
+	elsif ($tag =~ /^(.*):$/) {  # new style
+	    $field = lc($1);
 	}
 	elsif (known_field($field = lc($tag))) {   # known field
 	    # no-op
 	}
-	else {                     # not a field:
+	else {                       # not a field:
 	    next;
 	}
 	
@@ -1337,6 +1383,44 @@ sub sign {
     1;
 }
 
+#------------------------------
+#
+# =item suggest_encoding CONTENTTYPE
+#
+# I<Class/instance method.>
+# Based on the CONTENTTYPE, return a good suggested encoding.
+# C<text> and C<message> types have their bodies scanned line-by-line
+# for 8-bit characters and long lines; lack of either means that the
+# message is 7bit-ok.  Other types are chosen independent of their body:
+#
+#    Major type:       7bit ok?    Suggested encoding:
+#    ------------------------------------------------------------
+#    text              yes         7bit
+#                      no          quoted-printable    
+#                      unknown     binary
+#
+#    message           yes         7bit
+#                      no          binary    
+#                      unknown     binary
+#
+#    multipart         n/a         binary (in case some parts are not ok)
+#
+#    (other)           n/a         base64
+#
+#=cut
+
+sub suggest_encoding {
+    my ($self, $ctype) = @_;
+
+    my ($type) = split '/', lc($ctype);
+    if (($type eq 'text') || ($type eq 'message')) {    # scan message body
+	return 'binary';
+    }
+    else {
+	return ($type eq 'multipart') ? 'binary' : 'base64';
+    }
+}
+
 =back
 
 =cut
@@ -1445,8 +1529,8 @@ sub print_body {
 	      last DATA;
 	  };
 	  /^QUOTED-PRINTABLE$/ and do {
-	      while ($self->{Data}=~ m{^.*[\r\n]*}mg) {
-		  $out->print(encode_qp($&));   # have to do it line by line...
+	      while ($self->{Data}=~ m{^(.*[\r\n]*)}mg) {
+		  $out->print(encode_qp($1));   # have to do it line by line...
 	      }
 	      last DATA;	 
 	  };
@@ -1723,6 +1807,9 @@ The ARGS are sent into Net::SMTP::new(): usually, these are
 
     MAILHOST, OPTION=>VALUE, ...
 
+Note that the list of recipients is taken from the 
+"To", "Cc" and "Bcc" fields.
+
 Returns true on success, false or exception on error.
 
 =cut
@@ -1738,7 +1825,10 @@ sub send_by_smtp {
     my $hdr = $self->fields();   
     my $from = $self->get('From');
     my @to   = $self->get('To');
-
+    if ($AUTO_CC) {
+	push @to, $self->get('Cc'), $self->get('Bcc');
+    }
+		
     # Create SMTP client:
     require Net::SMTP;
     my $smtp = MIME::Lite::SMTP->new(@args)
@@ -1963,6 +2053,8 @@ to actually print the darn thing.
 
 =head1 WARNINGS
 
+=head2 MIME- and non-MIME header fields
+
 B<Important:> the MIME attributes are stored and manipulated separately 
 from the message header fields; when it comes time to print the 
 header out, I<any explicitly-given header fields override the ones that
@@ -1980,6 +2072,20 @@ you need.  And, like any escape hatch, it's got an alarm on it:
 MIME::Lite will warn you if you attempt to C<set()> or C<replace()>
 any MIME header field.  Use C<attr()> instead.
 
+=head2 Lines consisting of a single dot
+
+Julian Haight noted that MIME::Lite allows you to compose messages
+with lines in the body consisting of a single ".".  
+This is true: it should be completely harmless so long as "sendmail" 
+is used with the -oi option (see L<"Cheap and easy mailing">).
+
+However, I don't know if using Net::SMTP to transfer such a message
+is equally safe.  Feedback is welcomed.
+
+My perspective: I don't want to magically diddle with a user's 
+message unless absolutely positively necessary.  
+Some users may want to send files with "." alone on a line;
+my well-meaning tinkering could seriously harm them.
 
 
 =head1 A MIME PRIMER
@@ -2081,9 +2187,23 @@ non-ASCII characters (e.g., Latin-1, Latin-2, or any other 8-bit alphabet).
 =head1 CHANGE LOG
 
 B<Current version:>
-$Id: Lite.pm,v 1.135 1999/04/18 14:32:13 eryq Exp $
+$Id: Lite.pm,v 1.137 2000/03/22 07:21:02 eryq Exp $
 
 =over 4
+
+
+=item Version 1.137
+
+Per popular request, added support for "Cc" and "Bcc" in send_by_smtp().
+To turn this off, set $MIME::Lite::AUTO_CC to false.
+
+Chooses a better default content-transfer-encoding if the content-type
+is "image/*", "audio/*", etc.
+To tuern this off, set $MIME::Lite::AUTO_ENCODE to false.
+
+Fixed bug in QP-encoding where a non-local C<$_> was being modified.
+
+Removed references to C<$`>, C<$'>, and C<$&>.
 
 
 =item Version 1.133

@@ -1,0 +1,39 @@
+#!/usr/bin/perl
+use lib "lib";
+use MIME::Lite;
+
+(@ARGV == 2) or die "htmltest {your email} {path to GIF file}\n";
+my $email = shift @ARGV;
+my $gif = shift @ARGV;
+
+
+$msg = MIME::Lite->new(
+		       To      =>$email,
+		       From    =>$email,
+		       Subject =>'MIME::Lite: HTML with in-line images!',
+		       Type    =>'multipart/related'
+		       );
+
+$msg->attach(Type => 'text/html',
+	     Data => qq{ 
+		 <body>
+                     <img src="cid:myimage.gif"> 
+		     Here's <i>my</i> image! 
+                     <img src="cid:myimage2.gif"> 
+                 </body> 
+            });
+
+$msg->attach(Type => 'image/gif',
+             Id   => 'myimage.gif',
+             Path => $gif,
+            );
+
+$msg->attach(Type => 'image/gif',
+             Id   => 'myimage2.gif',
+             Path => $gif,
+            );
+
+$msg->send_by_smtp();
+
+
+

@@ -1,0 +1,7 @@
+MENU perldoc
+
+SECTION Modules
+
+ITEM MIME::Lite
+HREF MIME/Lite.pm.html
+
