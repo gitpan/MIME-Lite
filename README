@@ -74,16 +74,10 @@ DESCRIPTION
     this one.
 
 CHANGES
-  Version 1.116
+  Version 1.120
 
-    Small bug in our private copy of encode_base64() was patched. *Thanks to
-    Andreas Koenig for pointing this out.*
-
-    New, prettier way of specifying mail message headers in `build()'.
-
-    New quiet method to turn off warnings.
-
-    Changed "stringify" methods to more-standard "as_string" methods.
+    Efficiency hack to speed up MIME::Lite::IO_Scalar. *Thanks to David
+    Aspinwall for the patch.*
 
 AUTHOR
     Eryq, (who really should be wrapping holiday presents instead).

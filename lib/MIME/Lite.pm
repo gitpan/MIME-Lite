@@ -152,7 +152,7 @@ use vars qw($VERSION $QUIET);
 
 
 # The package version, both in 1.23 style *and* usable by MakeMaker:
-$VERSION = substr q$Revision: 1.119 $, 10;
+$VERSION = substr q$Revision: 1.120 $, 10;
 
 # Don't warn me about dangerous activities:
 $QUIET = undef;
@@ -512,8 +512,8 @@ lines, so consider using one of the following values instead:
 
 Be sure to pick an appropriate encoding.  In the case of "7bit"/"8bit",
 long lines are automatically chopped to legal length; in the case of "7bit", 
-all 8-bit characters are automatically removed.  
-There's also L<"A MIME PRIMER"> in this document with more info.
+all 8-bit characters are automatically converted to ugly QP-like C<"=XX">
+sequences.  There's a L<"A MIME PRIMER"> in this document with more info.
 
 =item Filename
 
@@ -1608,6 +1608,7 @@ sub wrap {
 sub print {
     my $self = shift;
     $$self .= join('', @_);
+    1;
 }
 
 
@@ -1794,9 +1795,15 @@ non-ASCII characters (e.g., Latin-1, Latin-2, or any other 8-bit alphabet).
 =head1 CHANGE LOG
 
 B<Current version:>
-$Id: Lite.pm,v 1.119 1997/03/20 04:29:35 eryq Exp $
+$Id: Lite.pm,v 1.120 1997/03/29 04:51:42 eryq Exp $
 
 =over 4
+
+=item Version 1.120
+
+Efficiency hack to speed up MIME::Lite::IO_Scalar.
+I<Thanks to David Aspinwall for the patch.>
+
 
 =item Version 1.116
 
