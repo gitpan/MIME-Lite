@@ -342,7 +342,7 @@ use vars qw(
 # GLOBALS, EXTERNAL/CONFIGURATION...
 
 ### The package version, both in 1.23 style *and* usable by MakeMaker:
-$VERSION = substr q$Revision: 2.115 $, 10;
+$VERSION = substr q$Revision: 2.116 $, 10;
 
 ### Automatically interpret CC/BCC for SMTP:
 $AUTO_CC = 1;
@@ -2376,18 +2376,35 @@ I<Class/instance method.>
 This is the principal method for sending mail, and for configuring
 how mail will be sent.
 
-I<As an instance method> (with no arguments), sends the message by whatever 
-means has been set up (the default is to use the Unix "sendmail" program).
+I<As a class method> with a HOW argument and optional HOWARGS, it sets 
+the default sending mechanism that the no-argument instance method 
+will use.  The HOW is a facility name (B<see below>), 
+and the HOWARGS is interpreted by the facilty.  
+The class method returns the previous HOW and HOWARGS as an array.
+
+    MIME::Lite->send('sendmail', "d:\\programs\\sendmail.exe");
+    ...
+    $msg = MIME::Lite->new(...);
+    $msg->send;
+
+I<As an instance method with arguments> 
+(a HOW argument and optional HOWARGS), sends the message in the 
+requested manner; e.g.:
+
+    $msg->send('sendmail', "d:\\programs\\sendmail.exe");
+
+I<As an instance method with no arguments,> sends the message by 
+the default mechanism set up by the class method.
 Returns whatever the mail-handling routine returns: this should be true 
 on success, false/exception on error:
 
     $msg = MIME::Lite->new(From=>...);
     $msg->send || die "you DON'T have mail!";
 
-I<As a class method> (with a HOW argument and optional HOWARGS), sets up 
-how the instance method will work for all objects until further notice
-It treats HOW as a facility name, with optional HOWARGS handled by
-the facility (and returns the previous HOW and HOWARGS as an array).
+On Unix systems (at least), the default setting is equivalent to:
+
+    MIME::Lite->send("sendmail", "/usr/lib/sendmail -t -oi -oem");
+
 There are three facilities:
 
 =over 4
@@ -2431,16 +2448,28 @@ sub send {
     my $self = shift;
 
     if (ref($self)) {              ### instance method:
-	my $method = "send_by_$Sender";
-	my @args   = @{$SenderArgs{$Sender} || []};
-	$self->verify_data if $AUTO_VERIFY;       ### prevents missing parts!
+	my ($method, @args); 
+	if (@_) {                            ### args; use them just this once
+	    $method = 'send_by_' . shift;
+	    @args   = @_;    
+	}
+	else {                               ### no args; use defaults
+	    $method = "send_by_$Sender";
+	    @args   = @{$SenderArgs{$Sender} || []};	    
+	}
+	$self->verify_data if $AUTO_VERIFY;  ### prevents missing parts!
 	return $self->$method(@args);
     }
     else {                         ### class method:
-	my @old = ($Sender, @{$SenderArgs{$Sender}});
-	$Sender = shift;
-	$SenderArgs{$Sender} = [@_];    ### remaining args
-	return @old;
+	if (@_) {
+	    my @old = ($Sender, @{$SenderArgs{$Sender}});
+	    $Sender = shift;
+	    $SenderArgs{$Sender} = [@_];    ### remaining args
+	    return @old;
+	}
+	else {
+	  Carp::croak "class method send must have HOW... arguments\n";
+	}
     }
 }
 
@@ -3134,12 +3163,18 @@ non-ASCII characters (e.g., Latin-1, Latin-2, or any other 8-bit alphabet).
 
 =head1 VERSION
 
-$Id: Lite.pm,v 2.115 2001/08/16 07:06:37 eryq Exp $
+$Id: Lite.pm,v 2.116 2001/08/17 14:25:01 eryq Exp $
 
 
 =head1 CHANGE LOG
 
 =over 4
+
+=item Version 2.116   (2001/08/17)
+
+Added long-overdue patch which makes the instance method form
+of send() do the right thing when given HOW... arguments.
+I<Thanks to Casey West for the patch.>
 
 =item Version 2.114   (2001/08/16)
 
@@ -3498,6 +3533,8 @@ President, ZeeGee Software Inc. (F<http://www.zeegee.com>).
 
 Go to F<http://www.zeegee.com> for the latest downloads
 and on-line documentation for this module.
+
+Enjoy.
 
 =cut
 

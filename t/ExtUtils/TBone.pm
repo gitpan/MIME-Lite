@@ -88,7 +88,7 @@ use FileHandle;
 use File::Basename;
 
 # The package version, both in 1.23 style *and* usable by MakeMaker:
-$VERSION = substr q$Revision: 1.118 $, 10;
+$VERSION = substr q$Revision: 1.121 $, 10;
 
 
 
@@ -494,31 +494,39 @@ sub catfile {
 =back
 
 
-=head1 CHANGE LOG
+=head1 VERSION
 
-B<Current version:>
-$Id: TBone.pm,v 1.118 2001/08/07 04:23:19 eryq Exp $
+$Id: TBone.pm,v 1.121 2001/08/17 01:56:59 eryq Exp $
+
+
+=head1 CHANGE LOG
 
 =over 4
 
-=item Version 1.116
+=item Version 1.120   (2001/08/17)
+
+Added log_warnings() to support the logging of SIG{__WARN__}
+messages to the log file (if any).
+
+
+=item Version 1.116   (2000/03/23)
 
 Cosmetic improvements only.
 
 
-=item Version 1.112
+=item Version 1.112   (1999/05/12)
 
 Added lightweight catdir() and catfile() (a la File::Spec)
 to enhance portability to Mac environment.
 
 
-=item Version 1.111
+=item Version 1.111   (1999/04/18)
 
 Now uses File::Basename to create "typical" logfile name,
 for portability.
 
 
-=item Version 1.110
+=item Version 1.110   (1999/04/17)
 
 Fixed bug in constructor that surfaced if no log was being used. 
 

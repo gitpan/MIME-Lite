@@ -790,19 +790,35 @@ PUBLIC INTERFACE
         *Class/instance method.* This is the principal method for sending
         mail, and for configuring how mail will be sent.
 
-        *As an instance method* (with no arguments), sends the message by
-        whatever means has been set up (the default is to use the Unix
-        "sendmail" program). Returns whatever the mail-handling routine
-        returns: this should be true on success, false/exception on error:
+        *As a class method* with a HOW argument and optional HOWARGS, it
+        sets the default sending mechanism that the no-argument instance
+        method will use. The HOW is a facility name (see below), and the
+        HOWARGS is interpreted by the facilty. The class method returns the
+        previous HOW and HOWARGS as an array.
+
+            MIME::Lite->send('sendmail', "d:\\programs\\sendmail.exe");
+            ...
+            $msg = MIME::Lite->new(...);
+            $msg->send;
+
+        *As an instance method with arguments* (a HOW argument and optional
+        HOWARGS), sends the message in the requested manner; e.g.:
+
+            $msg->send('sendmail', "d:\\programs\\sendmail.exe");
+
+        *As an instance method with no arguments,* sends the message by the
+        default mechanism set up by the class method. Returns whatever the
+        mail-handling routine returns: this should be true on success,
+        false/exception on error:
 
             $msg = MIME::Lite->new(From=>...);
             $msg->send || die "you DON'T have mail!";
 
-        *As a class method* (with a HOW argument and optional HOWARGS), sets
-        up how the instance method will work for all objects until further
-        notice It treats HOW as a facility name, with optional HOWARGS
-        handled by the facility (and returns the previous HOW and HOWARGS as
-        an array). There are three facilities:
+        On Unix systems (at least), the default setting is equivalent to:
+
+            MIME::Lite->send("sendmail", "/usr/lib/sendmail -t -oi -oem");
+
+        There are three facilities:
 
     "sendmail", ARGS...
             Send a message by piping it into the "sendmail" command. Uses
@@ -1193,9 +1209,14 @@ A MIME PRIMER
         8-bit alphabet).
 
 VERSION
-    $Id: Lite.pm,v 2.115 2001/08/16 07:06:37 eryq Exp $
+    $Id: Lite.pm,v 2.116 2001/08/17 14:25:01 eryq Exp $
 
 CHANGE LOG
+    Version 2.116   (2001/08/17)
+        Added long-overdue patch which makes the instance method form of
+        send() do the right thing when given HOW... arguments. *Thanks to
+        Casey West for the patch.*
+
     Version 2.114   (2001/08/16)
         New special 'AUTO' content type in new()/build() tells MIME::Lite to
         try and guess the type from file extension. To make use of this,
@@ -1492,4 +1513,6 @@ AUTHOR
 
     Go to http://www.zeegee.com for the latest downloads and on-line
     documentation for this module.
+
+    Enjoy.
 
