@@ -157,7 +157,7 @@ use vars qw($VERSION $QUIET $PARANOID $VANILLA);
 # GLOBALS, EXTERNAL/CONFIGURATION...
 
 # The package version, both in 1.23 style *and* usable by MakeMaker:
-$VERSION = substr q$Revision: 1.130 $, 10;
+$VERSION = substr q$Revision: 1.132 $, 10;
 
 # Don't warn me about dangerous activities:
 $QUIET = undef;
@@ -1164,7 +1164,7 @@ to be recomputed (possibly to nothing).
 sub data {
     my $self = shift;
     if (@_) {
-	$self->{Data} = (ref($_[0] eq 'ARRAY') ? join('', @{$_[0]}) : $_[0]);
+	$self->{Data} = ((ref($_[0]) eq 'ARRAY') ? join('', @{$_[0]}) : $_[0]);
 	$self->get_length;
     }
     $self->{Data};
@@ -2081,7 +2081,7 @@ non-ASCII characters (e.g., Latin-1, Latin-2, or any other 8-bit alphabet).
 =head1 CHANGE LOG
 
 B<Current version:>
-$Id: Lite.pm,v 1.130 1998/12/14 04:27:41 eryq Exp eryq $
+$Id: Lite.pm,v 1.132 1999/02/17 04:29:19 eryq Exp $
 
 =over 4
 

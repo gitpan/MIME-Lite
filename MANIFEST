@@ -16,6 +16,8 @@ examples/smtptest
 lib/MIME/Lite.pm
 t/ExtUtils/TBone.pm
 t/Utils.pm
+t/data.t
 t/head.t
 testin/README
+testin/hello
 testout/README

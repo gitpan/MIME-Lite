@@ -750,8 +750,7 @@ A MIME PRIMER
         8-bit alphabet).
 
 CHANGE LOG
-    Current version: $Id: Lite.pm,v 1.130 1998/12/14 04:27:41 eryq Exp eryq
-    $
+    Current version: $Id: Lite.pm,v 1.132 1999/02/17 04:29:19 eryq Exp $
 
     Version 1.130
         Added much larger and more-flexible send() facility. *Thanks to
