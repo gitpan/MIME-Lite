@@ -256,10 +256,18 @@ methods/options:
 
 =over 4
 
+
+=item MIME::Lite->header_order()
+
+When used as a L<classmethod|/send>, this changes the default 
+order in which headers are output for I<all> messages.
+
+
 =item MIME::Lite->quiet()
 
 This L<classmethod|/quiet> can be used to suppress/unsuppress 
 all warnings coming from this module.
+
 
 =item MIME::Lite->send()
 
@@ -284,15 +292,18 @@ If true, we won't attempt to use MIME::Base64/MIME::QuotedPrint, even
 if they're available.
 Default is B<false>.
 
+
 =item $MIME::Lite::AUTO_ENCODE
 
 If true, automatically choose the encoding from the content type.
 Default is B<true>.
 
+
 =item $MIME::Lite::AUTO_CC
 
 If true, automatically send to the Cc/Bcc addresses for send_by_smtp().
 Default is B<true>.
+
 
 =item $MIME::Lite::AUTO_VERIFY
 
@@ -328,7 +339,7 @@ use vars qw(
 # GLOBALS, EXTERNAL/CONFIGURATION...
 
 ### The package version, both in 1.23 style *and* usable by MakeMaker:
-$VERSION = substr q$Revision: 2.107 $, 10;
+$VERSION = substr q$Revision: 2.108 $, 10;
 
 ### Don't warn me about dangerous activities:
 $QUIET = undef;
@@ -354,10 +365,15 @@ $AUTO_VERIFY = 1;
 #
 # GLOBALS, INTERNAL...
 
+### Find sendmail:
+my $SENDMAIL =                 "/usr/lib/sendmail";
+(-x $SENDMAIL) or ($SENDMAIL = "/usr/sbin/sendmail");
+(-x $SENDMAIL) or ($SENDMAIL = "sendmail");
+
 ### Our sending facilities:
 my $Sender     = "sendmail";
 my %SenderArgs = (
-    "sendmail" => ["/usr/lib/sendmail -t -oi -oem"],
+    "sendmail" => ["$SENDMAIL -t -oi -oem"],
     "smtp"     => [],
     "sub"      => [],
 );
@@ -380,6 +396,8 @@ qw(
 ### What external packages do we use for encoding?
 my @Uses;
 
+### Header order:
+my @FieldOrder;
 
 
 #==============================
@@ -1075,6 +1093,7 @@ sub top_level {
 
 =item add TAG,VALUE
 
+I<Instance method.>
 Add field TAG with the given VALUE to the end of the header. 
 The TAG will be converted to all-lowercase, and the VALUE 
 will be made "safe" (returns will be given a trailing space).
@@ -1131,6 +1150,7 @@ sub add {
 
 =item attr ATTR,[VALUE]
 
+I<Instance method.>
 Set MIME attribute ATTR to the string VALUE.  
 ATTR is converted to all-lowercase.
 This method is normally used to set/get MIME attributes:
@@ -1188,6 +1208,7 @@ sub _safe_attr {
 
 =item delete TAG
 
+I<Instance method.>
 Delete field TAG with the given VALUE to the end of the header.  
 The TAG will be converted to all-lowercase.
 
@@ -1211,10 +1232,37 @@ sub delete {
     $self;
 }
 
+
+#------------------------------
+
+=item field_order FIELD,...FIELD
+
+I<Class/instance method.>  
+Change the order in which header fields are output for this object:
+
+    $msg->field_order('from', 'to', 'content-type', 'subject');
+
+When used as a class method, changes the default settings for
+all objects:
+
+    MIME::Lite->field_order('from', 'to', 'content-type', 'subject');
+
+Case does not matter: all field names will be coerced to lowercase.
+In either case, supply the empty array to restore the default ordering.
+
+=cut
+
+sub field_order {
+    my $self = shift;
+    if (ref($self)) { $self->{FieldOrder} = [ map { lc($_) } @_ ] }
+    else            { @FieldOrder         =   map { lc($_) } @_ }
+}
+
 #------------------------------
 
 =item fields
 
+I<Instance method.>
 Return the full header for the object, as a ref to an array
 of C<[TAG, VALUE]> pairs, where each TAG is all-lowercase.  
 Note that any fields the user has explicitly set will override the 
@@ -1229,6 +1277,10 @@ MIME field that we would normally generate.
 I<Note:> I called this "fields" because the header() method of
 Mail::Header returns something different, but similar enough to 
 be confusing.
+
+You can change the order of the fields: see L</header_order>. 
+You really shouldn't need to do this, but some people have to
+deal with broken mailers.
 
 =cut
 
@@ -1267,14 +1319,47 @@ sub fields {
 	push @fields, [@{$_}];
     }
 
+    ### Final step: 
+    ### If a suggested ordering was given, we "sort" by that ordering.
+    ###    The idea is that we give each field a numeric rank, which is
+    ###    (1000 * order(field)) + origposition.
+    my @order = @{$self->{FieldOrder} || []};      ### object-specific
+    @order or @order = @FieldOrder;                ### no? maybe generic
+    if (@order) {                                  ### either?
+
+	### Create hash mapping field names to 1-based rank:
+	my %rank = map {$order[$_] => (1+$_)} (0..$#order);
+	
+	### Create parallel array to @fields, called @ranked.
+	### It contains fields tagged with numbers like 2003, where the 
+	### 3 is the original 0-based position, and 2000 indicates that 
+	### we wanted ths type of field to go second.
+	my @ranked = map {
+	    [
+	     ($_ + 1000*($rank{lc($fields[$_][0])} || (2+$#order))),
+	     $fields[$_]
+	     ]
+	    } (0..$#fields);  
+	# foreach (@ranked) { 
+	#     print STDERR "RANKED: $_->[0] $_->[1][0] $_->[1][1]\n";
+	# }
+
+	### That was half the Schwartzian transform.  Here's the rest:
+	@fields = map { $_->[1] } 
+	          sort { $a->[0] <=> $b->[0] } 
+	          @ranked;
+    }
+
     ### Done!
     return \@fields;
 }
+
 
 #------------------------------
 
 =item filename [FILENAME]
 
+I<Instance method.>
 Set the filename which this data will be reported as.
 This actually sets both "standard" attributes.
 
@@ -1296,6 +1381,7 @@ sub filename {
 
 =item get TAG,[INDEX]
 
+I<Instance method.>
 Get the contents of field TAG, which might have been set 
 with set() or replace().  Returns the text of the field.
 
@@ -1324,6 +1410,7 @@ sub get {
 
 =item get_length
 
+I<Instance method.>
 Recompute the content length for the message I<if the process is trivial>, 
 setting the "content-length" attribute as a side-effect:
 
@@ -1381,6 +1468,7 @@ sub get_length {
 
 =item replace TAG,VALUE
 
+I<Instance method.>
 Delete all occurences of fields named TAG, and add a new
 field with the given VALUE.  TAG is converted to all-lowercase.
 
@@ -1416,6 +1504,7 @@ sub replace {
 
 =item scrub
 
+I<Instance method.>
 B<This is Alpha code.  If you use it, please let me know how it goes.>
 Recursively goes through the "parts" tree of this message and tries 
 to find MIME attributes that can be removed. 
@@ -1490,6 +1579,7 @@ sub scrub {
 
 =item binmode [OVERRIDE]
 
+I<Instance method.>
 With no argument, returns whether or not it thinks that the data 
 (as given by the "Path" argument of C<build()>) should be read using 
 binmode() (for example, when C<read_now()> is invoked).
@@ -1515,6 +1605,7 @@ sub binmode {
 
 =item data [DATA]
 
+I<Instance method.>
 Get/set the literal DATA of the message.  The DATA may be
 either a scalar, or a reference to an array of scalars (which
 will simply be joined).    
@@ -2815,12 +2906,22 @@ non-ASCII characters (e.g., Latin-1, Latin-2, or any other 8-bit alphabet).
 
 =head1 VERSION
 
-$Id: Lite.pm,v 2.107 2001/03/28 05:22:46 eryq Exp $
+$Id: Lite.pm,v 2.108 2001/03/30 06:16:54 eryq Exp $
 
 
 =head1 CHANGE LOG
 
 =over 4
+
+
+=item Version 2.108
+
+New C<field_order()> allows you to set the header order, both on a 
+per-message basis, and package-wide.
+I<Thanks to Thomas Stromberg for suggesting this.>
+
+Added code to try and divine "sendmail" path more intelligently.
+I<Thanks to Slaven Rezic for the suggestion.>
 
 
 =item Version 2.107   (2001/03/27)
@@ -2829,6 +2930,7 @@ Fixed serious bug where tainted data with quoted-printable encoding
 was causing infinite loops.  The "fix" untaints the data in question,
 which is not optimal, but it's probably benign in this case.
 I<Thanks to Stefan Sautter for tracking this nasty little beast down.>
+I<Thanks to Larry Geralds for a related patch.>
 
     "Doctor, O doctor:
        it's painful when I do *this* --" 

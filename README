@@ -218,6 +218,10 @@ PUBLIC INTERFACE
     To alter the way the entire module behaves, you have the following
     methods/options:
 
+    MIME::Lite->header_order()
+        When used as a classmethod, this changes the default order in which
+        headers are output for *all* messages.
+
     MIME::Lite->quiet()
         This classmethod can be used to suppress/unsuppress all warnings
         coming from this module.
@@ -445,9 +449,9 @@ PUBLIC INTERFACE
   Setting/getting headers and attributes
 
     add TAG,VALUE
-        Add field TAG with the given VALUE to the end of the header. The TAG
-        will be converted to all-lowercase, and the VALUE will be made
-        "safe" (returns will be given a trailing space).
+        *Instance method.* Add field TAG with the given VALUE to the end of
+        the header. The TAG will be converted to all-lowercase, and the
+        VALUE will be made "safe" (returns will be given a trailing space).
 
         Beware: any MIME fields you "add" will override any MIME attributes
         I have when it comes time to output those fields. Normally, you will
@@ -475,9 +479,9 @@ PUBLIC INTERFACE
         *Note:* the name comes from Mail::Header.
 
     attr ATTR,[VALUE]
-        Set MIME attribute ATTR to the string VALUE. ATTR is converted to
-        all-lowercase. This method is normally used to set/get MIME
-        attributes:
+        *Instance method.* Set MIME attribute ATTR to the string VALUE. ATTR
+        is converted to all-lowercase. This method is normally used to
+        set/get MIME attributes:
 
             $msg->attr("content-type"         => "text/html");
             $msg->attr("content-type.charset" => "US-ASCII");
@@ -499,18 +503,34 @@ PUBLIC INTERFACE
             $name = $msg->attr("content-type.name");   ### returns "homepage.html"
 
     delete TAG
-        Delete field TAG with the given VALUE to the end of the header. The
-        TAG will be converted to all-lowercase.
+        *Instance method.* Delete field TAG with the given VALUE to the end
+        of the header. The TAG will be converted to all-lowercase.
 
             $msg->delete("Subject");
 
         *Note:* the name comes from Mail::Header.
 
+    field_order FIELD,...FIELD
+        *Class/instance method.* Change the order in which header fields are
+        output for this object:
+
+            $msg->field_order('from', 'to', 'content-type', 'subject');
+
+        When used as a class method, changes the default settings for all
+        objects:
+
+            MIME::Lite->field_order('from', 'to', 'content-type', 'subject');
+
+        Case does not matter: all field names will be coerced to lowercase.
+        In either case, supply the empty array to restore the default
+        ordering.
+
     fields
-        Return the full header for the object, as a ref to an array of
-        `[TAG, VALUE]' pairs, where each TAG is all-lowercase. Note that any
-        fields the user has explicitly set will override the corresponding
-        MIME fields that we would otherwise generate. So, don't say...
+        *Instance method.* Return the full header for the object, as a ref
+        to an array of `[TAG, VALUE]' pairs, where each TAG is all-
+        lowercase. Note that any fields the user has explicitly set will
+        override the corresponding MIME fields that we would otherwise
+        generate. So, don't say...
 
             $msg->set("Content-type" => "text/html; charset=US-ASCII");
 
@@ -521,16 +541,20 @@ PUBLIC INTERFACE
         Mail::Header returns something different, but similar enough to be
         confusing.
 
+        You can change the order of the fields: see the header_order entry
+        elsewhere in this document . You really shouldn't need to do this,
+        but some people have to deal with broken mailers.
+
     filename [FILENAME]
-        Set the filename which this data will be reported as. This actually
-        sets both "standard" attributes.
+        *Instance method.* Set the filename which this data will be reported
+        as. This actually sets both "standard" attributes.
 
         With no argument, returns the filename as dictated by the content-
         disposition.
 
     get TAG,[INDEX]
-        Get the contents of field TAG, which might have been set with set()
-        or replace(). Returns the text of the field.
+        *Instance method.* Get the contents of field TAG, which might have
+        been set with set() or replace(). Returns the text of the field.
 
             $ml->get('Subject', 0);
 
@@ -543,8 +567,9 @@ PUBLIC INTERFACE
         with MIME fields is TBD, and will raise an exception for now.
 
     get_length
-        Recompute the content length for the message *if the process is
-        trivial*, setting the "content-length" attribute as a side-effect:
+        *Instance method.* Recompute the content length for the message *if
+        the process is trivial*, setting the "content-length" attribute as a
+        side-effect:
 
             $msg->get_length;
 
@@ -565,8 +590,9 @@ PUBLIC INTERFACE
         seems pretty fair.
 
     replace TAG,VALUE
-        Delete all occurences of fields named TAG, and add a new field with
-        the given VALUE. TAG is converted to all-lowercase.
+        *Instance method.* Delete all occurences of fields named TAG, and
+        add a new field with the given VALUE. TAG is converted to all-
+        lowercase.
 
         Beware the special MIME fields (MIME-version, Content-*): if you
         "replace" a MIME field, the replacement text will override the
@@ -588,10 +614,10 @@ PUBLIC INTERFACE
         *Note:* the name of this method comes from Mail::Header.
 
     scrub
-        This is Alpha code. If you use it, please let me know how it goes.
-        Recursively goes through the "parts" tree of this message and tries
-        to find MIME attributes that can be removed. With an array argument,
-        removes exactly those attributes; e.g.:
+        *Instance method.* This is Alpha code. If you use it, please let me
+        know how it goes. Recursively goes through the "parts" tree of this
+        message and tries to find MIME attributes that can be removed. With
+        an array argument, removes exactly those attributes; e.g.:
 
             $msg->scrub(['content-disposition', 'content-length']);
 
@@ -603,9 +629,10 @@ PUBLIC INTERFACE
   Setting/getting message data
 
     binmode [OVERRIDE]
-        With no argument, returns whether or not it thinks that the data (as
-        given by the "Path" argument of `build()') should be read using
-        binmode() (for example, when `read_now()' is invoked).
+        *Instance method.* With no argument, returns whether or not it
+        thinks that the data (as given by the "Path" argument of `build()')
+        should be read using binmode() (for example, when `read_now()' is
+        invoked).
 
         The default behavior is that any content type other than `text/*' or
         `message/*' is binmode'd; this should in general work fine.
@@ -615,9 +642,9 @@ PUBLIC INTERFACE
         value is returned.
 
     data [DATA]
-        Get/set the literal DATA of the message. The DATA may be either a
-        scalar, or a reference to an array of scalars (which will simply be
-        joined).
+        *Instance method.* Get/set the literal DATA of the message. The DATA
+        may be either a scalar, or a reference to an array of scalars (which
+        will simply be joined).
 
         *Warning:* setting the data causes the "content-length" attribute to
         be recomputed (possibly to nothing).
@@ -1070,14 +1097,23 @@ A MIME PRIMER
         8-bit alphabet).
 
 VERSION
-    $Id: Lite.pm,v 2.107 2001/03/28 05:22:46 eryq Exp $
+    $Id: Lite.pm,v 2.108 2001/03/30 06:16:54 eryq Exp $
 
 CHANGE LOG
+    Version 2.108
+        New `field_order()' allows you to set the header order, both on a
+        per-message basis, and package-wide. *Thanks to Thomas Stromberg for
+        suggesting this.*
+
+        Added code to try and divine "sendmail" path more intelligently.
+        *Thanks to Slaven Rezic for the suggestion.*
+
     Version 2.107   (2001/03/27)
         Fixed serious bug where tainted data with quoted-printable encoding
         was causing infinite loops. The "fix" untaints the data in question,
         which is not optimal, but it's probably benign in this case. *Thanks
         to Stefan Sautter for tracking this nasty little beast down.*
+        *Thanks to Larry Geralds for a related patch.*
 
             "Doctor, O doctor:
                it's painful when I do *this* --" 
