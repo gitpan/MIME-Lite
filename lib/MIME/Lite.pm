@@ -57,7 +57,6 @@ Output a message:
     $msg->print(\*SENDMAIL);
 
 
-
 =head1 DESCRIPTION
 
 In the never-ending quest for great taste with fewer calories,
@@ -141,18 +140,17 @@ use Carp;
 use FileHandle;
 
 use strict;
-use vars qw($VERSION $QUIET $PARANOID);
+use vars qw($VERSION $QUIET $PARANOID $VANILLA);
 
 
 
 #==============================
 #==============================
 #
-# GLOBALS...
-
+# GLOBALS, EXTERNAL/CONFIGURATION...
 
 # The package version, both in 1.23 style *and* usable by MakeMaker:
-$VERSION = substr q$Revision: 1.123 $, 10;
+$VERSION = substr q$Revision: 1.126 $, 10;
 
 # Don't warn me about dangerous activities:
 $QUIET = undef;
@@ -160,13 +158,20 @@ $QUIET = undef;
 # Set this true if you don't want to use MIME::Base64/MIME::QuotedPrint:
 $PARANOID = 0;
 
+# Unsupported (for tester use): don't qualify boundary with time/pid:
+$VANILLA = 0;
 
+
+#==============================
+#==============================
+#
+# GLOBALS, INTERNAL...
+
+# Our sendmail command:
+my $SendmailCmd = "/usr/lib/sendmail -t -oi -oem";
 
 # Boundary counter:
 my $BCount = 0;
-
-# Our sendmail command:
-my $SENDMAIL = "/usr/lib/sendmail -t -oi -oem";
 
 # Known Mail/MIME fields... these, plus some general forms like 
 # "x-*", are recognized by build():
@@ -206,9 +211,10 @@ sub fold {
 # gen_boundary
 #
 # Generate a new boundary to use.
+# The unsupported $VANILLA is for test purposes only.
 
 sub gen_boundary {
-    return ("_----------=_".int(time).$$.$BCount++);
+    return ("_----------=_".($VANILLA ? '' : int(time).$$).$BCount++);
 }
 
 #------------------------------------------------------------
@@ -334,27 +340,6 @@ sub encode_7bit {
     $str;
 }
 
-
-
-#==============================
-#==============================
-#
-# PRIVATE UTILITY METHODS...
-
-#------------------------------------------------------------
-#
-# _slurp_data
-#
-# Slurp in the contents of the Path, into Data.
-
-sub _slurp_data {
-    my $self = shift;
-    
-
-}
-
-
-
 #==============================
 #==============================
 
@@ -448,7 +433,7 @@ sub attach {
 	my $part0 = ref($self)->new;
 
 	# Cut MIME stuff from self, and paste into part zero: 
-	foreach (qw(Attrs Data Path)) {
+	foreach (qw(Attrs Data Path FH)) {
 	    $part0->{$_} = $self->{$_}; delete($self->{$_});
 	}
 	$part0->top_level(0);    # clear top-level attributes
@@ -475,7 +460,13 @@ sub attach {
 
 I<Class/instance method, initiallizer.>
 Create (or initiallize) a MIME message object.  
-PARAMHASH can contain the following keys:
+Normally, you'll use the following keys in PARAMHASH:
+
+   * Data, FH, or Path      (either one of these, or none if multipart)
+   * Type                   (e.g., "image/jpeg")
+   * From, To, and Subject  (if this is the "top level" of a message)
+
+The PARAMHASH can contain the following keys:
 
 =over 4
 
@@ -502,7 +493,7 @@ field (and it sort of looks like one too).
 
 =item Data
 
-I<Alternative to "Path".>
+I<Alternative to "Path" or "FH".>
 The actual message data.  This may be a scalar or a ref to an array of
 strings; if the latter, the message consists of a simple concatenation 
 of all the strings in the array.
@@ -534,6 +525,12 @@ all 8-bit characters are automatically I<removed>.  This may not be
 what you want, so pick your encoding well!
 There's a L<"A MIME PRIMER"> in this document with more info.
 
+=item FH
+
+I<Alternative to "Data" or "Path".>
+Filehandle containing the data, opened for reading.
+See "ReadNow" also.
+
 =item Filename
 
 I<Optional.>
@@ -548,10 +545,10 @@ computed, but only under certain circumstances (see L<"Limitations">).
 
 =item Path
 
-I<Alternative to "Data".>
+I<Alternative to "Data" or "FH".>
 Path to a file containing the data... actually, it can be any open()able
 expression.  If it looks like a path, the last element will automatically 
-be treated as the filename.  Ignored if "Data" is present.
+be treated as the filename. 
 See "ReadNow" also.
 
 =item ReadNow
@@ -631,14 +628,12 @@ sub build {
     my @params = @_;
     my $key;
 
-
-    # Sanity:
-    (!$params{Data} or !$params{Path}) 
-	or croak "supply either Data or Path, but not both!\n";
+    # miko note: reorganized to check for exactly one of Data, Path, or FH
+    (defined($params{Data})+defined($params{Path})+defined($params{FH}) <= 1)
+	or croak "supply exactly zero or one of (Data|Path|FH).\n";
 
     # Create new instance, if necessary:
     ref($self) or $self = $self->new;
-
 
 
     ### CONTENT-TYPE....
@@ -665,13 +660,21 @@ sub build {
     ###    Note that we must do this *after* we get the content type, 
     ###    in case read_now() is invoked, since it needs the binmode().
 
-    # Get data or path:
-    if (defined($params{Data})) {     # Literal data...	
+    # Get data, as...
+    # ...either literal data:
+    if (defined($params{Data})) {
 	$self->data($params{Data});
     }
-    elsif (defined($params{Path})) {  # A path to data...
+    # ...or a path to data:
+    elsif (defined($params{Path})) {
 	$self->path($params{Path});       # also sets filename
 	$self->read_now if $params{ReadNow};
+    }
+    # ...or a filehandle to data:
+    # miko note: this part works much like the path routine just above,
+    elsif (defined($params{FH})) {
+	$self->fh($params{FH});
+	$self->read_now if $params{ReadNow};  # implement later
     }
     
 
@@ -696,14 +699,11 @@ sub build {
 	    croak "illegal MIME: can't have encoding $enc with type $type!";
     }
 
-
     ### CONTENT-DISPOSITION...
     ###    Default is inline for single, none for multis:
     ###
     my $disp = ($params{Disposition} or ($is_multipart ? undef : 'inline'));
     $self->attr('content-disposition' => $disp);
-
-
 
     ### CONTENT-LENGTH...
     ###
@@ -773,7 +773,8 @@ sub top_level {
     if ($onoff) {
 	$self->attr('MIME-Version' => '1.0');
 	my $uses = (@Uses ? ("(" . join("; ", @Uses) . ")") : '');
-	$self->replace('X-Mailer' => "MIME::Lite $VERSION $uses");
+	$self->replace('X-Mailer' => "MIME::Lite $VERSION $uses")
+	    unless $VANILLA;
     }
     else {
 	$self->attr('MIME-Version' => undef);
@@ -1010,6 +1011,16 @@ it's not in the MIME RFCs, it's an HTTP thing), this seems pretty fair.
 
 =cut
 
+#----
+# miko note: I wasn't quite sure how to handle this, so I waited to hear 
+# what you think.  Given that the content-length isn't always required, 
+# and given the performance cost of calculating it from a file handle,
+# I thought it might make more sense to add some some sort of computelength 
+# property. If computelength is false, then the length simply isn't 
+# computed.  What do you think?
+#
+# Eryq's reply:  I agree; for now, we can silently leave out the content-type.
+
 sub get_length {
     my $self = shift;
 
@@ -1017,8 +1028,11 @@ sub get_length {
     my $enc = lc($self->attr('content-transfer-encoding') || 'binary');
     my $length;
     if (!$is_multipart && ($enc eq "binary")){  # might figure it out cheap:
-	if (defined($self->{Data})) {                  # it's in core!
+	if    (defined($self->{Data})) {               # it's in core
 	    $length = length($self->{Data});
+	}
+	elsif (defined($self->{FH})) {                 # it's in a filehandle
+	    # no-op: it's expensive, so don't bother
 	}
 	elsif (-e $self->{Path}) {                     # it's a simple file!
 	    $length = (-s $self->{Path});
@@ -1152,11 +1166,53 @@ sub path {
 
 #------------------------------------------------------------
 
-=item read_now [PATH]
+=item fh [FILEHANDLE]
 
-Force the path to be read into core immediately.  With optional
-argument, sets the C<path()> first; otherwise, the current path
-(such as given during a C<build()>) will be used.
+Get/set the FILEHANDLE which contains the message data.
+
+Takes a filehandle as an input and stores it in the object.
+This routine is similar to path(); one important difference is that 
+no attempt is made to set the content length.  
+
+=cut
+
+sub fh {
+    my $self = shift;
+    $self->{FH} = shift if @_;
+    $self->{FH};
+}
+
+#------------------------------------------------------------
+
+=item resetfh [FILEHANDLE]
+
+Set the current position of the filehandle back to the beginning. 
+Only applies if you used "FH" in build() or attach() for this message.
+
+Returns false if unable to reset the filehandle (since not all filehandles
+are seekable).
+
+=cut
+
+#----
+# miko note: With the Data and Path, the same data could theoretically 
+# be reused.  However, file handles need to be reset to be reused, 
+# so I added this routine.
+#
+# Eryq reply: beware... not all filehandles are seekable (think about STDIN)!
+
+sub resetfh {
+    my $self = shift;
+    seek($self->{FH},0,0);
+}
+
+#------------------------------------------------------------
+
+=item read_now 
+
+Forces data from the path/filehandle (as specified by C<build()>)
+to be read into core immediately, just as though you had given it
+literally with the C<Data> keyword.  
 
 Note that the in-core data will always be used if available.
 
@@ -1170,10 +1226,19 @@ until the message is output via C<print()> or C<print_body()>.
 sub read_now {
     my $self = shift;
     local $/ = undef;
-    open SLURP, $self->{Path} or croak "open $self->{Path}: $!";
-    binmode(SLURP) if $self->binmode;
-    $self->{Data} = <SLURP>;        # sssssssssssssslurp...
-    close SLURP;                    # ...aaaaaaaaahhh!
+    
+    if    ($self->{FH}) {       # data from a filehandle:
+	my $chunk;
+	$self->{Data} = '';
+	CORE::binmode($self->{FH}) if $self->binmode;
+	while (read($self->{FH}, $chunk, 1024)) {$self->{Data} .= $chunk}
+    }
+    elsif ($self->{Path}) {     # data from a path:
+	open SLURP, $self->{Path} or croak "open $self->{Path}: $!";
+	CORE::binmode(SLURP) if $self->binmode;
+	$self->{Data} = <SLURP>;        # sssssssssssssslurp...
+	close SLURP;                    # ...aaaaaaaaahhh!
+    }
 }
 
 #------------------------------------------------------------
@@ -1209,19 +1274,19 @@ sub sign {
     my %params = @_;
 
     # Default:
-    int(@_) or $params{Path} = "$ENV{HOME}/.signature";
+    @_ or $params{Path} = "$ENV{HOME}/.signature";
 
     # Force message in-core:
     defined($self->{Data}) or $self->read_now;
 
     # Load signature:
     my $sig;
-    if (!defined($sig = $params{Data})) {    # not given explicitly...
+    if (!defined($sig = $params{Data})) {      # not given explicitly:
 	local $/ = undef;
 	open SIG, $params{Path} or croak "open sig $params{Path}: $!";
 	$sig = <SIG>;                  # sssssssssssssslurp...
 	close SIG;                     # ...aaaaaaaaahhh!
-    }
+    }    
     $sig = join('',@$sig) if (ref($sig) and (ref($sig) eq 'ARRAY'));
 
     # Append, following Internet conventions:
@@ -1312,7 +1377,6 @@ encountered.
 sub print_body {
     my ($self, $out) = @_;
 
-
     # Coerce into a printable output handle:
     $out = wrap MIME::Lite::IO_Handle $out;
 
@@ -1355,43 +1419,54 @@ sub print_body {
     }
 
     # Else, is the data in a file?  If so, output piecemeal...
-    elsif (defined($self->{Path})) {
-
-	# Open file:
-	my $DATA = new FileHandle || croak "can't get new filehandle!";
-	$DATA->open("$self->{Path}") or croak "open $self->{Path}: $!";
-	binmode($DATA) if $self->binmode;
-
+    #    miko note: this routine pretty much works the same with a path 
+    #    or a filehandle. the only difference in behaviour is that it does 
+    #    not attempt to open anything if it already has a filehandle
+    elsif (defined($self->{Path}) || defined($self->{FH})) {
+	no strict 'refs';          # in case FH is not an object
+	my $DATA;
+	
+	# Open file if necessary:
+	if (defined($self->{Path})) {
+	    $DATA = new FileHandle || croak "can't get new filehandle!";
+	    $DATA->open("$self->{Path}") or croak "open $self->{Path}: $!";
+	}
+	else {
+	    $DATA=$self->{FH};
+	}
+	CORE::binmode($DATA) if $self->binmode;
+		
 	# Encode piece by piece:
-      PATH:
-	{ $_ = $encoding;
-	  
-	  /^BINARY$/ and do {
-	      $out->print($_)                while read($DATA, $_, 2048); 
-	      last PATH;
-	  };      
-	  /^8BIT$/ and do {
-	      $out->print(encode_8bit($_))   while (<$DATA>); 
-	      last PATH;
-	  };
-	  /^7BIT$/ and do {
-	      $out->print(encode_7bit($_))   while (<$DATA>); 
-	      last PATH;
-	  };
-	  /^QUOTED-PRINTABLE$/ and do {
-	      $out->print(encode_qp($_))     while (<$DATA>); 
-	      last PATH;
-	  };
-	  /^BASE64$/ and do {
-	      $out->print(encode_base64($_)) while (read($DATA, $_, 45));
-	      last PATH;
-	  };
-	  croak "unsupported encoding: `$_'";
-        }
+      PATH: 
+	{   $_ = $encoding;
+	    
+	    /^BINARY$/ and do {
+		$out->print($_)                while read($DATA, $_, 2048); 
+		last PATH;
+	    };      
+	    /^8BIT$/ and do {
+		$out->print(encode_8bit($_))   while (<$DATA>); 
+		last PATH;
+	    };
+	    /^7BIT$/ and do {
+		$out->print(encode_7bit($_))   while (<$DATA>); 
+		last PATH;
+	    };
+	    /^QUOTED-PRINTABLE$/ and do {
+		$out->print(encode_qp($_))     while (<$DATA>); 
+		last PATH;
+	    };
+	    /^BASE64$/ and do {
+		$out->print(encode_base64($_)) while (read($DATA, $_, 45));
+		last PATH;
+	    };
+	    croak "unsupported encoding: `$_'";
+	}
 	
 	# Close file:
-	close $DATA;
+	close $DATA if defined($self->{Path});
     }
+    
     else {
 	croak "no data in this part!";
     }
@@ -1507,7 +1582,8 @@ I<Instance method.>
 Sends the message.
 
 Right now, this is done by piping it into the "sendmail" command
-as given by C<sendmail()>.  It probably will only work on Unix systems.
+as given by C<sendmail()>.  The default will probably only work 
+on Unix-like systems.
 
 Returns false if sendmail I<seems> to have failed, true otherwise.
 B<Fatal exception> raised if the open fails.
@@ -1518,7 +1594,7 @@ sub send {
     my $self = shift;
    
     my $pid;
-    open SENDMAIL, "|$SENDMAIL" or croak "open |$SENDMAIL: $!";
+    open SENDMAIL, "|$SendmailCmd" or croak "open |$SendmailCmd: $!";
     $self->print(\*SENDMAIL);
     close SENDMAIL;
     return (($? >> 8) ? undef : 1);
@@ -1542,7 +1618,7 @@ What you see above is the default.
 
 sub sendmail {
     my $self = shift;
-    $SENDMAIL = join(' ', @_);
+    $SendmailCmd = join(' ', @_);
 }
 
 =back
@@ -1823,9 +1899,15 @@ non-ASCII characters (e.g., Latin-1, Latin-2, or any other 8-bit alphabet).
 =head1 CHANGE LOG
 
 B<Current version:>
-$Id: Lite.pm,v 1.123 1998/05/01 16:40:18 eryq Exp $
+$Id: Lite.pm,v 1.126 1998/11/13 05:34:49 eryq Exp $
 
 =over 4
+
+
+=item Version 1.124
+
+Folded in filehandle (FH) support provided by "miko".
+
 
 =item Version 1.122
 
@@ -1909,7 +1991,7 @@ on any products that bear the name "Lite"...
 
 =head1 AUTHOR
 
-Eryq.  President, Zero G Inc.
+Eryq.  President, ZeeGee Software, Inc.
 F<eryq@zeegee.com> / F<http://www.zeegee.com>.
 
 Created: 11 December 1996.  Ho ho ho.

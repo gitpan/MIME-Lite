@@ -7,7 +7,7 @@ quiet MIME::Lite 1;
 
 # Create a new multipart message:
 $msg = new MIME::Lite 
-     To       => 'eryq@enteract.com',
+     To       => 'me@somewhere.com',
      Subject  => 'GIF test',
      Type     => 'TEXT',
      'Content-Length' => 23,      

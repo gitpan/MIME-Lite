@@ -8,8 +8,9 @@ docs/MIME/h2bullet.gif
 docs/MIME/mime-lg.gif
 docs/MIME/mime-sm.gif
 docs/Makefile
+examples/bigmsg
+examples/giftest
+examples/hacktest
+examples/signtest
 lib/MIME/Lite.pm
-test/bigmsg
-test/giftest
-test/hacktest
-test/signtest
+

@@ -69,6 +69,11 @@ in a non-backwards-compatible manner.  It is being provided to the
 community for suggestions and in the hopes that it will be useful.</I>
 
 
+<P>
+<PRE></PRE>
+
+
+
 <P><HR>
 <A NAME="synopsis">
 <H1><FONT COLOR=#600020>
@@ -78,7 +83,8 @@ SYNOPSIS</FONT></H1>
 
 
 <P>
-<PRE>    use MIME::Lite;</PRE>
+<PRE>    use MIME::Lite;
+   </PRE>
 
 
 
@@ -95,7 +101,13 @@ Create a single-part message:
                 Subject  =&gt;'Helloooooo, nurse!',
                 Type     =&gt;'image/gif',
                 Encoding =&gt;'base64',
-                Path     =&gt;'hellonurse.gif';</PRE>
+                Path     =&gt;'hellonurse.gif';
+    </PRE>
+
+
+
+<P>
+<PRE></PRE>
 
 
 
@@ -110,7 +122,8 @@ Create a multipart message (i.e., one with attachments):
                 To      =&gt;'you@yourhost.com',
                 Cc      =&gt;'some@other.com, some@more.com',
                 Subject =&gt;'A message with 2 parts...',
-                Type    =&gt;'multipart/mixed';</PRE>
+                Type    =&gt;'multipart/mixed';
+    </PRE>
 
 
 
@@ -127,18 +140,29 @@ Create a multipart message (i.e., one with attachments):
 
 
 <P>
+<PRE></PRE>
+
+
+
+<P>
 Output a message:
 
 
 <P>
 <PRE>    # As a string...
-    $str = $msg-&gt;as_string;</PRE>
+    $str = $msg-&gt;as_string;
+    </PRE>
 
 
 
 <P>
 <PRE>    # To a filehandle (say, a &quot;sendmail&quot; stream)...
     $msg-&gt;print(\*SENDMAIL);</PRE>
+
+
+
+<P>
+<PRE></PRE>
 
 
 
@@ -180,6 +204,11 @@ package instead.  I will be more likely to add stuff to that toolkit
 over this one.
 
 
+<P>
+<PRE></PRE>
+
+
+
 <P><HR>
 <A NAME="more_examples">
 <H1><FONT COLOR=#600020>
@@ -201,7 +230,8 @@ Create a multipart message exactly as above, but using the
                 Cc      =&gt;'some@other.com, some@more.com',
                 Subject =&gt;'A message with 2 parts...',
                 Type    =&gt;'TEXT',
-                Data    =&gt;&quot;Here's the GIF file you wanted&quot;;  </PRE>
+                Data    =&gt;&quot;Here's the GIF file you wanted&quot;;  
+    </PRE>
 
 
 
@@ -210,7 +240,13 @@ Create a multipart message exactly as above, but using the
     attach $msg 
                 Type     =&gt;'image/gif',
                 Path     =&gt;'aaa000123.gif',
-                Filename =&gt;'logo.gif';</PRE>
+                Filename =&gt;'logo.gif';
+    </PRE>
+
+
+
+<P>
+<PRE></PRE>
 
 
 
@@ -220,13 +256,15 @@ Output a message to a filehandle:
 
 <P>
 <PRE>    # Write it to a filehandle:
-    $msg-&gt;print(\*STDOUT); </PRE>
+    $msg-&gt;print(\*STDOUT); 
+     </PRE>
 
 
 
 <P>
 <PRE>    # Write just the header:
-    $msg-&gt;print_header(\*STDOUT); </PRE>
+    $msg-&gt;print_header(\*STDOUT); 
+     </PRE>
 
 
 
@@ -237,18 +275,25 @@ Output a message to a filehandle:
 
 
 <P>
+<PRE></PRE>
+
+
+
+<P>
 Get a message as a string:
 
 
 <P>
 <PRE>    # Get entire message as a string:
-    $str = $msg-&gt;as_string;</PRE>
+    $str = $msg-&gt;as_string;
+     </PRE>
 
 
 
 <P>
 <PRE>    # Get just the header:
-    $str = $msg-&gt;header_as_string;</PRE>
+    $str = $msg-&gt;header_as_string;
+     </PRE>
 
 
 
@@ -259,12 +304,22 @@ Get a message as a string:
 
 
 <P>
+<PRE></PRE>
+
+
+
+<P>
 # Send a message (Unix systems only!):
 
 
 <P>
 <PRE>    # Send it!
     $msg-&gt;send;</PRE>
+
+
+
+<P>
+<PRE></PRE>
 
 
 
@@ -339,7 +394,18 @@ that a user agent like Netscape allows you to do.
 
 <I>Class/instance method, initiallizer.</I>
 Create (or initiallize) a MIME message object.  
-PARAMHASH can contain the following keys:
+Normally, you'll use the following keys in PARAMHASH:
+
+
+<P>
+<PRE>   * Data, FH, or Path      (either one of these, or none if multipart)
+   * Type                   (e.g., &quot;image/jpeg&quot;)
+   * From, To, and Subject  (if this is the &quot;top level&quot; of a message)</PRE>
+
+
+
+<P>
+The PARAMHASH can contain the following keys:
 
 <DL>
 <P><DT><B><A NAME="fieldname">(fieldname)</A></B><DD>
@@ -373,7 +439,7 @@ field (and it sort of looks like one too).
 
 <P><DT><B><A NAME="data">Data</A></B><DD>
 
-<I>Alternative to &quot;Path&quot;.</I>
+<I>Alternative to &quot;Path&quot; or &quot;FH&quot;.</I>
 The actual message data.  This may be a scalar or a ref to an array of
 strings; if the latter, the message consists of a simple concatenation 
 of all the strings in the array.
@@ -413,6 +479,13 @@ what you want, so pick your encoding well!
 There's a <A HREF="#a_mime_primer">&quot;A MIME PRIMER&quot;</A> in this document with more info.
 
 
+<P><DT><B><A NAME="fh">FH</A></B><DD>
+
+<I>Alternative to &quot;Data&quot; or &quot;Path&quot;.</I>
+Filehandle containing the data, opened for reading.
+See &quot;ReadNow&quot; also.
+
+
 <P><DT><B><A NAME="filename">Filename</A></B><DD>
 
 <I>Optional.</I>
@@ -429,10 +502,10 @@ computed, but only under certain circumstances (see <A HREF="#limitations">&quot
 
 <P><DT><B><A NAME="path">Path</A></B><DD>
 
-<I>Alternative to &quot;Data&quot;.</I>
+<I>Alternative to &quot;Data&quot; or &quot;FH&quot;.</I>
 Path to a file containing the data... actually, it can be any open()able
 expression.  If it looks like a path, the last element will automatically 
-be treated as the filename.  Ignored if &quot;Data&quot; is present.
+be treated as the filename. 
 See &quot;ReadNow&quot; also.
 
 
@@ -484,7 +557,8 @@ but I digress...), here are some examples:
                Subject  =&gt; &quot;Hi there!&quot;,
                Type     =&gt; 'TEXT',
                Encoding =&gt; '7bit',
-               Data     =&gt; &quot;Just a quick note to say hi!&quot;;</PRE>
+               Data     =&gt; &quot;Just a quick note to say hi!&quot;;
+ </PRE>
 
 
 
@@ -494,7 +568,8 @@ but I digress...), here are some examples:
                To       =&gt; 'gesundheit@edu.edu.edu',
                Subject  =&gt; &quot;A gif for U&quot;
                Type     =&gt; 'image/gif',
-               Path     =&gt; &quot;/home/httpd/logo.gif&quot;;</PRE>
+               Path     =&gt; &quot;/home/httpd/logo.gif&quot;;
+ </PRE>
 
 
 
@@ -516,7 +591,8 @@ have been written:
 
 
 <P>
-<PRE>    $msg = new MIME::Lite;</PRE>
+<PRE>    $msg = new MIME::Lite;
+    </PRE>
 
 
 
@@ -524,7 +600,8 @@ have been written:
 <PRE>    $msg-&gt;build(Type     =&gt; 'x-gzip',
                 Path     =&gt; &quot;gzip &lt; /usr/inc/somefile.tar |&quot;,
                 ReadNow  =&gt; 1,
-                Filename =&gt; &quot;somefile.tgz&quot;);</PRE>
+                Filename =&gt; &quot;somefile.tgz&quot;);
+    </PRE>
 
 
 
@@ -788,11 +865,33 @@ and re-sets the &quot;filename&quot; (to the last element of the path if it
 looks like a simple path, and to nothing if not).
 
 
-<P><DT><B><A NAME="read_now">read_now [PATH]</A></B><DD>
+<P><DT><B><A NAME="fh">fh [FILEHANDLE]</A></B><DD>
 
-Force the path to be read into core immediately.  With optional
-argument, sets the <CODE>path()</CODE> first; otherwise, the current path
-(such as given during a <CODE>build()</CODE>) will be used.
+Get/set the FILEHANDLE which contains the message data.
+
+
+<P>
+Takes a filehandle as an input and stores it in the object.
+This routine is similar to path(); one important difference is that 
+no attempt is made to set the content length.
+
+
+<P><DT><B><A NAME="resetfh">resetfh [FILEHANDLE]</A></B><DD>
+
+Set the current position of the filehandle back to the beginning. 
+Only applies if you used &quot;FH&quot; in build() or attach() for this message.
+
+
+<P>
+Returns false if unable to reset the filehandle (since not all filehandles
+are seekable).
+
+
+<P><DT><B><A NAME="read_now">read_now</A></B><DD>
+
+Forces data from the path/filehandle (as specified by <CODE>build()</CODE>)
+to be read into core immediately, just as though you had given it
+literally with the <CODE>Data</CODE> keyword.
 
 
 <P>
@@ -932,7 +1031,8 @@ Sends the message.
 
 <P>
 Right now, this is done by piping it into the &quot;sendmail&quot; command
-as given by <CODE>sendmail()</CODE>.  It probably will only work on Unix systems.
+as given by <CODE>sendmail()</CODE>.  The default will probably only work 
+on Unix-like systems.
 
 
 <P>
@@ -1028,6 +1128,11 @@ your use of MIME::Lite with a healthy diet and exercise.
 </UL>
 
 
+<P>
+<PRE></PRE>
+
+
+
 <P><HR>
 <A NAME="cheap_and_easy_mailing">
 <H2><FONT COLOR=#600020>
@@ -1043,13 +1148,15 @@ to sendmail (which you can change) are:
 
 
 <P>
-<PRE>     -t      Scan message for To:, Cc:, Bcc:, etc.</PRE>
+<PRE>     -t      Scan message for To:, Cc:, Bcc:, etc.
+              </PRE>
 
 
 
 <P>
 <PRE>     -oi     Do NOT treat a single &quot;.&quot; on a line as a message terminator.
-             As in, &quot;-oi vey, it truncated my message... why?!&quot;</PRE>
+             As in, &quot;-oi vey, it truncated my message... why?!&quot;
+                </PRE>
 
 
 
@@ -1057,6 +1164,11 @@ to sendmail (which you can change) are:
 <PRE>     -oem    On error, mail back the message (I assume to the
              appropriate address, given in the header).
              When mail returns, circle is complete.  Jai guru deva -oem.</PRE>
+
+
+
+<P>
+<PRE></PRE>
 
 
 
@@ -1073,6 +1185,16 @@ This class treats a MIME header in the most abstract sense,
 as being a collection of high-level attributes.  The actual
 RFC-822-style header fields are not constructed until it's time
 to actually print the darn thing.
+
+
+<P>
+<PRE></PRE>
+
+
+
+<P>
+<PRE></PRE>
+
 
 
 <P><HR>
@@ -1107,6 +1229,16 @@ the code that normally formats MIME header fields isn't doing what
 you need.  And, like any escape hatch, it's got an alarm on it:
 MIME::Lite will warn you if you attempt to <CODE>set()</CODE> or <CODE>replace()</CODE>
 any MIME header field.  Use <CODE>attr()</CODE> instead.
+
+
+<P>
+<PRE></PRE>
+
+
+
+<P>
+<PRE></PRE>
+
 
 
 <P><HR>
@@ -1181,6 +1313,11 @@ Video or video+audio data.
 </DL>
 
 
+<P>
+<PRE></PRE>
+
+
+
 <P><HR>
 <A NAME="content_transfer_encodings">
 <H2><FONT COLOR=#600020>
@@ -1238,6 +1375,16 @@ non-ASCII characters (e.g., Latin-1, Latin-2, or any other 8-bit alphabet).
 </DL>
 
 
+<P>
+<PRE></PRE>
+
+
+
+<P>
+<PRE></PRE>
+
+
+
 <P><HR>
 <A NAME="change_log">
 <H1><FONT COLOR=#600020>
@@ -1248,9 +1395,24 @@ CHANGE LOG</FONT></H1>
 
 <P>
 <B>Current version:</B>
-$Id: Lite.pm,v 1.123 1998/05/01 16:40:18 eryq Exp $
+$Id: Lite.pm,v 1.126 1998/11/13 05:34:49 eryq Exp $
+
+
+<P>
+<PRE></PRE>
+
 
 <DL>
+<P><DT><B><A NAME="version">Version 1.124</A></B><DD>
+
+Folded in filehandle (FH) support provided by &quot;miko&quot;.
+
+
+<P>
+<PRE></PRE>
+
+
+
 <P><DT><B><A NAME="version">Version 1.122</A></B><DD>
 
 MIME::Base64 and MIME::QuotedPrint are used if available.
@@ -1260,16 +1422,31 @@ MIME::Base64 and MIME::QuotedPrint are used if available.
 The 7bit encoding no longer does &quot;escapes&quot;; it merely strips 8-bit characters.
 
 
+<P>
+<PRE></PRE>
+
+
+
 <P><DT><B><A NAME="version">Version 1.121</A></B><DD>
 
 Filename attribute is now no longer ignored by build().
 <I>Thanks to Ian Smith for finding and patching this bug.</I>
 
 
+<P>
+<PRE></PRE>
+
+
+
 <P><DT><B><A NAME="version">Version 1.120</A></B><DD>
 
 Efficiency hack to speed up MIME::Lite::IO_Scalar.
 <I>Thanks to David Aspinwall for the patch.</I>
+
+
+<P>
+<PRE></PRE>
+
 
 
 <P><DT><B><A NAME="version">Version 1.116</A></B><DD>
@@ -1290,6 +1467,11 @@ New quiet method to turn off warnings.
 Changed &quot;stringify&quot; methods to more-standard &quot;as_string&quot; methods.
 
 
+<P>
+<PRE></PRE>
+
+
+
 <P><DT><B><A NAME="version">Version 1.112</A></B><DD>
 
 Added <CODE>read_now()</CODE>, and <CODE>binmode()</CODE> method for our non-Unix-using brethren: 
@@ -1297,9 +1479,19 @@ file data is now read using binmode() if appropriate.
 <I>Thanks to Xiangzhou Wang for pointing out this bug.</I>
 
 
+<P>
+<PRE></PRE>
+
+
+
 <P><DT><B><A NAME="version">Version 1.110</A></B><DD>
 
 Fixed bug in opening the data filehandle.
+
+
+<P>
+<PRE></PRE>
+
 
 
 <P><DT><B><A NAME="version">Version 1.102</A></B><DD>
@@ -1307,11 +1499,21 @@ Fixed bug in opening the data filehandle.
 Initial release.
 
 
+<P>
+<PRE></PRE>
+
+
+
 <P><DT><B><A NAME="version">Version 1.101</A></B><DD>
 
 Baseline code.
 
 </DL>
+
+
+<P>
+<PRE></PRE>
+
 
 
 <P><HR>
@@ -1331,6 +1533,11 @@ Perl itself.
 <P>
 This software comes with <B>NO WARRANTY</B> of any kind.
 See the COPYING file in the distribution for details.
+
+
+<P>
+<PRE></PRE>
+
 
 
 <P><HR>
@@ -1361,6 +1568,11 @@ on any products that bear the name &quot;Lite&quot;...
 
 
 
+<P>
+<PRE></PRE>
+
+
+
 <P><HR>
 <A NAME="author">
 <H1><FONT COLOR=#600020>
@@ -1370,7 +1582,7 @@ AUTHOR</FONT></H1>
 
 
 <P>
-Eryq.  President, Zero G Inc.
+Eryq.  President, ZeeGee Software, Inc.
 <I><A HREF="mailto:eryq@zeegee.com">eryq@zeegee.com</A></I> / <I><A HREF="http://www.zeegee.com">http://www.zeegee.com</A></I>.
 
 
@@ -1380,7 +1592,7 @@ Created: 11 December 1996.  Ho ho ho.
 
 <P><HR>
 <SMALL>
-		Last updated: Fri May  1 12:41:18 1998 <BR>
+		Last updated: Mon Nov 23 23:21:54 1998 <BR>
 		Generated by pod2coolhtml 1.101.  Want a copy?  Just email
 		<A HREF="mailto:eryq@zeegee.com">eryq@zeegee.com</A>.
 		(Yes, it's free.)
