@@ -1,0 +1,73 @@
+<HTML>
+<HEAD>
+  <TITLE>mime_longlines</TITLE>
+</HEAD>
+<BODY 
+       bgcolor="#FFFFFF" link="#BE1B58" vlink="#8C337C" alink="#F28EAA">
+<A HREF="http://www.zeegee.com" TARGET="_top"><IMG SRC="icons/zeegee.gif" ALT="ZeeGee Software" ALIGN="RIGHT" BORDER="0"></A><A NAME="__TOP__"><H1>mime_longlines</H1>
+</A>
+<P><B>This module is <FONT COLOR="#990000">BETA</FONT> code, which means that the interfaces are fairly stable BUT it has not been out in the community long enough to guarantee much testing. Use with caution! Please report any errors back to <A HREF="mailto:eryq@zeegee.com">eryq@zeegee.com</A> as soon as you can.</B><UL>
+<LI> <A HREF="#NAME">NAME</A>
+<LI> <A HREF="#SYNOPSIS">SYNOPSIS</A>
+<LI> <A HREF="#DESCRIPTION">DESCRIPTION</A>
+<LI> <A HREF="#AUTHOR">AUTHOR</A>
+</UL>
+</A>
+
+<P><HR>
+<A NAME="NAME"><H2><A HREF="#__TOP__"><IMG SRC="icons/h1bullet.gif" ALT="Top" BORDER="0"></A> NAME</H2></A>
+
+
+<P>mime_longlines - generate a test message with long lines
+
+
+
+<P><HR>
+<A NAME="SYNOPSIS"><H2><A HREF="#__TOP__"><IMG SRC="icons/h1bullet.gif" ALT="Top" BORDER="0"></A> SYNOPSIS</H2></A>
+
+
+<P>Usage:
+
+<PRE>
+    mime_longlines [-s]
+</PRE>
+
+<P>Options:
+
+<PRE>
+    -s   Stringify message first, and print the *string* to STDOUT.
+</PRE>
+
+
+<P><HR>
+<A NAME="DESCRIPTION"><H2><A HREF="#__TOP__"><IMG SRC="icons/h1bullet.gif" ALT="Top" BORDER="0"></A> DESCRIPTION</H2></A>
+
+
+<P>Assemble and print (to the standard output) a multipart message 
+with 5 attachments, for the purpose of &quot;eyeballing&quot; how well the 
+encoders are working.
+
+
+<P>Each attachments holds the same data -- some 8-bit text, and a long 
+line consisting of 1000 &quot;a&quot;s followed by a few &quot;b&quot;s) -- but each
+has a different encoding (the &quot;Content-transfer-encoding&quot; field
+will tell you which is which).
+
+
+<P>All of the encodings (except for the first one, &quot;binary&quot;) should 
+break the long line before the b's.
+
+
+
+<P><HR>
+<A NAME="AUTHOR"><H2><A HREF="#__TOP__"><IMG SRC="icons/h1bullet.gif" ALT="Top" BORDER="0"></A> AUTHOR</H2></A>
+
+
+<P>Eryq, eryq@zeegee.com
+
+<P><HR>
+<ADDRESS><FONT SIZE=-1>
+Generated Mon Jun  5 23:59:12 2000 by cvu_pod2html
+</FONT></ADDRESS>
+</BODY>
+</HTML>

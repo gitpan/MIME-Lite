@@ -244,7 +244,7 @@ use vars qw(
 # GLOBALS, EXTERNAL/CONFIGURATION...
 
 ### The package version, both in 1.23 style *and* usable by MakeMaker:
-$VERSION = substr q$Revision: 1.147 $, 10;
+$VERSION = substr q$Revision: 2.101 $, 10;
 
 ### Don't warn me about dangerous activities:
 $QUIET = undef;
@@ -535,8 +535,8 @@ a PARAMHASH that will be automatically given to C<new()>.
 
 One of the possibly-quite-useful hacks thrown into this is the 
 "attach-to-singlepart" hack: if you attempt to attach a part (let's
-call it "part 1") to a message that I<isn't> a multipart message
-(the "self" object in this case), the following happens:
+call it "part 1") to a message that doesn't have a content-type
+of "multipart" or "message", the following happens:
 
 =over 4
 
@@ -572,7 +572,7 @@ sub attach {
     my $part1 = ((@_ == 1) ? shift : ref($self)->new(Top=>0, @_));
 
     ### Do the "attach-to-singlepart" hack:
-    if ($self->attr('content-type') !~ m{^multipart/}i) {
+    if ($self->attr('content-type') !~ m{^(multipart|message)/}i) {
 
 	### Create part zero:
 	my $part0 = ref($self)->new;
@@ -648,7 +648,7 @@ of all the strings in the array.
 I<Optional.>
 If given true (or omitted), we force the creation of a C<Date:> field 
 stamped with the current date/time if this is a top-level message.  
-You may want this if using L</send_by_smtp>.  
+You may want this if using L<send_by_smtp()|/send_by_smtp>.  
 If you don't want this to be done, either provide your own Date
 or explicitly set this to false.
 
@@ -862,7 +862,7 @@ sub build {
     ### Sanity check:
     if ($type =~ m{^(multipart|message)/}) {
 	($enc =~ m{^(7bit|8bit|binary)\Z}) or 
-	    croak "illegal MIME: can't have encoding $enc with type $type!";
+	    croak "illegal MIME: can't have encoding $enc with type $type\n";
     }
 
     ### CONTENT-DISPOSITION...
@@ -1086,14 +1086,15 @@ sub delete {
 =item fields
 
 Return the full header for the object, as a ref to an array
-of C<[TAG, VALUE]> pairs.
-
-Any fields that the user has explicitly set will override the
-corresponding MIME fields that we would generate.  So: I<don't> say:
+of C<[TAG, VALUE]> pairs, where each TAG is all-lowercase.  
+Note that any fields the user has explicitly set will override the 
+corresponding MIME fields that we would otherwise generate.  
+So, don't say...
 
     $msg->set("Content-type" => "text/html; charset=US-ASCII");
 
-unless you I<mean it>!
+unless you want the above value to override the "Content-type"
+MIME field that we would normally generate.
 
 I<Note:> I called this "fields" because the header() method of
 Mail::Header returns something different, but similar enough to 
@@ -1433,12 +1434,15 @@ sub read_now {
     
     if    ($self->{FH}) {       ### data from a filehandle:
 	my $chunk;
-	$self->{Data} = '';
+	my @chunks;
 	CORE::binmode($self->{FH}) if $self->binmode;
-	while (read($self->{FH}, $chunk, 1024)) {$self->{Data} .= $chunk}
+	while (read($self->{FH}, $chunk, 1024)) { 
+	    push @chunks, $chunk; 
+	}
+	$self->{Data} = join '', @chunks;
     }
     elsif ($self->{Path}) {     ### data from a path:
-	open SLURP, $self->{Path} or croak "open $self->{Path}: $!";
+	open SLURP, $self->{Path} or croak "open $self->{Path}: $!\n";
 	CORE::binmode(SLURP) if $self->binmode;
 	$self->{Data} = <SLURP>;        ### sssssssssssssslurp...
 	close SLURP;                    ### ...aaaaaaaaahhh!
@@ -1487,7 +1491,7 @@ sub sign {
     my $sig;
     if (!defined($sig = $params{Data})) {      ### not given explicitly:
 	local $/ = undef;
-	open SIG, $params{Path} or croak "open sig $params{Path}: $!";
+	open SIG, $params{Path} or croak "open sig $params{Path}: $!\n";
 	$sig = <SIG>;                  ### sssssssssssssslurp...
 	close SIG;                     ### ...aaaaaaaaahhh!
     }    
@@ -1599,31 +1603,32 @@ sub print {
     ### Coerce into a printable output handle:
     $out = wrap MIME::Lite::IO_Handle $out;
 
-    ### Output the head and its terminating blank line:
-    $self->print_header($out);
-    $out->print("\n");
+    ### Output head, separator, and body:
+    $out->print($self->header_as_string, "\n");
+    $self->print_body($out);
+}
 
-    ### Output either the body or the parts.
-    ###   Notice that we key off of the content-type!  We expect fewer 
-    ###   accidents that way, since the syntax will always match the MIME type.
-    if ($self->attr('content-type') !~ m{^multipart/}i) {	
-	$self->print_body($out);  ### Single part
-    }
-    else {                        ### Multipart...
-	my $boundary = $self->attr('content-type.boundary');
+#------------------------------
+#
+# print_for_smtp
+#
+# Instance method, private.
+# Print, but filter out the topmost "Bcc" field.
+# This is because qmail apparently doesn't do this for us!
+#
+sub print_for_smtp {
+    my ($self, $out) = @_;
 
-	### Preamble:
-	$out->print("This is a multi-part message in MIME format.\n");
-	
-	### Parts:
-	my $part;
-	foreach $part (@{$self->{Parts}}) {
-	    $out->print("\n--$boundary\n");
-	    $part->print($out);
-	}
-	$out->print("\n--$boundary--\n\n");
-    }
-    1;
+    ### Coerce into a printable output handle:
+    $out = wrap MIME::Lite::IO_Handle $out;
+    
+    ### Create a safe head:
+    my @fields = grep { $_->[0] ne 'bcc' } @{$self->fields};
+    my $header = $self->fields_as_string(\@fields);
+
+    ### Output head, separator, and body:
+    $out->print($header, "\n");
+    $self->print_body($out);
 }
 
 #------------------------------
@@ -1631,8 +1636,8 @@ sub print {
 =item print_body [OUTHANDLE]
 
 I<Instance method.> 
-Print the body of the message to the given output handle, 
-or to the currently-selected filehandle if none was given.
+Print the body of a message to the given output handle, or to 
+the currently-selected filehandle if none was given.  
 
 All OUTHANDLE has to be is a filehandle (possibly a glob ref), or 
 any object that responds to a print() message.
@@ -1644,6 +1649,66 @@ encountered.
 =cut
 
 sub print_body {
+    my ($self, $out) = @_;
+
+    ### Coerce into a printable output handle:
+    $out = wrap MIME::Lite::IO_Handle $out;
+
+    ### Output either the body or the parts.
+    ###   Notice that we key off of the content-type!  We expect fewer 
+    ###   accidents that way, since the syntax will always match the MIME type.
+    my $type = $self->attr('content-type');
+    if ($type =~ m{^multipart/}i) {	
+	my $boundary = $self->attr('content-type.boundary');
+
+	### Preamble:
+	$out->print("This is a multi-part message in MIME format.\n");
+	
+	### Parts:
+	my $part;
+	foreach $part (@{$self->{Parts}}) {
+	    $out->print("\n--$boundary\n");
+	    $part->print($out);
+	}
+
+	### Epilogue:
+	$out->print("\n--$boundary--\n\n");
+    }
+    elsif ($type =~ m{^message/}) {
+	my @parts = @{$self->{Parts}};
+
+	### It's a toss-up; try both data and parts:
+	if    (@parts == 0) { $self->print_simple_body($out) }
+	elsif (@parts == 1) { $parts[0]->print($out) }
+	else                { croak "can't handle message with >1 part\n"; }
+    }
+    else {                    
+	$self->print_simple_body($out); 
+    }
+    1;
+}
+
+#------------------------------
+#
+# print_simple_body [OUTHANDLE]
+#
+# I<Instance method, private.>
+# Print the body of a simple singlepart message to the given 
+# output handle, or to the currently-selected filehandle if none 
+# was given.  
+#
+# Note that if you want to print "the portion after
+# the header", you don't want this method: you want 
+# L<print_body()|/print_body>.
+#
+# All OUTHANDLE has to be is a filehandle (possibly a glob ref), or 
+# any object that responds to a print() message.
+#
+# B<Fatal exception> raised if unable to open any of the input files,
+# or if a part contains no data, or if an unsupported encoding is 
+# encountered.
+#
+sub print_simple_body {
     my ($self, $out) = @_;
 
     ### Coerce into a printable output handle:
@@ -1683,7 +1748,7 @@ sub print_body {
 	      $out->print(encode_base64($self->{Data})); 
 	      last DATA;
 	  };
-	  croak "unsupported encoding: `$_'";
+	  croak "unsupported encoding: `$_'\n";
         }
     }
 
@@ -1697,8 +1762,8 @@ sub print_body {
 	
 	### Open file if necessary:
 	if (defined($self->{Path})) {
-	    $DATA = new FileHandle || croak "can't get new filehandle!";
-	    $DATA->open("$self->{Path}") or croak "open $self->{Path}: $!";
+	    $DATA = new FileHandle || croak "can't get new filehandle\n";
+	    $DATA->open("$self->{Path}") or croak "open $self->{Path}: $!\n";
 	}
 	else {
 	    $DATA=$self->{FH};
@@ -1729,7 +1794,7 @@ sub print_body {
 		$out->print(encode_base64($_)) while (read($DATA, $_, 45));
 		last PATH;
 	    };
-	    croak "unsupported encoding: `$_'";
+	    croak "unsupported encoding: `$_'\n";
 	}
 	
 	### Close file:
@@ -1737,7 +1802,7 @@ sub print_body {
     }
     
     else {
-	croak "no data in this part!";
+	croak "no data in this part\n";
     }
     1;
 }
@@ -1777,10 +1842,10 @@ Return the entire message as a string, with a header and an encoded body.
 
 sub as_string {
     my $self = shift;
-    my $str = "";
-    my $io = (wrap MIME::Lite::IO_Scalar \$str);
+    my @buf;
+    my $io = (wrap MIME::Lite::IO_ScalarArray \@buf);
     $self->print($io);
-    $str;
+    join '', @buf;
 }
 *stringify = \&as_string;    ### backwards compatibility
 
@@ -1790,6 +1855,7 @@ sub as_string {
 
 I<Instance method.> 
 Return the encoded body as a string.
+This is the portion after the header and the blank line.
 
 I<Note:> actually prepares the body by "printing" to a scalar.
 Proof that you can hand the C<print*()> methods any blessed object 
@@ -1799,12 +1865,31 @@ that responds to a C<print()> message.
 
 sub body_as_string {
     my $self = shift;
-    my $str = "";
-    my $io = (wrap MIME::Lite::IO_Scalar \$str);
+    my @buf;
+    my $io = (wrap MIME::Lite::IO_ScalarArray \@buf);
     $self->print_body($io);
-    $str;
+    join '', @buf;
 }
 *stringify_body = \&body_as_string;    ### backwards compatibility
+
+#------------------------------
+#
+# fields_as_string FIELDS
+#
+# PRIVATE!  Return a stringified version of the given header
+# fields, where FIELDS is an arrayref like that returned by fields().
+#
+sub fields_as_string {
+    my ($self, $fields) = @_;
+    my @lines;
+    foreach (@$fields) {
+	my ($tag, $value) = @$_;
+	$tag =~ s/\b([a-z])/uc($1)/ge;   ### make pretty
+	$tag =~ s/^mime-/MIME-/ig;       ### even prettier
+	push @lines, "$tag: $value\n";
+    }
+    join '', @lines;
+}
 
 #------------------------------
 
@@ -1817,14 +1902,7 @@ Return the header as a string.
 
 sub header_as_string {
     my $self = shift;
-    my $str = '';
-    foreach (@{$self->fields}) {
-	my ($tag, $value) = @$_;
-	$tag =~ s/\b([a-z])/uc($1)/ge;   ### make pretty
-	$tag =~ s/^mime-/MIME-/ig;       ### even prettier
-	$str .= "$tag: $value\n";
-    }
-    $str;
+    $self->fields_as_string($self->fields);
 }
 *stringify_header = \&header_as_string;    ### backwards compatibility
 
@@ -1872,13 +1950,13 @@ There are three facilities:
 =item "sendmail", ARGS...
 
 Send a message by piping it into the "sendmail" command.
-Uses the L</send_by_sendmail> method, giving it the ARGS.
+Uses the L<send_by_sendmail()|/send_by_sendmail> method, giving it the ARGS.
 This usage implements (and deprecates) the C<sendmail()> method.
 
 =item "smtp", [HOSTNAME]
 
 Send a message by SMTP, using optional HOSTNAME as SMTP-sending host.
-Uses the L</send_by_smtp> method.
+Uses the L<send_by_smtp()|/send_by_smtp> method.
 
 =item "sub", \&SUBREF, ARGS...
 
@@ -1986,7 +2064,7 @@ sub send_by_sendmail {
 	my $sendmailcmd = shift @_;
 
 	### Do it:
-	open SENDMAIL, "|$sendmailcmd" or croak "open |$sendmailcmd: $!";
+	open SENDMAIL, "|$sendmailcmd" or croak "open |$sendmailcmd: $!\n";
 	$self->print(\*SENDMAIL);
 	close SENDMAIL;
 	return (($? >> 8) ? undef : 1);
@@ -2066,16 +2144,16 @@ sub send_by_smtp {
     ### Create SMTP client:
     require Net::SMTP;
     my $smtp = MIME::Lite::SMTP->new(@args)
-        or croak "Failed to connect to mail server: $!";
+        or croak "Failed to connect to mail server: $!\n";
     $smtp->mail($from)
-        or croak "SMTP MAIL command failed: $!";
+        or croak "SMTP MAIL command failed: $!\n";
     $smtp->to(@to_all)
-        or croak "SMTP RCPT command failed: $!";
+        or croak "SMTP RCPT command failed: $!\n";
     $smtp->data()
-        or croak "SMTP DATA command failed: $!";
+        or croak "SMTP DATA command failed: $!\n";
 
     ### MIME::Lite can print() to anything with a print() method:
-    $self->print($smtp);
+    $self->print_for_smtp($smtp);
     $smtp->dataend();
     $smtp->quit;
     1;
@@ -2216,6 +2294,27 @@ sub print {
     1;
 }
 
+
+#============================================================
+
+package MIME::Lite::IO_ScalarArray;
+
+#============================================================
+
+### Wrap an array inside a blessed, printable interface:
+sub wrap {
+    my ($class, $arrayref) = @_;
+    defined($arrayref) or $arrayref = [];
+    bless $arrayref, $class;
+}
+
+### Print:
+sub print {
+    my $self = shift;
+    push @$self, @_;
+    1;
+}
+
 1;
 __END__
 
@@ -2292,7 +2391,7 @@ some other way, there's always:
      MIME::Lite->send('smtp', "smtp.myisp.net");
 
 Or you can set up your own subroutine to call.
-In any case, check out the L</send> method. 
+In any case, check out the L<send()|/send> method. 
 
 
 
@@ -2300,10 +2399,11 @@ In any case, check out the L</send> method.
 
 =head2 Good-vs-bad email addresses with send_by_smtp()
 
-If using L</send_by_smtp>, be aware that you are forcing MIME::Lite
-to extract email addresses out of a possible list provided in the
-C<To:>, C<Cc:>, and C<Bcc:> fields.  This is tricky stuff, and as such only
-the following sorts of addresses will work reliably:
+If using L<send_by_smtp()|/send_by_smtp>, be aware that you are
+forcing MIME::Lite to extract email addresses out of a possible list
+provided in the C<To:>, C<Cc:>, and C<Bcc:> fields.  This is tricky
+stuff, and as such only the following sorts of addresses will work
+reliably:
 
     username
     full.name@some.host.com
@@ -2331,10 +2431,11 @@ to actually print the darn thing.
 
 =head2 Encoding of data delayed until print()
 
-When you specify message bodies (in L</build> or L</attach>) -- 
+When you specify message bodies 
+(in L<build()|/build> or L<attach()|/attach>) -- 
 whether by B<FH>, B<Data>, or B<Path> -- be warned that we don't 
 attempt to open files, read filehandles, or encode the data until 
-L</print> is invoked.  
+L<print()|/print> is invoked.  
 
 In the past, this created some confusion for users of sendmail
 who gave the wrong path to an attachment body, since enough of 
@@ -2486,9 +2587,31 @@ non-ASCII characters (e.g., Latin-1, Latin-2, or any other 8-bit alphabet).
 =head1 CHANGE LOG
 
 B<Current version:>
-$Id: Lite.pm,v 1.147 2000/06/02 06:52:15 eryq Exp $
+$Id: Lite.pm,v 2.101 2000/06/06 03:52:43 eryq Exp $
 
 =over 4
+
+=item Version 2.101
+
+Major revision to print_body() and body_as_string() so that
+"body" really means "the part after the header", which is what most
+people would want in this context.  This is B<not> how it was used
+1.x, where "body" only meant "the body of a simple singlepart".
+Hopefully, this change will solve many problems and create very few ones.  
+
+Added support for attaching a part to a "message/rfc822", treating
+the "message" type as a multipart-like container.
+
+Now takes care not to include "Bcc:" in header when using send_by_smtp,
+as a safety precaution against qmail's behavior.
+I<Thanks to Tatsuhiko Miyagawa for identifying this problem.>
+
+Improved efficieny of many stringifying operations by using 
+string-arrays which are joined, instead of doing multiple appends 
+to a scalar.
+
+Cleaned up the "examples" directory.
+
 
 =item Version 1.147
 

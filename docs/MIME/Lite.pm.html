@@ -5,7 +5,8 @@
 <BODY 
        bgcolor="#FFFFFF" link="#BE1B58" vlink="#8C337C" alink="#F28EAA">
 <A HREF="http://www.zeegee.com" TARGET="_top"><IMG SRC="icons/zeegee.gif" ALT="ZeeGee Software" ALIGN="RIGHT" BORDER="0"></A><A NAME="__TOP__"><H1>MIME::Lite</H1>
-</A><UL>
+</A>
+<P><B>This module is <FONT COLOR="#990000">BETA</FONT> code, which means that the interfaces are fairly stable BUT it has not been out in the community long enough to guarantee much testing. Use with caution! Please report any errors back to <A HREF="mailto:eryq@zeegee.com">eryq@zeegee.com</A> as soon as you can.</B><UL>
 <LI> <A HREF="#NAME">NAME</A>
 <LI> <A HREF="#SYNOPSIS">SYNOPSIS</A>
 <LI> <A HREF="#DESCRIPTION">DESCRIPTION</A>
@@ -344,8 +345,8 @@ a PARAMHASH that will be automatically given to <CODE>new()</CODE>.
 
 <P>One of the possibly-quite-useful hacks thrown into this is the 
 &quot;attach-to-singlepart&quot; hack: if you attempt to attach a part (let's
-call it &quot;part 1&quot;) to a message that <I>isn't</I> a multipart message
-(the &quot;self&quot; object in this case), the following happens:
+call it &quot;part 1&quot;) to a message that doesn't have a content-type
+of &quot;multipart&quot; or &quot;message&quot;, the following happens:
 
 
 
@@ -423,7 +424,7 @@ of all the strings in the array.
 <I>Optional.</I>
 If given true (or omitted), we force the creation of a <CODE>Date:</CODE> field 
 stamped with the current date/time if this is a top-level message.  
-You may want this if using <A HREF="#item:send_by_smtp">send_by_smtp</A>.  
+You may want this if using <A HREF="#item:send_by_smtp">send_by_smtp()</A>.  
 If you don't want this to be done, either provide your own Date
 or explicitly set this to false.
 
@@ -646,17 +647,17 @@ The TAG will be converted to all-lowercase.
 <P><DT><B><A NAME="item:fields">fields</A></B></DT>
 <DD>
 Return the full header for the object, as a ref to an array
-of <CODE>[TAG, VALUE]</CODE> pairs.
-
-
-<P>Any fields that the user has explicitly set will override the
-corresponding MIME fields that we would generate.  So: <I>don't</I> say:
+of <CODE>[TAG, VALUE]</CODE> pairs, where each TAG is all-lowercase.  
+Note that any fields the user has explicitly set will override the 
+corresponding MIME fields that we would otherwise generate.  
+So, don't say...
 
 <PRE>
     $msg-&gt;set(&quot;Content-type&quot; =&gt; &quot;text/html; charset=US-ASCII&quot;);
 </PRE>
 
-<P>unless you <I>mean it</I>!
+<P>unless you want the above value to override the &quot;Content-type&quot;
+MIME field that we would normally generate.
 
 
 <P><I>Note:</I> I called this &quot;fields&quot; because the header() method of
@@ -874,8 +875,8 @@ any object that responds to a print() message.
 <P><DT><B><A NAME="item:print_body">print_body [OUTHANDLE]</A></B></DT>
 <DD>
 <I>Instance method.</I> 
-Print the body of the message to the given output handle, 
-or to the currently-selected filehandle if none was given.
+Print the body of a message to the given output handle, or to 
+the currently-selected filehandle if none was given.  
 
 
 <P>All OUTHANDLE has to be is a filehandle (possibly a glob ref), or 
@@ -905,6 +906,7 @@ Return the entire message as a string, with a header and an encoded body.
 <DD>
 <I>Instance method.</I> 
 Return the encoded body as a string.
+This is the portion after the header and the blank line.
 
 
 <P><I>Note:</I> actually prepares the body by &quot;printing&quot; to a scalar.
@@ -957,13 +959,13 @@ There are three facilities:
 <P><DT><B><A NAME="item:sendmail_ARGS">&quot;sendmail&quot;, ARGS...</A></B></DT>
 <DD>
 Send a message by piping it into the &quot;sendmail&quot; command.
-Uses the <A HREF="#item:send_by_sendmail">send_by_sendmail</A> method, giving it the ARGS.
+Uses the <A HREF="#item:send_by_sendmail">send_by_sendmail()</A> method, giving it the ARGS.
 This usage implements (and deprecates) the <CODE>sendmail()</CODE> method.
 
 <P><DT><B><A NAME="item:smtp_HOSTNAME">&quot;smtp&quot;, [HOSTNAME]</A></B></DT>
 <DD>
 Send a message by SMTP, using optional HOSTNAME as SMTP-sending host.
-Uses the <A HREF="#item:send_by_smtp">send_by_smtp</A> method.
+Uses the <A HREF="#item:send_by_smtp">send_by_smtp()</A> method.
 
 <P><DT><B><A NAME="item:sub_SUBREF_ARGS">&quot;sub&quot;, \&amp;SUBREF, ARGS...</A></B></DT>
 <DD>
@@ -1185,7 +1187,7 @@ some other way, there's always:
 </PRE>
 
 <P>Or you can set up your own subroutine to call.
-In any case, check out the <A HREF="#item:send">send</A> method. 
+In any case, check out the <A HREF="#item:send">send()</A> method. 
 
 
 
@@ -1198,10 +1200,11 @@ In any case, check out the <A HREF="#item:send">send</A> method.
 <A NAME="Good-vs-bad_email_addresses_with_send_by_smtp"><H3><A HREF="#__TOP__"><IMG SRC="icons/h2bullet.gif" ALT="Top" BORDER="0"></A> Good-vs-bad email addresses with send_by_smtp()</H3></A>
 
 
-<P>If using <A HREF="#item:send_by_smtp">send_by_smtp</A>, be aware that you are forcing MIME::Lite
-to extract email addresses out of a possible list provided in the
-<CODE>To:</CODE>, <CODE>Cc:</CODE>, and <CODE>Bcc:</CODE> fields.  This is tricky stuff, and as such only
-the following sorts of addresses will work reliably:
+<P>If using <A HREF="#item:send_by_smtp">send_by_smtp()</A>, be aware that you are
+forcing MIME::Lite to extract email addresses out of a possible list
+provided in the <CODE>To:</CODE>, <CODE>Cc:</CODE>, and <CODE>Bcc:</CODE> fields.  This is tricky
+stuff, and as such only the following sorts of addresses will work
+reliably:
 
 <PRE>
     username
@@ -1238,10 +1241,11 @@ to actually print the darn thing.
 <A NAME="Encoding_of_data_delayed_until_print"><H3><A HREF="#__TOP__"><IMG SRC="icons/h2bullet.gif" ALT="Top" BORDER="0"></A> Encoding of data delayed until print()</H3></A>
 
 
-<P>When you specify message bodies (in <A HREF="#item:build">build</A> or <A HREF="#item:attach">attach</A>) -- 
+<P>When you specify message bodies 
+(in <A HREF="#item:build">build()</A> or <A HREF="#item:attach">attach()</A>) -- 
 whether by <B>FH</B>, <B>Data</B>, or <B>Path</B> -- be warned that we don't 
 attempt to open files, read filehandles, or encode the data until 
-<A HREF="#item:print">print</A> is invoked.  
+<A HREF="#item:print">print()</A> is invoked.  
 
 
 <P>In the past, this created some confusion for users of sendmail
@@ -1422,11 +1426,36 @@ non-ASCII characters (e.g., Latin-1, Latin-2, or any other 8-bit alphabet).
 
 
 <P><B>Current version:</B>
-$Id: Lite.pm,v 1.147 2000/06/02 06:52:15 eryq Exp $
+$Id: Lite.pm,v 2.101 2000/06/06 03:52:43 eryq Exp $
 
 
 
 <DL>
+<P><DT><B><A NAME="item:Version">Version 2.101</A></B></DT>
+<DD>
+Major revision to print_body() and body_as_string() so that
+&quot;body&quot; really means &quot;the part after the header&quot;, which is what most
+people would want in this context.  This is <B>not</B> how it was used
+1.x, where &quot;body&quot; only meant &quot;the body of a simple singlepart&quot;.
+Hopefully, this change will solve many problems and create very few ones.  
+
+
+<P>Added support for attaching a part to a &quot;message/rfc822&quot;, treating
+the &quot;message&quot; type as a multipart-like container.
+
+
+<P>Now takes care not to include &quot;Bcc:&quot; in header when using send_by_smtp,
+as a safety precaution against qmail's behavior.
+<I>Thanks to Tatsuhiko Miyagawa for identifying this problem.</I>
+
+
+<P>Improved efficieny of many stringifying operations by using 
+string-arrays which are joined, instead of doing multiple appends 
+to a scalar.
+
+
+<P>Cleaned up the &quot;examples&quot; directory.
+
 <P><DT><B><A NAME="item:Version">Version 1.147</A></B></DT>
 <DD>
 Fixed buglet where lack of Cc:/Bcc: was causing extract_addrs
@@ -1621,7 +1650,7 @@ President, ZeeGee Software Inc. (<I><FILE><A HREF="http://www.zeegee.com">http:/
 
 <P><HR>
 <ADDRESS><FONT SIZE=-1>
-Generated Fri Jun  2 02:53:01 2000 by cvu_pod2html
+Generated Mon Jun  5 23:59:01 2000 by cvu_pod2html
 </FONT></ADDRESS>
 </BODY>
 </HTML>

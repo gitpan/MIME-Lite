@@ -7,27 +7,18 @@ HREF MIME/Lite.pm.html
 
 SECTION Examples
 
-ITEM bigmsg
-HREF bigmsg.html
+ITEM mime_fwd
+HREF mime_fwd.html
 
-ITEM giftest
-HREF giftest.html
+ITEM mime_gif
+HREF mime_gif.html
 
-ITEM hacktest
-HREF hacktest.html
+ITEM mime_hack
+HREF mime_hack.html
 
-ITEM htmltest
-HREF htmltest.html
+ITEM mime_longlines
+HREF mime_longlines.html
 
 ITEM mime_postcard
 HREF mime_postcard.html
-
-ITEM sendmailtest
-HREF sendmailtest.html
-
-ITEM signtest
-HREF signtest.html
-
-ITEM smtptest
-HREF smtptest.html
 
