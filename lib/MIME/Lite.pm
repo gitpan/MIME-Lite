@@ -339,7 +339,7 @@ use vars qw(
 # GLOBALS, EXTERNAL/CONFIGURATION...
 
 ### The package version, both in 1.23 style *and* usable by MakeMaker:
-$VERSION = substr q$Revision: 2.108 $, 10;
+$VERSION = substr q$Revision: 2.111 $, 10;
 
 ### Don't warn me about dangerous activities:
 $QUIET = undef;
@@ -1466,6 +1466,56 @@ sub get_length {
 
 #------------------------------
 
+=item parts
+
+I<Instance method.>
+Return the parts of this entity, and this entity only.
+Returns empty array if this entity has no parts.
+
+This is B<not> recursive!  Parts can have sub-parts; use
+parts_DFS() to get everything.
+
+=cut
+
+sub parts {
+    my $self = shift;
+    @{$self->{Parts} || []};
+}
+
+#------------------------------
+
+=item parts_DFS
+
+I<Instance method.>
+Return the list of all MIME::Lite objects included in the entity,
+starting with the entity itself, in depth-first-search order.  
+If this object has no parts, it alone will be returned.
+
+=cut
+
+sub parts_DFS {
+    my $self = shift;
+    return ($self, map { $_->parts_DFS } $self->parts);
+}
+
+#------------------------------
+
+=item preamble [TEXT]
+
+I<Instance method.>
+Get/set the preamble string, assuming that this object has subparts.
+Set it to undef for the default string.
+
+=cut
+
+sub preamble {
+    my $self = shift;
+    $self->{Preamble} = shift if @_;
+    $self->{Preamble};
+}
+
+#------------------------------
+
 =item replace TAG,VALUE
 
 I<Instance method.>
@@ -1624,11 +1674,30 @@ sub data {
     $self->{Data};
 }
 
+#------------------------------
+
+=item fh [FILEHANDLE]
+
+I<Instance method.>
+Get/set the FILEHANDLE which contains the message data.
+
+Takes a filehandle as an input and stores it in the object.
+This routine is similar to path(); one important difference is that 
+no attempt is made to set the content length.  
+
+=cut
+
+sub fh {
+    my $self = shift;
+    $self->{FH} = shift if @_;
+    $self->{FH};
+}
 
 #------------------------------
 
 =item path [PATH]
 
+I<Instance method.>
 Get/set the PATH to the message data.
 
 I<Warning:> setting the path recomputes any existing "content-length" field,
@@ -1660,26 +1729,9 @@ sub path {
 
 #------------------------------
 
-=item fh [FILEHANDLE]
-
-Get/set the FILEHANDLE which contains the message data.
-
-Takes a filehandle as an input and stores it in the object.
-This routine is similar to path(); one important difference is that 
-no attempt is made to set the content length.  
-
-=cut
-
-sub fh {
-    my $self = shift;
-    $self->{FH} = shift if @_;
-    $self->{FH};
-}
-
-#------------------------------
-
 =item resetfh [FILEHANDLE]
 
+I<Instance method.>
 Set the current position of the filehandle back to the beginning. 
 Only applies if you used "FH" in build() or attach() for this message.
 
@@ -1704,6 +1756,7 @@ sub resetfh {
 
 =item read_now 
 
+I<Instance method.>
 Forces data from the path/filehandle (as specified by C<build()>)
 to be read into core immediately, just as though you had given it
 literally with the C<Data> keyword.  
@@ -1742,6 +1795,7 @@ sub read_now {
 
 =item sign PARAMHASH
 
+I<Instance method.>
 Sign the message.  This forces the message to be read into core,
 after which the signature is appended to it.
 
@@ -1893,6 +1947,7 @@ sub print {
     $out = wrap MIME::Lite::IO_Handle $out;
 
     ### Output head, separator, and body:
+    $self->verify_data if $AUTO_VERIFY;       ### prevents missing parts!
     $out->print($self->header_as_string, "\n");
     $self->print_body($out);
 }
@@ -1951,7 +2006,9 @@ sub print_body {
 	my $boundary = $self->attr('content-type.boundary');
 
 	### Preamble:
-	$out->print("This is a multi-part message in MIME format.\n");
+	$out->print(defined($self->{Preamble})
+		    ? $self->{Preamble}
+		    : "This is a multi-part message in MIME format.\n");
 	
 	### Parts:
 	my $part;
@@ -2906,7 +2963,7 @@ non-ASCII characters (e.g., Latin-1, Latin-2, or any other 8-bit alphabet).
 
 =head1 VERSION
 
-$Id: Lite.pm,v 2.108 2001/03/30 06:16:54 eryq Exp $
+$Id: Lite.pm,v 2.111 2001/04/04 06:20:23 eryq Exp $
 
 
 =head1 CHANGE LOG
@@ -2914,7 +2971,22 @@ $Id: Lite.pm,v 2.108 2001/03/30 06:16:54 eryq Exp $
 =over 4
 
 
-=item Version 2.108
+=item Version 2.111   (2001/04/03)
+
+Added long-overdue C<parts()> and C<parts_DFS()> methods.
+
+    No instance method
+       For accessing the subparts?			   
+    That can't be right.  D'OH!		 
+
+Added long-overdue auto-verify logic to C<print()> method.
+
+Added long-overdue C<preamble()> method for getting/setting 
+the preamble text.  
+I<Thanks to Jim Daigle for inspiring this.>
+
+
+=item Version 2.108   (2001/03/30)
 
 New C<field_order()> allows you to set the header order, both on a 
 per-message basis, and package-wide.

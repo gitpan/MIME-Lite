@@ -867,6 +867,29 @@ length is set to the undefined value.
 <P>Since content-length is not a standard MIME field anyway (that's right, kids:
 it's not in the MIME RFCs, it's an HTTP thing), this seems pretty fair.
 
+<P><DT><B><A NAME="item:parts">parts</A></B></DT>
+<DD>
+<I>Instance method.</I>
+Return the parts of this entity, and this entity only.
+Returns empty array if this entity has no parts.
+
+
+<P>This is <B>not</B> recursive!  Parts can have sub-parts; use
+parts_DFS() to get everything.
+
+<P><DT><B><A NAME="item:parts_DFS">parts_DFS</A></B></DT>
+<DD>
+<I>Instance method.</I>
+Return the list of all MIME::Lite objects included in the entity,
+starting with the entity itself, in depth-first-search order.  
+If this object has no parts, it alone will be returned.
+
+<P><DT><B><A NAME="item:preamble">preamble [TEXT]</A></B></DT>
+<DD>
+<I>Instance method.</I>
+Get/set the preamble string, assuming that this object has subparts.
+Set it to undef for the default string.
+
 <P><DT><B><A NAME="item:replace">replace TAG,VALUE</A></B></DT>
 <DD>
 <I>Instance method.</I>
@@ -953,17 +976,9 @@ will simply be joined).
 <P><I>Warning:</I> setting the data causes the &quot;content-length&quot; attribute
 to be recomputed (possibly to nothing).
 
-<P><DT><B><A NAME="item:path">path [PATH]</A></B></DT>
-<DD>
-Get/set the PATH to the message data.
-
-
-<P><I>Warning:</I> setting the path recomputes any existing &quot;content-length&quot; field,
-and re-sets the &quot;filename&quot; (to the last element of the path if it
-looks like a simple path, and to nothing if not).
-
 <P><DT><B><A NAME="item:fh">fh [FILEHANDLE]</A></B></DT>
 <DD>
+<I>Instance method.</I>
 Get/set the FILEHANDLE which contains the message data.
 
 
@@ -971,8 +986,19 @@ Get/set the FILEHANDLE which contains the message data.
 This routine is similar to path(); one important difference is that 
 no attempt is made to set the content length.  
 
+<P><DT><B><A NAME="item:path">path [PATH]</A></B></DT>
+<DD>
+<I>Instance method.</I>
+Get/set the PATH to the message data.
+
+
+<P><I>Warning:</I> setting the path recomputes any existing &quot;content-length&quot; field,
+and re-sets the &quot;filename&quot; (to the last element of the path if it
+looks like a simple path, and to nothing if not).
+
 <P><DT><B><A NAME="item:resetfh">resetfh [FILEHANDLE]</A></B></DT>
 <DD>
+<I>Instance method.</I>
 Set the current position of the filehandle back to the beginning. 
 Only applies if you used &quot;FH&quot; in build() or attach() for this message.
 
@@ -982,6 +1008,7 @@ are seekable).
 
 <P><DT><B><A NAME="item:read_now">read_now</A></B></DT>
 <DD>
+<I>Instance method.</I>
 Forces data from the path/filehandle (as specified by <CODE>build()</CODE>)
 to be read into core immediately, just as though you had given it
 literally with the <CODE>Data</CODE> keyword.  
@@ -997,6 +1024,7 @@ until the message is output via <CODE>print()</CODE> or <CODE>print_body()</CODE
 
 <P><DT><B><A NAME="item:sign">sign PARAMHASH</A></B></DT>
 <DD>
+<I>Instance method.</I>
 Sign the message.  This forces the message to be read into core,
 after which the signature is appended to it.
 
@@ -1634,7 +1662,7 @@ non-ASCII characters (e.g., Latin-1, Latin-2, or any other 8-bit alphabet).
 <A NAME="VERSION"><H2><A HREF="#__TOP__"><IMG SRC="icons/h1bullet.gif" ALT="Top" BORDER="0"></A> VERSION</H2></A>
 
 
-<P>$Id: Lite.pm,v 2.108 2001/03/30 06:16:54 eryq Exp $
+<P>$Id: Lite.pm,v 2.111 2001/04/04 06:20:23 eryq Exp $
 
 
 
@@ -1644,7 +1672,24 @@ non-ASCII characters (e.g., Latin-1, Latin-2, or any other 8-bit alphabet).
 
 
 <DL>
-<P><DT><B><A NAME="item:Version">Version 2.108</A></B></DT>
+<P><DT><B><A NAME="item:Version">Version 2.111   (2001/04/03)</A></B></DT>
+<DD>
+Added long-overdue <CODE>parts()</CODE> and <CODE>parts_DFS()</CODE> methods.
+
+<FONT SIZE=3 FACE="courier"><PRE>
+    No instance method
+       For accessing the subparts?			   
+    That can't be right.  D'OH!		 
+</PRE></FONT>
+
+<P>Added long-overdue auto-verify logic to <CODE>print()</CODE> method.
+
+
+<P>Added long-overdue <CODE>preamble()</CODE> method for getting/setting 
+the preamble text.  
+<I>Thanks to Jim Daigle for inspiring this.</I>
+
+<P><DT><B><A NAME="item:Version">Version 2.108   (2001/03/30)</A></B></DT>
 <DD>
 New <CODE>field_order()</CODE> allows you to set the header order, both on a 
 per-message basis, and package-wide.
@@ -1970,7 +2015,7 @@ President, ZeeGee Software Inc. (<I><FILE><A HREF="http://www.zeegee.com">http:/
 
 <P><HR>
 <ADDRESS><FONT SIZE=-1>
-Generated Fri Mar 30 01:17:20 2001 by cvu_pod2html
+Generated Wed Apr  4 02:21:14 2001 by cvu_pod2html
 </FONT></ADDRESS>
 </FONT></BODY>
 </HTML>

@@ -24,12 +24,14 @@ examples/mime_gif
 examples/mime_hack
 examples/mime_longlines
 examples/mime_postcard
+examples/nodisp
 lib/MIME/Lite.pm
 t/ExtUtils/TBone.pm
 t/Utils.pm
 t/addrs.t
 t/data.t
 t/head.t
+t/parts.t
 t/verify.t
 testin/README
 testin/hello

@@ -589,6 +589,23 @@ PUBLIC INTERFACE
         right, kids: it's not in the MIME RFCs, it's an HTTP thing), this
         seems pretty fair.
 
+    parts
+        *Instance method.* Return the parts of this entity, and this entity
+        only. Returns empty array if this entity has no parts.
+
+        This is not recursive! Parts can have sub-parts; use parts_DFS() to
+        get everything.
+
+    parts_DFS
+        *Instance method.* Return the list of all MIME::Lite objects
+        included in the entity, starting with the entity itself, in depth-
+        first-search order. If this object has no parts, it alone will be
+        returned.
+
+    preamble [TEXT]
+        *Instance method.* Get/set the preamble string, assuming that this
+        object has subparts. Set it to undef for the default string.
+
     replace TAG,VALUE
         *Instance method.* Delete all occurences of fields named TAG, and
         add a new field with the given VALUE. TAG is converted to all-
@@ -649,32 +666,33 @@ PUBLIC INTERFACE
         *Warning:* setting the data causes the "content-length" attribute to
         be recomputed (possibly to nothing).
 
-    path [PATH]
-        Get/set the PATH to the message data.
-
-        *Warning:* setting the path recomputes any existing "content-length"
-        field, and re-sets the "filename" (to the last element of the path
-        if it looks like a simple path, and to nothing if not).
-
     fh [FILEHANDLE]
-        Get/set the FILEHANDLE which contains the message data.
+        *Instance method.* Get/set the FILEHANDLE which contains the message
+        data.
 
         Takes a filehandle as an input and stores it in the object. This
         routine is similar to path(); one important difference is that no
         attempt is made to set the content length.
 
+    path [PATH]
+        *Instance method.* Get/set the PATH to the message data.
+
+        *Warning:* setting the path recomputes any existing "content-length"
+        field, and re-sets the "filename" (to the last element of the path
+        if it looks like a simple path, and to nothing if not).
+
     resetfh [FILEHANDLE]
-        Set the current position of the filehandle back to the beginning.
-        Only applies if you used "FH" in build() or attach() for this
-        message.
+        *Instance method.* Set the current position of the filehandle back
+        to the beginning. Only applies if you used "FH" in build() or
+        attach() for this message.
 
         Returns false if unable to reset the filehandle (since not all
         filehandles are seekable).
 
     read_now
-        Forces data from the path/filehandle (as specified by `build()') to
-        be read into core immediately, just as though you had given it
-        literally with the `Data' keyword.
+        *Instance method.* Forces data from the path/filehandle (as
+        specified by `build()') to be read into core immediately, just as
+        though you had given it literally with the `Data' keyword.
 
         Note that the in-core data will always be used if available.
 
@@ -685,8 +703,8 @@ PUBLIC INTERFACE
         `print_body()'.
 
     sign PARAMHASH
-        Sign the message. This forces the message to be read into core,
-        after which the signature is appended to it.
+        *Instance method.* Sign the message. This forces the message to be
+        read into core, after which the signature is appended to it.
 
     Data    As in `build()': the literal signature data. Can be either a scalar
             or a ref to an array of scalars.
@@ -1097,10 +1115,22 @@ A MIME PRIMER
         8-bit alphabet).
 
 VERSION
-    $Id: Lite.pm,v 2.108 2001/03/30 06:16:54 eryq Exp $
+    $Id: Lite.pm,v 2.111 2001/04/04 06:20:23 eryq Exp $
 
 CHANGE LOG
-    Version 2.108
+    Version 2.111   (2001/04/03)
+        Added long-overdue `parts()' and `parts_DFS()' methods.
+
+            No instance method
+               For accessing the subparts?                         
+            That can't be right.  D'OH!          
+
+        Added long-overdue auto-verify logic to `print()' method.
+
+        Added long-overdue `preamble()' method for getting/setting the
+        preamble text. *Thanks to Jim Daigle for inspiring this.*
+
+    Version 2.108   (2001/03/30)
         New `field_order()' allows you to set the header order, both on a
         per-message basis, and package-wide. *Thanks to Thomas Stromberg for
         suggesting this.*
