@@ -19,12 +19,15 @@ examples/bigmsg
 examples/giftest
 examples/hacktest
 examples/htmltest
+examples/mime_postcard
 examples/signtest
 examples/smtptest
 lib/MIME/Lite.pm
 t/ExtUtils/TBone.pm
 t/Utils.pm
+t/addrs.t
 t/data.t
 t/head.t
+t/verify.t
 testin/README
 testin/hello

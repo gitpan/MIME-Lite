@@ -1,7 +1,30 @@
-MENU perldoc
+MENU perlmod
 
 SECTION Modules
 
 ITEM MIME::Lite
 HREF MIME/Lite.pm.html
+
+SECTION Examples
+
+ITEM bigmsg
+HREF bigmsg.html
+
+ITEM giftest
+HREF giftest.html
+
+ITEM hacktest
+HREF hacktest.html
+
+ITEM htmltest
+HREF htmltest.html
+
+ITEM mime_postcard
+HREF mime_postcard.html
+
+ITEM signtest
+HREF signtest.html
+
+ITEM smtptest
+HREF smtptest.html
 

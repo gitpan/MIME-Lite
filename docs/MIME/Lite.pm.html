@@ -258,7 +258,7 @@ over this one.
 
 
 <DL>
-<P><DT><B><A NAME="item:new_PARAMHASH">new [PARAMHASH]</A></B></DT>
+<P><DT><B><A NAME="item:new">new [PARAMHASH]</A></B></DT>
 <DD>
 <I>Class method, constructor.</I>
 Create a new message object.  
@@ -267,7 +267,7 @@ Create a new message object.
 <P>If any arguments are given, they are passed into <CODE>build()</CODE>; otherwise,
 just the empty object is created.
 
-<P><DT><B><A NAME="item:attach_OBJECT_PARAMHASH">attach [OBJECT|PARAMHASH]</A></B></DT>
+<P><DT><B><A NAME="item:attach">attach [OBJECT|PARAMHASH]</A></B></DT>
 <DD>
 <I>Instance method.</I>
 Add a new part to this message, and return the new part.
@@ -305,7 +305,7 @@ are cut from the &quot;self&quot; message, and pasted into &quot;part 0&quot;.
 and then add zero or more attachments to it, much in the same way
 that a user agent like Netscape allows you to do.
 
-<P><DT><B><A NAME="item:build_PARAMHASH">build [PARAMHASH]</A></B></DT>
+<P><DT><B><A NAME="item:build">build [PARAMHASH]</A></B></DT>
 <DD>
 <I>Class/instance method, initiallizer.</I>
 Create (or initiallize) a MIME message object.  
@@ -383,8 +383,7 @@ characters, so consider using one of the other values instead.
 <P>In the case of &quot;7bit&quot;/&quot;8bit&quot;, long lines are automatically chopped to
 legal length; in the case of &quot;7bit&quot;, all 8-bit characters are
 automatically <I>removed</I>.  This may not be what you want, so pick your
-encoding well!  There's a <A HREF="#A_MIME_PRIMER">A MIME PRIMER</A> in this document with
-more info.
+encoding well!  For more info, see <A HREF="#A_MIME_PRIMER">A MIME PRIMER</A>.
 
 <P><DT><B><A NAME="item:FH">FH</A></B></DT>
 <DD>
@@ -501,7 +500,7 @@ have been written:
 
 
 <DL>
-<P><DT><B><A NAME="item:add_TAG_VALUE">add TAG,VALUE</A></B></DT>
+<P><DT><B><A NAME="item:add">add TAG,VALUE</A></B></DT>
 <DD>
 Add field TAG with the given VALUE to the end of the header. 
 The TAG will be converted to all-lowercase, and the VALUE 
@@ -528,7 +527,7 @@ so you're better off using it for most applications.
 
 <P><I>Note:</I> the name comes from Mail::Header.
 
-<P><DT><B><A NAME="item:attr_ATTR_VALUE">attr ATTR,[VALUE]</A></B></DT>
+<P><DT><B><A NAME="item:attr">attr ATTR,[VALUE]</A></B></DT>
 <DD>
 Set MIME attribute ATTR to the string VALUE.  
 ATTR is converted to all-lowercase.
@@ -560,7 +559,7 @@ subfield to be deleted.
     $type = $msg-&gt;attr(&quot;content-type&quot;);        # returns &quot;text/html&quot;
     $name = $msg-&gt;attr(&quot;content-type.name&quot;);   # returns &quot;homepage.html&quot;
 </PRE>
-<P><DT><B><A NAME="item:delete_TAG">delete TAG</A></B></DT>
+<P><DT><B><A NAME="item:delete">delete TAG</A></B></DT>
 <DD>
 Delete field TAG with the given VALUE to the end of the header.  
 The TAG will be converted to all-lowercase.
@@ -591,7 +590,7 @@ corresponding MIME fields that we would generate.  So: <I>don't</I> say:
 Mail::Header returns something different, but similar enough to 
 be confusing.
 
-<P><DT><B><A NAME="item:filename_FILENAME">filename [FILENAME]</A></B></DT>
+<P><DT><B><A NAME="item:filename">filename [FILENAME]</A></B></DT>
 <DD>
 Set the filename which this data will be reported as.
 This actually sets both &quot;standard&quot; attributes.
@@ -600,7 +599,7 @@ This actually sets both &quot;standard&quot; attributes.
 <P>With no argument, returns the filename as dictated by the 
 content-disposition.
 
-<P><DT><B><A NAME="item:get_TAG_INDEX">get TAG,[INDEX]</A></B></DT>
+<P><DT><B><A NAME="item:get">get TAG,[INDEX]</A></B></DT>
 <DD>
 Get the contents of field TAG, which might have been set 
 with set() or replace().  Returns the text of the field.
@@ -645,7 +644,7 @@ length is set to the undefined value.
 <P>Since content-length is not a standard MIME field anyway (that's right, kids:
 it's not in the MIME RFCs, it's an HTTP thing), this seems pretty fair.
 
-<P><DT><B><A NAME="item:replace_TAG_VALUE">replace TAG,VALUE</A></B></DT>
+<P><DT><B><A NAME="item:replace">replace TAG,VALUE</A></B></DT>
 <DD>
 Delete all occurences of fields named TAG, and add a new
 field with the given VALUE.  TAG is converted to all-lowercase.
@@ -676,7 +675,7 @@ in the array to be added.
 
 
 <DL>
-<P><DT><B><A NAME="item:binmode_OVERRIDE">binmode [OVERRIDE]</A></B></DT>
+<P><DT><B><A NAME="item:binmode">binmode [OVERRIDE]</A></B></DT>
 <DD>
 With no argument, returns whether or not it thinks that the data 
 (as given by the &quot;Path&quot; argument of <CODE>build()</CODE>) should be read using 
@@ -691,7 +690,7 @@ binmode() (for example, when <CODE>read_now()</CODE> is invoked).
 value.  An undefined argument unsets the override.
 The new current value is returned.
 
-<P><DT><B><A NAME="item:data_DATA">data [DATA]</A></B></DT>
+<P><DT><B><A NAME="item:data">data [DATA]</A></B></DT>
 <DD>
 Get/set the literal DATA of the message.  The DATA may be
 either a scalar, or a reference to an array of scalars (which
@@ -701,7 +700,7 @@ will simply be joined).
 <P><I>Warning:</I> setting the data causes the &quot;content-length&quot; attribute
 to be recomputed (possibly to nothing).
 
-<P><DT><B><A NAME="item:path_PATH">path [PATH]</A></B></DT>
+<P><DT><B><A NAME="item:path">path [PATH]</A></B></DT>
 <DD>
 Get/set the PATH to the message data.
 
@@ -710,7 +709,7 @@ Get/set the PATH to the message data.
 and re-sets the &quot;filename&quot; (to the last element of the path if it
 looks like a simple path, and to nothing if not).
 
-<P><DT><B><A NAME="item:fh_FILEHANDLE">fh [FILEHANDLE]</A></B></DT>
+<P><DT><B><A NAME="item:fh">fh [FILEHANDLE]</A></B></DT>
 <DD>
 Get/set the FILEHANDLE which contains the message data.
 
@@ -719,7 +718,7 @@ Get/set the FILEHANDLE which contains the message data.
 This routine is similar to path(); one important difference is that 
 no attempt is made to set the content length.  
 
-<P><DT><B><A NAME="item:resetfh_FILEHANDLE">resetfh [FILEHANDLE]</A></B></DT>
+<P><DT><B><A NAME="item:resetfh">resetfh [FILEHANDLE]</A></B></DT>
 <DD>
 Set the current position of the filehandle back to the beginning. 
 Only applies if you used &quot;FH&quot; in build() or attach() for this message.
@@ -743,7 +742,7 @@ to use this if sending tar files!  The benefit of <I>not</I> reading in the data
 is that very large files can be handled by this module if left on disk
 until the message is output via <CODE>print()</CODE> or <CODE>print_body()</CODE>.
 
-<P><DT><B><A NAME="item:sign_PARAMHASH">sign PARAMHASH</A></B></DT>
+<P><DT><B><A NAME="item:sign">sign PARAMHASH</A></B></DT>
 <DD>
 Sign the message.  This forces the message to be read into core,
 after which the signature is appended to it.
@@ -771,6 +770,14 @@ As in <CODE>build()</CODE>: the path to the file.
 
 <P>The content-length is recomputed.
 
+<P><DT><B><A NAME="item:verify_data">verify_data</A></B></DT>
+<DD>
+<I>Instance method.</I>
+Verify that all &quot;paths&quot; to attached data exist, recursively.  
+It might be a good idea for you to do this before a print(), to
+prevent accidental partial output if a file might be missing.
+Raises exception if any path is not readable.
+
 </DL>
 
 
@@ -781,7 +788,7 @@ As in <CODE>build()</CODE>: the path to the file.
 
 
 <DL>
-<P><DT><B><A NAME="item:print_OUTHANDLE">print [OUTHANDLE]</A></B></DT>
+<P><DT><B><A NAME="item:print">print [OUTHANDLE]</A></B></DT>
 <DD>
 <I>Instance method.</I> 
 Print the message to the given output handle, or to the currently-selected
@@ -791,7 +798,7 @@ filehandle if none was given.
 <P>All OUTHANDLE has to be is a filehandle (possibly a glob ref), or 
 any object that responds to a print() message.
 
-<P><DT><B><A NAME="item:print_body_OUTHANDLE">print_body [OUTHANDLE]</A></B></DT>
+<P><DT><B><A NAME="item:print_body">print_body [OUTHANDLE]</A></B></DT>
 <DD>
 <I>Instance method.</I> 
 Print the body of the message to the given output handle, 
@@ -806,7 +813,7 @@ any object that responds to a print() message.
 or if a part contains no data, or if an unsupported encoding is 
 encountered.
 
-<P><DT><B><A NAME="item:print_header_OUTHANDLE">print_header [OUTHANDLE]</A></B></DT>
+<P><DT><B><A NAME="item:print_header">print_header [OUTHANDLE]</A></B></DT>
 <DD>
 <I>Instance method.</I> 
 Print the header of the message to the given output handle, 
@@ -848,7 +855,7 @@ Return the header as a string.
 <DL>
 <P><DT><B><A NAME="item:send">send</A></B></DT>
 <DD>
-<P><DT><B><A NAME="item:send_HOW_HOWARGS">send HOW, HOWARGS...</A></B></DT>
+<P><DT><B><A NAME="item:send">send HOW, HOWARGS...</A></B></DT>
 <DD>
 <I>Class/instance method.</I>  
 This is the principle method for sending mail, and for configuring
@@ -912,7 +919,7 @@ Do this following in your script's setup:
 need to do is change that line in the setup and you're done.
 All of your $msg-&gt;send invocations will work as expected.
 
-<P><DT><B><A NAME="item:send_by_sendmail_SENDMAILCMD">send_by_sendmail SENDMAILCMD</A></B></DT>
+<P><DT><B><A NAME="item:send_by_sendmail">send_by_sendmail SENDMAILCMD</A></B></DT>
 <DD>
 <I>Instance method.</I>
 Send message via the external &quot;sendmail&quot; program, SENDMAILCMD.
@@ -923,7 +930,7 @@ Returns true on success, false or exception on error.
 The SENDMAILCMD for this facility must get all its message-specific 
 information from the standard input.
 
-<P><DT><B><A NAME="item:send_by_smtp_ARGS">send_by_smtp [ARGS...]</A></B></DT>
+<P><DT><B><A NAME="item:send_by_smtp">send_by_smtp [ARGS...]</A></B></DT>
 <DD>
 <I>Instance method.</I>
 Send message via SMTP, using Net::SMTP.  
@@ -939,7 +946,7 @@ The ARGS are sent into Net::SMTP::new(): usually, these are
 
 <P>Returns true on success, false or exception on error.
 
-<P><DT><B><A NAME="item:sendmail_COMMAND">sendmail COMMAND...</A></B></DT>
+<P><DT><B><A NAME="item:sendmail">sendmail COMMAND...</A></B></DT>
 <DD>
 <I>Class method, DEPRECATED.</I>  
 Declare the sender to be &quot;sendmail&quot;, and set up the &quot;sendmail&quot; command.
@@ -955,7 +962,7 @@ Declare the sender to be &quot;sendmail&quot;, and set up the &quot;sendmail&quo
 
 
 <DL>
-<P><DT><B><A NAME="item:quiet_ONOFF">quiet ONOFF</A></B></DT>
+<P><DT><B><A NAME="item:quiet">quiet ONOFF</A></B></DT>
 <DD>
 <I>Class method.</I>  
 Suppress/unsuppress all warnings coming from this module.
@@ -1211,33 +1218,54 @@ non-ASCII characters (e.g., Latin-1, Latin-2, or any other 8-bit alphabet).
 
 
 <P><B>Current version:</B>
-$Id: Lite.pm,v 1.137 2000/03/22 07:21:02 eryq Exp $
+$Id: Lite.pm,v 1.140 2000/04/27 06:31:54 eryq Exp $
 
 
 
 <DL>
-<P><DT><B><A NAME="item:Version_1_137">Version 1.137</A></B></DT>
+<P><DT><B><A NAME="item:Version">Version 1.140</A></B></DT>
 <DD>
-Per popular request, added support for &quot;Cc&quot; and &quot;Bcc&quot; in send_by_smtp().
+Fixed bug in support for &quot;To&quot;, &quot;Cc&quot;, and &quot;Bcc&quot; in send_by_smtp():
+multiple (comma-separated) addresses should now work fine.
+We try real hard to extract addresses from the flat text strings.
+<I>Thanks to John Mason for motivating this change.</I>
+
+
+<P>Added automatic verification that attached data files exist,
+done immediately before the &quot;send&quot; action is invoked.
+To turn this off, set $MIME::Lite::AUTO_VERIFY to false.
+
+<P><DT><B><A NAME="item:Version">Version 1.137</A></B></DT>
+<DD>
+Added support for &quot;Cc&quot; and &quot;Bcc&quot; in send_by_smtp().
 To turn this off, set $MIME::Lite::AUTO_CC to false.
+<I>Thanks to Lucas Maneos for the patch, and tons of others for 
+the suggestion.</I>
 
 
 <P>Chooses a better default content-transfer-encoding if the content-type
 is &quot;image/*&quot;, &quot;audio/*&quot;, etc.
-To tuern this off, set $MIME::Lite::AUTO_ENCODE to false.
+To turn this off, set $MIME::Lite::AUTO_ENCODE to false.
+<I>Thanks to many folks for the suggestion.</I>
 
 
 <P>Fixed bug in QP-encoding where a non-local <CODE>$_</CODE> was being modified.
+<I>Thanks to Jochen Stenzel for finding this very obscure bug!</I>
 
 
-<P>Removed references to <CODE>$`</CODE>, <CODE>$'</CODE>, and <CODE>$&amp;</CODE>.
+<P>Removed references to <CODE>$`</CODE>, <CODE>$'</CODE>, and <CODE>$&amp;</CODE> (bad variables
+which slow things down).
 
-<P><DT><B><A NAME="item:Version_1_133">Version 1.133</A></B></DT>
+
+<P>Added an example of how to send HTML files with enclosed in-line
+images, per popular demand.
+
+<P><DT><B><A NAME="item:Version">Version 1.133</A></B></DT>
 <DD>
 Fixed bug in &quot;Data&quot; handling: arrayrefs were not being handled
 properly.
 
-<P><DT><B><A NAME="item:Version_1_130">Version 1.130</A></B></DT>
+<P><DT><B><A NAME="item:Version">Version 1.130</A></B></DT>
 <DD>
 Added much larger and more-flexible send() facility.
 <I>Thanks to Andrew McRae (and Optimation New Zealand Ltd) 
@@ -1250,29 +1278,29 @@ who requested this feature.</I>
 
 <P>New... &quot;t&quot; tests!
 
-<P><DT><B><A NAME="item:Version_1_124">Version 1.124</A></B></DT>
+<P><DT><B><A NAME="item:Version">Version 1.124</A></B></DT>
 <DD>
 Folded in filehandle (FH) support in build/attach.
 <I>Thanks to Miko O'Sullivan for the code.</I>
 
-<P><DT><B><A NAME="item:Version_1_122">Version 1.122</A></B></DT>
+<P><DT><B><A NAME="item:Version">Version 1.122</A></B></DT>
 <DD>
 MIME::Base64 and MIME::QuotedPrint are used if available.
 
 
 <P>The 7bit encoding no longer does &quot;escapes&quot;; it merely strips 8-bit characters.
 
-<P><DT><B><A NAME="item:Version_1_121">Version 1.121</A></B></DT>
+<P><DT><B><A NAME="item:Version">Version 1.121</A></B></DT>
 <DD>
 Filename attribute is now no longer ignored by build().
 <I>Thanks to Ian Smith for finding and patching this bug.</I>
 
-<P><DT><B><A NAME="item:Version_1_120">Version 1.120</A></B></DT>
+<P><DT><B><A NAME="item:Version">Version 1.120</A></B></DT>
 <DD>
 Efficiency hack to speed up MIME::Lite::IO_Scalar.
 <I>Thanks to David Aspinwall for the patch.</I>
 
-<P><DT><B><A NAME="item:Version_1_116">Version 1.116</A></B></DT>
+<P><DT><B><A NAME="item:Version">Version 1.116</A></B></DT>
 <DD>
 Small bug in our private copy of encode_base64() was patched.
 <I>Thanks to Andreas Koenig for pointing this out.</I>
@@ -1286,21 +1314,21 @@ Small bug in our private copy of encode_base64() was patched.
 
 <P>Changed &quot;stringify&quot; methods to more-standard &quot;as_string&quot; methods.
 
-<P><DT><B><A NAME="item:Version_1_112">Version 1.112</A></B></DT>
+<P><DT><B><A NAME="item:Version">Version 1.112</A></B></DT>
 <DD>
 Added <CODE>read_now()</CODE>, and <CODE>binmode()</CODE> method for our non-Unix-using brethren: 
 file data is now read using binmode() if appropriate.
 <I>Thanks to Xiangzhou Wang for pointing out this bug.</I>
 
-<P><DT><B><A NAME="item:Version_1_110">Version 1.110</A></B></DT>
+<P><DT><B><A NAME="item:Version">Version 1.110</A></B></DT>
 <DD>
 Fixed bug in opening the data filehandle.
 
-<P><DT><B><A NAME="item:Version_1_102">Version 1.102</A></B></DT>
+<P><DT><B><A NAME="item:Version">Version 1.102</A></B></DT>
 <DD>
 Initial release.
 
-<P><DT><B><A NAME="item:Version_1_101">Version 1.101</A></B></DT>
+<P><DT><B><A NAME="item:Version">Version 1.101</A></B></DT>
 <DD>
 Baseline code.
 
@@ -1355,7 +1383,7 @@ President, ZeeGee Software Inc. (<I><FILE><A HREF="http://www.zeegee.com">http:/
 
 <P><HR>
 <ADDRESS><FONT SIZE=-1>
-Generated Thu Mar 23 01:54:30 2000 by cvu_pod2html
+Generated Thu Apr 27 02:32:37 2000 by cvu_pod2html
 </FONT></ADDRESS>
 </BODY>
 </HTML>

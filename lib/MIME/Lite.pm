@@ -173,7 +173,7 @@ use FileHandle;
 
 use strict;
 use vars qw($VERSION $QUIET $PARANOID $VANILLA
-            $AUTO_ENCODE $AUTO_CC);
+            $AUTO_ENCODE $AUTO_CC $AUTO_VERIFY);
 
 
 
@@ -183,7 +183,7 @@ use vars qw($VERSION $QUIET $PARANOID $VANILLA
 # GLOBALS, EXTERNAL/CONFIGURATION...
 
 ### The package version, both in 1.23 style *and* usable by MakeMaker:
-$VERSION = substr q$Revision: 1.137 $, 10;
+$VERSION = substr q$Revision: 1.140 $, 10;
 
 ### Don't warn me about dangerous activities:
 $QUIET = undef;
@@ -199,6 +199,9 @@ $AUTO_ENCODE = 1;
 
 ### Automatically interpret CC/BCC for SMTP:
 $AUTO_CC = 1;
+
+### Check paths right before printing:
+$AUTO_VERIFY = 1;
 
 
 #==============================
@@ -230,6 +233,14 @@ qw(
 ### What external packages do we use for encoding?
 my @Uses;
 
+### Regexps:
+my $ATOM  = '[^ \000-\037()<>@,;:\134"\056\133\135]+';
+my $QSTR  = '".*?"';
+my $WORD  = '(?:' . $QSTR . '|' . $ATOM . ')';
+my $DOMAIN     = '(?:' . $ATOM . '(?:' . '\\.' . $ATOM . ')*' . ')';
+my $LOCALPART  = '(?:' . $WORD . '(?:' . '\\.' . $WORD . ')*' . ')';
+my $ADDR       = '(?:' . $LOCALPART . '@' . $DOMAIN . ')';
+my $PHRASE = $QSTR;
 
 #==============================
 #==============================
@@ -280,6 +291,23 @@ sub known_field {
 
 sub is_mime_field {
     $_[0] =~ /^(mime\-|content\-)/i;
+}
+
+#------------------------------
+#
+# extract_addrs STRING
+#
+# Split STRING into an array of email addresses: somewhat of a KLUDGE.
+
+sub extract_addrs {
+    my $str = shift;
+    $str =~ s/\s/ /g;     ### collapse whitespace
+    my @addrs;
+    while ($str =~ m{\G\s*(($ADDR)|$PHRASE\s*<\s*($ADDR)\s*>)(\s*,)?}go) { 
+	my $addr = $2 ? $2 : $3;
+	push @addrs, $addr;
+    }
+    return @addrs;
 }
 
 
@@ -570,8 +598,7 @@ characters, so consider using one of the other values instead.
 In the case of "7bit"/"8bit", long lines are automatically chopped to
 legal length; in the case of "7bit", all 8-bit characters are
 automatically I<removed>.  This may not be what you want, so pick your
-encoding well!  There's a L<"A MIME PRIMER"> in this document with
-more info.
+encoding well!  For more info, see L<"A MIME PRIMER">.
 
 =item FH
 
@@ -1120,8 +1147,8 @@ sub get_length {
 	elsif (defined($self->{FH})) {                 # it's in a filehandle
 	    # no-op: it's expensive, so don't bother
 	}
-	elsif (-e $self->{Path}) {                     # it's a simple file!
-	    $length = (-s $self->{Path});
+	elsif (defined($self->{Path})) {               # it's a simple file!
+	    $length = (-s $self->{Path})   if (-e $self->{Path});
 	}
     }
     $self->attr('content-length' => $length);
@@ -1419,6 +1446,33 @@ sub suggest_encoding {
     else {
 	return ($type eq 'multipart') ? 'binary' : 'base64';
     }
+}
+
+#------------------------------
+
+=item verify_data
+
+I<Instance method.>
+Verify that all "paths" to attached data exist, recursively.  
+It might be a good idea for you to do this before a print(), to
+prevent accidental partial output if a file might be missing.
+Raises exception if any path is not readable.
+
+=cut
+
+sub verify_data {
+    my $self = shift;
+
+    # Verify self:
+    my $path = $self->{Path};
+    if ($path and ($path !~ /\|$/)) {  # non-shell path:
+	$path =~ s/^<//;    
+	(-r $path) or die "$path: not readable\n";
+    }
+
+    # Verify parts:
+    foreach my $part (@{$self->{Parts}}) { $part->verify_data }
+    1;
 }
 
 =back
@@ -1760,9 +1814,11 @@ All of your $msg-E<gt>send invocations will work as expected.
 
 sub send {
     my $self = shift;
+
     if (ref($self)) {              # instance method:
 	my $method = "send_by_$Sender";
 	my @args   = @{$SenderArgs{$Sender} || []};
+	$self->verify_data if $AUTO_VERIFY;       # prevents missing parts!
 	return $self->$method(@args);
     }
     else {                         # class method:
@@ -1824,9 +1880,12 @@ sub send_by_smtp {
     # We need the "From:" and "To:" headers to pass to the SMTP mailer:
     my $hdr = $self->fields();   
     my $from = $self->get('From');
-    my @to   = $self->get('To');
+
+    # Get the destinations as a simple array of addresses:
+    my @to   = extract_addrs($self->get('To'));
     if ($AUTO_CC) {
-	push @to, $self->get('Cc'), $self->get('Bcc');
+	push @to, extract_addrs($self->get('Cc')), 
+	          extract_addrs($self->get('Bcc'));
     }
 		
     # Create SMTP client:
@@ -2187,23 +2246,41 @@ non-ASCII characters (e.g., Latin-1, Latin-2, or any other 8-bit alphabet).
 =head1 CHANGE LOG
 
 B<Current version:>
-$Id: Lite.pm,v 1.137 2000/03/22 07:21:02 eryq Exp $
+$Id: Lite.pm,v 1.140 2000/04/27 06:31:54 eryq Exp $
 
 =over 4
 
+=item Version 1.140
+
+Fixed bug in support for "To", "Cc", and "Bcc" in send_by_smtp():
+multiple (comma-separated) addresses should now work fine.
+We try real hard to extract addresses from the flat text strings.
+I<Thanks to John Mason for motivating this change.>
+
+Added automatic verification that attached data files exist,
+done immediately before the "send" action is invoked.
+To turn this off, set $MIME::Lite::AUTO_VERIFY to false.
 
 =item Version 1.137
 
-Per popular request, added support for "Cc" and "Bcc" in send_by_smtp().
+Added support for "Cc" and "Bcc" in send_by_smtp().
 To turn this off, set $MIME::Lite::AUTO_CC to false.
+I<Thanks to Lucas Maneos for the patch, and tons of others for 
+the suggestion.>
 
 Chooses a better default content-transfer-encoding if the content-type
 is "image/*", "audio/*", etc.
-To tuern this off, set $MIME::Lite::AUTO_ENCODE to false.
+To turn this off, set $MIME::Lite::AUTO_ENCODE to false.
+I<Thanks to many folks for the suggestion.>
 
 Fixed bug in QP-encoding where a non-local C<$_> was being modified.
+I<Thanks to Jochen Stenzel for finding this very obscure bug!>
 
-Removed references to C<$`>, C<$'>, and C<$&>.
+Removed references to C<$`>, C<$'>, and C<$&> (bad variables
+which slow things down).
+
+Added an example of how to send HTML files with enclosed in-line
+images, per popular demand.
 
 
 =item Version 1.133
