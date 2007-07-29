@@ -1,15 +1,16 @@
-# http://module-build.sourceforge.net/META-spec.html
-#XXXXXXX This is a prototype!!!  It will change in the future!!! XXXXX#
-name:         MIME-Lite
-version:      3.01_05
-version_from: lib/MIME/Lite.pm
-installdirs:  site
-requires:
+--- #YAML:1.0
+name:                MIME-Lite
+version:             3.01_06
+abstract:            ~
+license:             perl
+generated_by:        ExtUtils::MakeMaker version 6.32
+distribution_type:   module
+requires:     
     File::Basename:                
     Mail::Address:                 1.62
     MIME::Base64:                  
     MIME::QuotedPrint:             
     MIME::Types:                   1.13
-
-distribution_type: module
-generated_by: ExtUtils::MakeMaker version 6.17
+meta-spec:
+    url:     http://module-build.sourceforge.net/META-spec-v1.2.html
+    version: 1.2
