@@ -1,12 +1,14 @@
 --- #YAML:1.0
 name:                MIME-Lite
-version:             3.01_06
+version:             3.020
 abstract:            ~
 license:             perl
 generated_by:        ExtUtils::MakeMaker version 6.32
 distribution_type:   module
 requires:     
+    Email::Date:                   0
     File::Basename:                
+    File::Spec:                    0
     Mail::Address:                 1.62
     MIME::Base64:                  
     MIME::QuotedPrint:             
