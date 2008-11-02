@@ -1,13 +1,25 @@
 --- #YAML:1.0
-name:                MIME-Lite
-version:             3.021
-abstract:            ~
-license:             perl
-generated_by:        ExtUtils::MakeMaker version 6.36_01
-distribution_type:   module
-requires:     
-    Email::Date::Format:           1.000
-    File::Spec:                    0
+name:               MIME-Lite
+version:            3.022
+abstract:           ~
+author:  []
+license:            perl
+distribution_type:  module
+configure_requires:
+    ExtUtils::MakeMaker:  0
+requires:
+    Email::Date::Format:  1.000
+    File::Basename:       ~
+    File::Spec:           0
+    Mail::Address:        1.62
+    MIME::Base64:         ~
+    MIME::QuotedPrint:    ~
+    MIME::Types:          1.13
+no_index:
+    directory:
+        - t
+        - inc
+generated_by:       ExtUtils::MakeMaker version 6.48
 meta-spec:
-    url:     http://module-build.sourceforge.net/META-spec-v1.2.html
-    version: 1.2
+    url:      http://module-build.sourceforge.net/META-spec-v1.4.html
+    version:  1.4

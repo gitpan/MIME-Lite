@@ -1,5 +1,6 @@
 package MIME::Lite;
-
+use strict;
+require 5.004;    ### for /c modifier in m/\G.../gc modifier
 
 =head1 NAME
 
@@ -12,13 +13,13 @@ Create and send using the default send method for your OS a single-part message:
     use MIME::Lite;
     ### Create a new single-part message, to send a GIF file:
     $msg = MIME::Lite->new(
-        From     =>'me@myhost.com',
-        To       =>'you@yourhost.com',
-        Cc       =>'some@other.com, some@more.com',
-        Subject  =>'Helloooooo, nurse!',
-        Type     =>'image/gif',
-        Encoding =>'base64',
-        Path     =>'hellonurse.gif'
+        From     => 'me@myhost.com',
+        To       => 'you@yourhost.com',
+        Cc       => 'some@other.com, some@more.com',
+        Subject  => 'Helloooooo, nurse!',
+        Type     => 'image/gif',
+        Encoding => 'base64',
+        Path     => 'hellonurse.gif'
     );
     $msg->send; # send via default
 
@@ -26,22 +27,22 @@ Create a multipart message (i.e., one with attachments) and send it SMTP
 
     ### Create a new multipart message:
     $msg = MIME::Lite->new(
-        From    =>'me@myhost.com',
-        To      =>'you@yourhost.com',
-        Cc      =>'some@other.com, some@more.com',
-        Subject =>'A message with 2 parts...',
-        Type    =>'multipart/mixed'
+        From    => 'me@myhost.com',
+        To      => 'you@yourhost.com',
+        Cc      => 'some@other.com, some@more.com',
+        Subject => 'A message with 2 parts...',
+        Type    => 'multipart/mixed'
     );
 
     ### Add parts (each "attach" has same arguments as "new"):
     $msg->attach(
-        Type     =>'TEXT',
-        Data     =>"Here's the GIF file you wanted"
+        Type     => 'TEXT',
+        Data     => "Here's the GIF file you wanted"
     );
     $msg->attach(
-        Type     =>'image/gif',
-        Path     =>'aaa000123.gif',
-        Filename =>'logo.gif',
+        Type     => 'image/gif',
+        Path     => 'aaa000123.gif',
+        Filename => 'logo.gif',
         Disposition => 'attachment'
     );
     ### use Net:SMTP to do the sending
@@ -326,13 +327,9 @@ and trusting these other packages to do the right thing.
 
 =cut
 
-
-require 5.004;    ### for /c modifier in m/\G.../gc modifier
-
-use Carp();
+use Carp ();
 use FileHandle;
 
-use strict;
 use vars qw(
   $AUTO_CC
   $AUTO_CONTENT_TYPE
@@ -346,11 +343,8 @@ use vars qw(
 );
 
 
-#==============================
-#==============================
-#
 # GLOBALS, EXTERNAL/CONFIGURATION...
-$VERSION = '3.021';
+$VERSION = '3.022';
 
 ### Automatically interpret CC/BCC for SMTP:
 $AUTO_CC = 1;
@@ -383,7 +377,7 @@ $MIME::Lite::DEBUG = 0;
 my $Sender = "";
 my $SENDMAIL = "";
 
-if ( $^O =~ /win32/i ) {
+if ( $^O =~ /win32|cygwin/i ) {
     $Sender = "smtp";
 } else {
     ### Find sendmail:
@@ -401,13 +395,13 @@ if ( $^O =~ /win32/i ) {
         }
     }
     unless (-x $SENDMAIL) {
-        Carp::croak "can't find an executable sendmail"
+        undef $SENDMAIL;
     }
 }
 
 ### Our sending facilities:
 my %SenderArgs = (
-  sendmail  => ["$SENDMAIL -t -oi -oem"],
+  sendmail  => [$SENDMAIL ? "$SENDMAIL -t -oi -oem" : undef],
   smtp      => [],
   sub       => [],
 );
@@ -503,12 +497,13 @@ BEGIN {
     my $LOCALPART = '(?:' . $WORD . '(?:' . '\\.' . $WORD . ')*' . ')';
     my $ADDR      = '(?:' . $LOCALPART . '@' . $DOMAIN . ')';
     my $PHRASE    = '(?:' . $WORD . ')+';
-    my $SEP       = "(?:^\\s*|\\s*,\\s*)";                                ### before elems in a list
+    my $SEP       = "(?:^\\s*|\\s*,\\s*)"; ### before elems in a list
 
     sub my_extract_full_addrs {
         my $str = shift;
+        return unless $str;
         my @addrs;
-        $str =~ s/\s/ /g;                                                 ### collapse whitespace
+        $str =~ s/\s/ /g; ### collapse whitespace
 
         pos($str) = 0;
         while ( $str !~ m{\G\s*\Z}gco ) {
@@ -2259,7 +2254,9 @@ sub print_simple_body {
 
                 ### Encode it line by line:
                 while ( $untainted =~ m{^(.*[\r\n]*)}smg ) {
-                    $out->print( encode_qp($1) );    ### have to do it line by line...
+                    ### have to do it line by line...
+                    my $line = $1; # copy to avoid weird bug; rt 39334
+                    $out->print( encode_qp($line) );
                 }
                 last DATA;
             };
@@ -2659,6 +2656,25 @@ if the send was succesful or not.
 
 =cut
 
+sub _unfold_stupid_params {
+  my $self = shift;
+
+  my %p;
+  STUPID_PARAM: for (my $i = 0; $i < @_; $i++) { ## no critic Loop
+    my $item = $_[$i];
+    if (not ref $item) {
+      $p{ $item } = $_[ ++$i ];
+    } elsif (UNIVERSAL::isa($item, 'HASH')) {
+      $p{ $_ } = $item->{ $_ } for keys %$item;
+    } elsif (UNIVERSAL::isa($item, 'ARRAY')) {
+      for (my $j = 0; $j < @$item; $j += 2) {
+        $p{ $item->[ $j ] } = $item->[ $j + 1 ];
+      }
+    }
+  }
+
+  return %p;
+}
 
 sub send_by_sendmail {
     my $self = shift;
@@ -2666,6 +2682,7 @@ sub send_by_sendmail {
     if ( @_ == 1 and !ref $_[0] ) {
         ### Use the given command...
         my $sendmailcmd = shift @_;
+        Carp::croak "No sendmail command available" unless $sendmailcmd;
 
         ### Do it:
         local *SENDMAIL;
@@ -2674,10 +2691,7 @@ sub send_by_sendmail {
         close SENDMAIL;
         $return = ( ( $? >> 8 ) ? undef: 1 );
     } else {    ### Build the command...
-        my %p = map { UNIVERSAL::isa( $_, 'ARRAY' ) ? @$_
-                    : UNIVERSAL::isa( $_, 'HASH' )  ? %$_
-                    :                                  $_
-                    } @_;
+        my %p = $self->_unfold_stupid_params(@_);
 
         $p{Sendmail} = $SENDMAIL unless defined $p{Sendmail};
 
@@ -2831,9 +2845,7 @@ sub send_by_smtp {
     my @hdr_to = extract_only_addrs( scalar $self->get('To') );
     if ($AUTO_CC) {
         foreach my $field (qw(Cc Bcc)) {
-            my $value = $self->get($field);
-            push @hdr_to, extract_only_addrs($value)
-                if defined($value);
+            push @hdr_to, extract_only_addrs($_) for $self->get($field);
         }
     }
     Carp::croak "send_by_smtp: nobody to send to for host '$hostname'?!\n"
