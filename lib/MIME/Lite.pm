@@ -172,7 +172,7 @@ This will create a multipart message exactly as above, but using the
         Type     =>'text/html',
         Data     =>'<H1>Hello</H1>',
     );
-    $part->attr('content-type.charset' => 'UTF8');
+    $part->attr('content-type.charset' => 'UTF-8');
     $part->add('X-Comment' => 'A message for you');
 
     ### Attach it to any message:
@@ -344,7 +344,7 @@ use vars qw(
 
 
 # GLOBALS, EXTERNAL/CONFIGURATION...
-$VERSION = '3.022';
+$VERSION = '3.023';
 
 ### Automatically interpret CC/BCC for SMTP:
 $AUTO_CC = 1;

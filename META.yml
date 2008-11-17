@@ -1,6 +1,6 @@
 --- #YAML:1.0
 name:               MIME-Lite
-version:            3.022
+version:            3.023
 abstract:           ~
 author:  []
 license:            perl
