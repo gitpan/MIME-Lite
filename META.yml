@@ -1,6 +1,6 @@
 --- #YAML:1.0
 name:               MIME-Lite
-version:            3.023
+version:            3.024
 abstract:           ~
 author:  []
 license:            perl
@@ -9,12 +9,9 @@ configure_requires:
     ExtUtils::MakeMaker:  0
 requires:
     Email::Date::Format:  1.000
-    File::Basename:       ~
     File::Spec:           0
-    Mail::Address:        1.62
-    MIME::Base64:         ~
-    MIME::QuotedPrint:    ~
-    MIME::Types:          1.13
+resources:
+    Repository:  http://github.com/rjbs/mime-lite
 no_index:
     directory:
         - t
