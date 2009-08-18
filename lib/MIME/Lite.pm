@@ -344,7 +344,7 @@ use vars qw(
 
 
 # GLOBALS, EXTERNAL/CONFIGURATION...
-$VERSION = '3.024';
+$VERSION = '3.025';
 
 ### Automatically interpret CC/BCC for SMTP:
 $AUTO_CC = 1;
@@ -2754,6 +2754,8 @@ Please see L<Good-vs-bad email addresses with send_by_smtp()|/Good-vs-bad email 
 
 =item Timeout
 
+=item Port
+
 =item ExactAddresses
 
 =item Debug
@@ -2827,7 +2829,7 @@ if the send was succesful or not.
 my @_mail_opts     = qw( Size Return Bits Transaction Envelope );
 my @_recip_opts    = qw( SkipBad );
 my @_net_smtp_opts = qw( Hello LocalAddr LocalPort Timeout
-                         ExactAddresses Debug );
+                         Port ExactAddresses Debug );
 # internal:  qw( NoAuth AuthUser AuthPass To From Host);
 
 sub __opts {
