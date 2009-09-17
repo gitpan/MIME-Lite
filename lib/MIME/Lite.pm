@@ -344,7 +344,7 @@ use vars qw(
 
 
 # GLOBALS, EXTERNAL/CONFIGURATION...
-$VERSION = '3.025';
+$VERSION = '3.026';
 
 ### Automatically interpret CC/BCC for SMTP:
 $AUTO_CC = 1;
@@ -436,7 +436,7 @@ if ( eval "require File::Basename" ) {    # not affected by $PARANOID, core Perl
 
 ### See if we have/want MIME::Types
 my $HaveMimeTypes = 0;
-if ( !$PARANOID and eval "require MIME::Types; MIME::Types->VERSION(1.004);" ) {
+if ( !$PARANOID and eval "require MIME::Types; MIME::Types->VERSION(1.28);" ) {
     $HaveMimeTypes = 1;
     push @Uses, "T$MIME::Types::VERSION";
 }
@@ -3609,7 +3609,7 @@ you provide.
 
 =head1 VERSION
 
-Version: 3.01_06 (Dev Test Release)
+Version: 3.026
 
 =head1 CHANGE LOG
 

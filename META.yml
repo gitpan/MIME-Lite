@@ -1,6 +1,6 @@
 --- #YAML:1.0
 name:               MIME-Lite
-version:            3.025
+version:            3.026
 abstract:           ~
 author:  []
 license:            perl
@@ -16,7 +16,7 @@ requires:
     Mail::Address:        1.62
     MIME::Base64:         ~
     MIME::QuotedPrint:    ~
-    MIME::Types:          1.13
+    MIME::Types:          1.28
 resources:
     Repository:  http://github.com/rjbs/mime-lite
 no_index:
