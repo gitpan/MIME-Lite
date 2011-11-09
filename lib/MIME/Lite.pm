@@ -6,6 +6,14 @@ require 5.004;    ### for /c modifier in m/\G.../gc modifier
 
 MIME::Lite - low-calorie MIME generator
 
+=head1 WAIT!
+
+MIME::Lite is not recommended by its current maintainer.  There are a number of
+alternatives, like Email::MIME or MIME::Entity and Email::Sender, which you
+should probably use instead.  MIME::Lite continues to accrue weird bug reports,
+and it is not receiving a large amount of refactoring due to the availability
+of better alternatives.  Please consider using something else.
+
 =head1 SYNOPSIS
 
 Create and send using the default send method for your OS a single-part message:
@@ -69,8 +77,7 @@ Specify default send method:
 
 with authentication
 
-    MIME::Lite->send('smtp','some.host',
-       AuthUser=>$user, AuthPass=>$pass);
+    MIME::Lite->send('smtp','some.host', AuthUser=>$user, AuthPass=>$pass);
 
 =head1 DESCRIPTION
 
@@ -169,6 +176,7 @@ This will create a multipart message exactly as above, but using the
 
     ### Create a standalone part:
     $part = MIME::Lite->new(
+        Top      => 0,
         Type     =>'text/html',
         Data     =>'<H1>Hello</H1>',
     );
@@ -237,7 +245,7 @@ This will create a multipart message exactly as above, but using the
 
     ### Do something like this in your 'main':
     if ($I_DONT_HAVE_SENDMAIL) {
-       MIME::Lite->send('smtp', $host, Timeout=>60
+       MIME::Lite->send('smtp', $host, Timeout=>60,
            AuthUser=>$user, AuthPass=>$pass);
     }
 
@@ -344,7 +352,7 @@ use vars qw(
 
 
 # GLOBALS, EXTERNAL/CONFIGURATION...
-$VERSION = '3.027';
+$VERSION = '3.028';
 
 ### Automatically interpret CC/BCC for SMTP:
 $AUTO_CC = 1;
@@ -879,7 +887,7 @@ Same as setting "content-id".
 
 I<Optional.>
 Set the content length explicitly.  Normally, this header is automatically
-computed, but only under certain circumstances (see L<"Limitations">).
+computed, but only under certain circumstances (see L<"Benign limitations">).
 
 =item Path
 
@@ -2515,12 +2523,12 @@ This usage implements (and deprecates) the C<sendmail()> method.
 =item "smtp", [HOSTNAME, [NAMEDPARMS] ]
 
 Send a message by SMTP, using optional HOSTNAME as SMTP-sending host.
-Uses the L<send_by_smtp()|/send_by_smtp> method. Any additional
-arguments passed in will also be passed through to send_by_smtp.
-This is useful for things like mail servers requiring authentication
-where you can say something like the following
+L<Net::SMTP> will be required.  Uses the L<send_by_smtp()|/send_by_smtp>
+method. Any additional arguments passed in will also be passed through to
+send_by_smtp.  This is useful for things like mail servers requiring
+authentication where you can say something like the following
 
-  MIME::List->send('smtp', $host, AuthUser=>$user, AuthPass=>$pass);
+  MIME::Lite->send('smtp', $host, AuthUser=>$user, AuthPass=>$pass);
 
 which will configure things so future uses of
 
@@ -2551,7 +2559,7 @@ need to do is change that line in the setup and you're done.
 All of your $msg-E<gt>send invocations will work as expected.
 
 After sending, the method last_send_successful() can be used to determine
-if the send was succesful or not.
+if the send was successful or not.
 
 =cut
 
@@ -2652,7 +2660,7 @@ Thus:
 =back
 
 After sending, the method last_send_successful() can be used to determine
-if the send was succesful or not.
+if the send was successful or not.
 
 =cut
 
@@ -2732,7 +2740,8 @@ sub send_by_sendmail {
 =item send_by_smtp REF, HOST, ARGS
 
 I<Instance method.>
-Send message via SMTP, using Net::SMTP.
+Send message via SMTP, using Net::SMTP -- which will be required for this
+feature.
 
 HOST is the name of SMTP server to connect to, or undef to have
 L<Net::SMTP|Net::SMTP> use the defaults in Libnet.cfg.
@@ -2816,7 +2825,7 @@ I<Returns:>
 True on success, croaks with an error message on failure.
 
 After sending, the method last_send_successful() can be used to determine
-if the send was succesful or not.
+if the send was successful or not.
 
 =cut
 
@@ -3595,9 +3604,10 @@ MIME::Lite.
 =head1 HELPER MODULES
 
 MIME::Lite works nicely with other certain other modules if they are present.
-Good to have installed is the latest L<MIME::Types|MIME::Types>,
+Good to have installed are the latest L<MIME::Types|MIME::Types>,
 L<Mail::Address|Mail::Address>, L<MIME::Base64|MIME::Base64>,
-L<MIME::QuotedPrint|MIME::QuotedPrint>.
+L<MIME::QuotedPrint|MIME::QuotedPrint>, and L<Net::SMTP>.
+L<Email::Date::Format> is strictly required.
 
 If they aren't present then some functionality won't work, and other features
 wont be as efficient or up to date as they could be. Nevertheless they are optional
@@ -3613,34 +3623,34 @@ The ./examples directory contains a number of snippets in prepared
 form, generally they are documented, but they should be easy to understand.
 
 The ./contrib directory contains a companion/tool modules that come bundled
-with MIME::Lite, they dont get installed by default. Please review the POD they
-come with.
+with MIME::Lite, they don't get installed by default. Please review the POD
+they come with.
 
 =head1 BUGS
 
-The whole reason that version 3.0 was released was to ensure that MIME::Lite
-is up to date and patched. If you find an issue please report it.
+The whole reason that version 3.0 was released was to ensure that MIME::Lite is
+up to date and patched. If you find an issue please report it.
 
-As far as I know MIME::Lite doesnt currently have any serious bugs, but my usage
-is hardly comprehensive.
+As far as I know MIME::Lite doesn't currently have any serious bugs, but my
+usage is hardly comprehensive.
 
-Having said that there are a number of open issues for me, mostly caused by the progress
-in the community as whole since Eryq last released. The tests are based around an
-interesting but non standard test framework. I'd like to change it over to using
-Test::More.
+Having said that there are a number of open issues for me, mostly caused by the
+progress in the community as whole since Eryq last released. The tests are
+based around an interesting but non standard test framework. I'd like to change
+it over to using Test::More.
 
 Should tests fail please review the ./testout directory, and in any bug reports
-please include the output of the relevent file. This is the only redeeming feature
-of not using Test::More that I can see.
+please include the output of the relevent file. This is the only redeeming
+feature of not using Test::More that I can see.
 
-Bug fixes / Patches / Contribution are welcome, however I probably won't apply them
-unless they also have an associated test. This means that if I dont have the time to
-write the test the patch wont get applied, so please, include tests for any patches
-you provide.
+Bug fixes / Patches / Contribution are welcome, however I probably won't apply
+them unless they also have an associated test. This means that if I don't have
+the time to write the test the patch wont get applied, so please, include tests
+for any patches you provide.
 
 =head1 VERSION
 
-Version: 3.027
+Version: 3.028
 
 =head1 CHANGE LOG
 
@@ -3694,5 +3704,3 @@ Patches And Maintenance by Yves Orton and many others.
 Consult ./changes.pod
 
 =cut
-
-

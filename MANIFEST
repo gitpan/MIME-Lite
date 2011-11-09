@@ -27,4 +27,5 @@ testin/README
 testin/hello
 testin/test.html
 changes.pod
-META.yml                                 Module meta-data (added by MakeMaker)
+META.yml                                 Module YAML meta-data (added by MakeMaker)
+META.json                                Module JSON meta-data (added by MakeMaker)
