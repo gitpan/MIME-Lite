@@ -18,9 +18,11 @@ t/Utils.pm
 t/addrs.t
 t/data.t
 t/head.t
+t/mime-version.t
 t/parts.t
 t/pod.t
 t/pod-coverage.t
+t/sendmail.t
 t/verify.t
 t/types.t
 testin/README
